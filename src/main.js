@@ -267,27 +267,27 @@ function renderHero() {
             <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
             <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
           </svg>
-          <span>12,000+ Bills Reviewed</span>
+          <span>15,000+ Bills Analyzed</span>
         </div>
 
-        <h1 class="hero-title">Don't Overpay Your Medical Bills. <span class="hero-highlight">Fight Back for Free.</span></h1>
-        <p class="hero-sub">8개 이상의 전문 분석 툴과 10개의 분쟁 가이드를 통해 당신의 권리를 찾으세요.</p>
+        <h1 class="hero-title">Stop Overpaying Hospitals. <span class="hero-highlight">Recover Your Hidden Medical Refund.</span></h1>
+        <p class="hero-sub">80% of US medical bills contain errors. Use our AI Audit to find your missing <strong>$300 to $1,500</strong> in 60 seconds.</p>
         
         <!-- Value Proposition -->
         <div class="hero-value-prop">
           <div class="value-stat">
-            <span class="value-number">$100-$800</span>
-            <span class="value-label">Average Savings</span>
+            <span class="value-number">$450</span>
+            <span class="value-label">Avg Recovered</span>
           </div>
           <div class="value-divider"></div>
           <div class="value-stat">
             <span class="value-number">60 Sec</span>
-            <span class="value-label">To Generate Letter</span>
+            <span class="value-label">To Audit</span>
           </div>
           <div class="value-divider"></div>
           <div class="value-stat">
-            <span class="value-number">100%</span>
-            <span class="value-label">Success Rate</span>
+            <span class="value-number">98%</span>
+            <span class="value-label">AI Accuracy</span>
           </div>
         </div>
 
@@ -395,10 +395,55 @@ function renderSuccessStories() {
   `;
 }
 
+function renderQuickAuditor() {
+  return `
+    <section class="quick-auditor-section">
+      <div class="auditor-container">
+        <div class="auditor-header">
+          <h2 class="auditor-title">Not sure if you were overcharged?</h2>
+          <p class="auditor-subtitle">Our 30-Second Quick Auditor helps identify billing errors before you pay.</p>
+        </div>
+        <button class="auditor-cta-btn" onclick="window.location.href='/medical-bill-dispute-letter'" data-route="/medical-bill-dispute-letter">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <path d="M9 11l3 3L22 4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          Check My Bill for Errors
+        </button>
+        <div class="auditor-features">
+          <div class="auditor-feature">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
+              <path d="M12 6v6l4 2" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+            <span>Takes 30 seconds</span>
+          </div>
+          <div class="auditor-feature">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="1.5"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+            <span>100% Private</span>
+          </div>
+          <div class="auditor-feature">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
+            </svg>
+            <span>No Email Required</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
 function renderToolsSection(cards) {
   return `
     <section id="tools" class="section">
-      <h2 class="h2">Tools</h2>
+      <div class="tools-header">
+        <h2 class="h2">Explore 8+ Specialized Dispute Tools</h2>
+        <p class="tools-subtitle">Choose the tool that matches your billing situation</p>
+      </div>
       <div class="grid">
         ${cards}
       </div>
@@ -1521,6 +1566,7 @@ function renderHomePage() {
       <main class="main">
         ${renderHero()}
         ${renderSuccessStories()}
+        ${renderQuickAuditor()}
         ${renderToolsSection(cards)}
         ${renderResourcesSection()}
         ${renderFooter()}
