@@ -366,12 +366,22 @@ function renderQuickAuditor() {
         <div class="slim-auditor-bar" id="auditor-cta-box">
           <div class="slim-bar-content">
             <span class="slim-bar-text">Not sure if you were overcharged?</span>
-            <button class="slim-bar-btn" id="start-quiz-btn">
-              Check My Bill
+            <input type="file" id="bill-upload" accept="image/*,.pdf" style="display:none;">
+            <label for="bill-upload" class="slim-bar-btn" id="upload-label">
+              Upload Bill to Scan
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                <polyline points="17 8 12 3 7 8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></line>
               </svg>
-            </button>
+            </label>
+          </div>
+          <div class="privacy-notice" id="privacy-notice">Your documents are processed locally in your browser for 100% privacy.</div>
+          <div class="scan-progress" id="scan-progress" style="display:none;">
+            <div class="scan-progress-bar">
+              <div class="scan-progress-fill" id="scan-progress-fill"></div>
+            </div>
+            <div class="scan-progress-text" id="scan-progress-text">Scanning... 0%</div>
           </div>
         </div>
 
@@ -2408,6 +2418,7 @@ function router() {
       }
     }, 100);
     bindNavigation();
+    setupBillScanning(); // Initialize OCR
     setupQuizLogic(); // Initialize quiz
     return;
   }
@@ -2424,6 +2435,7 @@ function router() {
   
   // Initialize quiz if on home page
   if (normalizedPath === "/") {
+    setupBillScanning();
     setupQuizLogic();
   }
 
@@ -2491,6 +2503,87 @@ function router() {
     pdfFileName: "fixmymedicalbill-prior-authorization.pdf",
     pdfHeader: "FixMyMedicalBill — Prior Authorization",
     generate: generatePriorAuthContent,
+  });
+}
+
+// ========== OCR BILL SCANNING LOGIC ==========
+
+function setupBillScanning() {
+  const billUpload = document.getElementById('bill-upload');
+  const scanProgress = document.getElementById('scan-progress');
+  const scanProgressFill = document.getElementById('scan-progress-fill');
+  const scanProgressText = document.getElementById('scan-progress-text');
+  const privacyNotice = document.getElementById('privacy-notice');
+
+  if (!billUpload) return; // Exit if not on home page
+
+  billUpload.addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload a valid image file (JPEG, PNG, GIF, BMP, WEBP) or PDF.');
+      return;
+    }
+
+    // Show progress, hide privacy notice
+    privacyNotice.style.display = 'none';
+    scanProgress.style.display = 'flex';
+    scanProgressFill.style.width = '0%';
+    scanProgressText.textContent = 'Scanning... 0%';
+
+    try {
+      console.log('Starting OCR for file:', file.name);
+      
+      // Initialize Tesseract worker
+      const worker = await Tesseract.createWorker({
+        logger: (m) => {
+          // Update progress based on Tesseract status
+          if (m.status === 'recognizing text') {
+            const progress = Math.round(m.progress * 100);
+            scanProgressFill.style.width = `${progress}%`;
+            scanProgressText.textContent = `Scanning... ${progress}%`;
+          }
+        }
+      });
+
+      // Perform OCR
+      const { data: { text } } = await worker.recognize(file);
+      
+      // Complete progress
+      scanProgressFill.style.width = '100%';
+      scanProgressText.textContent = 'Scanning... 100%';
+
+      // Output extracted text to console
+      console.log('===== EXTRACTED TEXT FROM BILL =====');
+      console.log(text);
+      console.log('====================================');
+
+      // Clean up
+      await worker.terminate();
+
+      // Show success message
+      setTimeout(() => {
+        scanProgressText.textContent = 'Scan complete! Check console for results.';
+        setTimeout(() => {
+          scanProgress.style.display = 'none';
+          privacyNotice.style.display = 'block';
+          billUpload.value = ''; // Reset file input
+        }, 2000);
+      }, 500);
+
+    } catch (error) {
+      console.error('OCR Error:', error);
+      scanProgressText.textContent = 'Scan failed. Please try again.';
+      scanProgressFill.style.width = '0%';
+      setTimeout(() => {
+        scanProgress.style.display = 'none';
+        privacyNotice.style.display = 'block';
+        billUpload.value = '';
+      }, 3000);
+    }
   });
 }
 
