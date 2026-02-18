@@ -3402,7 +3402,7 @@ a{ color:inherit; }
   }
 }
 
-/* === MOBILE OVERRIDES (APPLE-STYLE MINIMALIST - FINAL FIX) === */
+/* === MOBILE OVERRIDES (APPLE-STYLE GOLDEN LAYOUT) === */
 /* 1. Global Mobile Fix to prevent right-side clipping */
 html, body {
   overflow-x: hidden !important;
@@ -3411,92 +3411,130 @@ html, body {
 }
 
 @media (max-width: 640px) {
-  /* 2. Hero Section: Center everything and fix font sizes */
+  /* 1. Header & Global Reset */
+  :root{
+    --header-offset: 54px;
+  }
+
+  .header{
+    height: var(--header-offset);
+    padding: 0 12px !important;
+  }
+
+  .main{
+    padding: calc(var(--header-offset) + 4px) 16px 84px;
+  }
+
+  html,
+  body {
+    overflow-x: hidden !important;
+  }
+
+  /* 2. Hero Section (Apple Squeeze) */
   .hero {
     text-align: center !important;
-    padding: 24px 16px !important;
+    padding: 12px 16px !important;
+    margin-top: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
   }
+
   .hero-title {
     font-size: 28px !important;
-    line-height: 1.2 !important;
-    margin-bottom: 12px !important;
+    line-height: 1.1 !important;
+    margin-bottom: 8px !important;
     word-break: keep-all;
   }
+
+  .hero-sub,
   .hero-subtitle {
-    font-size: 15px !important;
-    margin: 0 auto 20px !important;
+    font-size: 13.5px !important;
+    margin: 0 auto 12px !important;
+    text-align: center !important;
   }
 
-  /* 3. Stats Box: Center $450 and other items */
+  /* 3. Horizontal Stats Row (Key Fix) */
   .hero-value-prop {
     width: 100% !important;
     display: flex !important;
-    flex-direction: column !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
     align-items: center !important;
-    gap: 12px !important;
-    padding: 20px !important;
-    margin: 16px 0 !important;
+    padding: 12px 8px !important;
+    margin: 12px 0 !important;
+    gap: 0 !important;
   }
+
   .stat-item {
-    width: 100% !important;
-    border-right: none !important;
-    border-bottom: 1px solid rgba(0,0,0,0.05) !important;
-    padding: 8px 0 !important;
+    flex: 1;
+    border-bottom: none !important;
+    border-right: 1px solid rgba(0,0,0,0.06) !important;
+    padding: 4px 6px !important;
     text-align: center !important;
   }
-  .stat-item:last-child { border-bottom: none !important; }
 
-  /* 4. Tool Pages: Center Input Fields inside White Cards */
-  .tool-shell {
+  .stat-item:last-child {
+    border-right: none !important;
+  }
+
+  .stat-item .h2 {
+    font-size: 18px !important;
+  }
+
+  .stat-item p {
+    font-size: 10px !important;
+  }
+
+  .value-divider {
+    display: none !important;
+  }
+
+  /* 4. Trust Badges & Banner */
+  .hero-trust {
+    justify-content: center !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    font-size: 10px !important;
+    margin-top: 8px !important;
+    padding-top: 8px !important;
+  }
+
+  .hero-trust svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .trust-dot {
+    display: none !important;
+  }
+
+  .alert-banner {
+    margin: 8px 0 !important;
+    font-size: 10.5px !important;
+    padding: 8px !important;
+  }
+
+  /* 5. Final Banner Pull-up */
+  .quick-auditor-section {
+    margin-top: 4px !important;
     padding: 16px !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-  }
-  .tool-panel {
-    width: 100% !important;
-    padding: 20px !important; /* Balanced padding */
-    margin: 0 auto !important;
-    box-sizing: border-box !important;
-  }
-  .field {
-    width: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    margin-bottom: 20px !important;
-  }
-  .field label {
-    align-self: flex-start !important; /* Label stays left for readability */
-    margin-left: 4px;
-    width: 100%;
-  }
-  input, select, textarea {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important; /* Essential for alignment */
   }
 
-  /* 5. Button & Spacing Fixes */
+  #quick-auditor h2 {
+    font-size: 16px !important;
+  }
+
   .form-actions {
     display: flex !important;
     flex-direction: column !important;
     gap: 12px !important;
     width: 100% !important;
   }
+
   .btn {
     width: 100% !important;
     justify-content: center !important;
-  }
-  .quick-auditor-section {
-    margin-top: 16px !important;
-    padding: 24px 16px !important;
-  }
-  
-  /* Additional Centering for Hero Trust */
-  .hero-trust {
-     justify-content: center !important;
-     flex-wrap: wrap !important;
   }
 }
