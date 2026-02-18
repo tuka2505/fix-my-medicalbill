@@ -3074,9 +3074,10 @@ function buildDynamicQuiz(category, extractedText) {
 // ========== GEMINI AI INTEGRATION ==========
 
 // Generate AI-powered audit verdict using Gemini 1.5 Flash
-async function generateAIVerdict(extractedText, auditFindings, detectedAmount) {
+async function generateAIVerdict(extractedText, auditFindings, detectedAmount, quizSavings) {
   try {
     console.log('[Gemini API] Calling AI with audit findings:', auditFindings);
+    console.log('[Gemini API] Bill Amount:', detectedAmount, '| Quiz Savings:', quizSavings);
     
     // Validate API key exists
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -3087,7 +3088,32 @@ async function generateAIVerdict(extractedText, auditFindings, detectedAmount) {
     
     console.log('[Gemini API] ✓ API Key detected (length:', apiKey.length, 'chars)');
     
-    const prompt = `You are an expert US Medical Billing Auditor. Analyze this OCR text from a medical bill: '${extractedText.substring(0, 500)}'. The user answered 'Yes' to these audit questions, flagging these potential errors: ${JSON.stringify(auditFindings)}. Based on a total bill of $${detectedAmount}, provide a JSON response with exactly these keys (NO Markdown, strictly valid JSON):\n{ "refundProbability": "High (85%)", "estimatedRefund": 450, "auditorNote": "3-sentence professional explanation of violations like Upcoding/Unbundling.", "recommendedTool": "ER Bill Disputer" }`;
+    // Extract specific error types for context
+    const hasCharityCare = auditFindings.some(f => f.errorType === 'Charity Care Eligibility');
+    const hasUpcoding = auditFindings.some(f => f.errorType === 'Upcoding');
+    const hasPhantomBilling = auditFindings.some(f => f.errorType === 'Phantom Billing');
+    const hasUnbundling = auditFindings.some(f => f.errorType === 'Unbundling');
+    
+    const prompt = `You are an expert US Medical Billing Auditor. Do not guess a random number.
+
+INPUT DATA:
+- Total Bill Amount: $${detectedAmount}
+- Quiz-Calculated Savings: $${quizSavings}
+- Audit Findings: ${JSON.stringify(auditFindings)}
+- Detected Violations: Charity Care=${hasCharityCare}, Upcoding=${hasUpcoding}, Phantom Billing=${hasPhantomBilling}, Unbundling=${hasUnbundling}
+
+CALCULATION RULES:
+1. If Charity Care is eligible, the refund should be 60-80% of total bill amount.
+2. If Phantom Billing or Upcoding is found, use the specific weighted values from quiz results.
+3. If multiple errors exist, the refund should reflect cumulative impact.
+4. The estimatedRefund MUST be a realistic number based on the bill amount and quiz findings.
+5. NEVER return a fixed amount like $450 for every bill.
+6. Base your calculation on: Quiz Savings ($${quizSavings}) as the minimum, adjusting up for severity.
+
+OCR TEXT EXCERPT: '${extractedText.substring(0, 500)}'
+
+Provide a JSON response with exactly these keys (NO Markdown, strictly valid JSON):
+{ "refundProbability": "High (85%)", "estimatedRefund": 1250, "auditorNote": "3-sentence professional explanation of specific violations found.", "recommendedTool": "Medical Bill Dispute Letter" }`;
     
     // Use v1beta endpoint with gemini-3-flash-preview model
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
@@ -3134,6 +3160,20 @@ async function generateAIVerdict(extractedText, auditFindings, detectedAmount) {
     const aiVerdict = JSON.parse(aiText);
     
     console.log('[Gemini API] Parsed verdict:', aiVerdict);
+    
+    // ========== SAFEGUARD: Cap unrealistic refunds ==========
+    const billAmount = parseFloat(detectedAmount.replace(/,/g, '')) || 0;
+    const maxRealisticRefund = billAmount * 0.8; // 80% max cap
+    
+    if (aiVerdict.estimatedRefund > billAmount) {
+      console.warn('[Gemini API] ⚠️ AI returned refund ($' + aiVerdict.estimatedRefund + ') greater than bill ($' + billAmount + '). Capping at 50%.');
+      aiVerdict.estimatedRefund = Math.round(billAmount * 0.5);
+    } else if (aiVerdict.estimatedRefund > maxRealisticRefund) {
+      console.warn('[Gemini API] ⚠️ AI returned refund ($' + aiVerdict.estimatedRefund + ') exceeds 80% of bill. Capping at 80%.');
+      aiVerdict.estimatedRefund = Math.round(maxRealisticRefund);
+    }
+    
+    console.log('[Gemini API] Final refund after safeguard:', aiVerdict.estimatedRefund);
     return aiVerdict;
     
   } catch (error) {
@@ -3309,11 +3349,12 @@ function initializeTargetedQuiz(category) {
         
         // ========== GEMINI AI VERDICT ==========
         
-        // Call Gemini API for AI-generated verdict
+        // Call Gemini API for AI-generated verdict with quiz savings context
         const aiVerdict = await generateAIVerdict(
           currentBillText || 'No text extracted',
           auditFindings,
-          detectedAmount || '0'
+          detectedAmount || '0',
+          Math.round(calculatedRefund)
         );
         
         console.log('[AI Verdict] Received:', aiVerdict);
