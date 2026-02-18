@@ -3089,9 +3089,9 @@ async function generateAIVerdict(extractedText, auditFindings, detectedAmount) {
     
     const prompt = `You are an expert US Medical Billing Auditor. Analyze this OCR text from a medical bill: '${extractedText.substring(0, 500)}'. The user answered 'Yes' to these audit questions, flagging these potential errors: ${JSON.stringify(auditFindings)}. Based on a total bill of $${detectedAmount}, provide a JSON response with exactly these keys (NO Markdown, strictly valid JSON):\n{ "refundProbability": "High (85%)", "estimatedRefund": 450, "auditorNote": "3-sentence professional explanation of violations like Upcoding/Unbundling.", "recommendedTool": "ER Bill Disputer" }`;
     
-    // Use v1beta endpoint (gemini-1.5-flash is only available in beta)
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    console.log('[Gemini API] Calling URL: https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=***');
+    // Use v1beta endpoint with gemini-3-flash-preview model
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+    console.log('[Gemini API] Calling URL: https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=***');
     
     const response = await fetch(apiUrl, {
       method: 'POST',
