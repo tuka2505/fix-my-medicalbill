@@ -1027,6 +1027,16 @@ a{ color:inherit; }
   text-align: center;
 }
 
+.question-context{
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.75);
+  margin: 12px 0 24px;
+  text-align: center;
+  font-style: italic;
+}
+
 .quiz-options{
   display: flex;
   flex-direction: column;
@@ -2544,6 +2554,11 @@ a{ color:inherit; }
     font-size: 18px;
   }
 
+  .question-context{
+    font-size: 12px;
+    margin: 10px 0 18px;
+  }
+
   .quiz-option-btn{
     padding: 16px 18px;
     min-height: 60px;
@@ -2744,6 +2759,11 @@ a{ color:inherit; }
 
   .question-title{
     font-size: 20px;
+  }
+
+  .question-context{
+    font-size: 13px;
+    margin: 10px 0 20px;
   }
 
   .quiz-option-btn{

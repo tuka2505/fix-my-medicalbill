@@ -2847,123 +2847,100 @@ function setupBillScanning() {
   });
 }
 
-// ========== CATEGORY-SPECIFIC QUESTION SETS ==========
+// ========== SMART QUESTION ENGINE - WEIGHTED QUESTION BANK ==========
 
-const categoryQuestions = {
-  'Emergency Room': [
-    {
-      id: 'er-facility-fee',
-      question: 'Were you charged a "Facility Fee" in addition to the doctor\'s fee?',
-      options: [
-        { label: 'Yes, I see it on my bill', value: 'Yes', amount: 300 },
-        { label: 'No facility fee listed', value: 'No', amount: 0 }
-      ]
-    },
-    {
-      id: 'er-triage-level',
-      question: 'Was your ER visit coded as Level 4 or 5 (high severity)?',
-      options: [
-        { label: 'Yes, Level 4 or 5', value: 'High', amount: 0 },
-        { label: 'No, seemed routine', value: 'Low', amount: 250 }
-      ]
-    },
-    {
-      id: 'er-itemized',
-      question: 'Did you receive an itemized bill showing all charges?',
-      options: [
-        { label: 'No / Not sure', value: 'No', amount: 200 },
-        { label: 'Yes, I have it', value: 'Yes', amount: 0 }
-      ]
-    }
+const questionBank = {
+  ER: [
+    { q: "Did the doctor spend less than 5 minutes with you?", weight: 250, context: "High-level ER codes (99284/5) require comprehensive exam time." },
+    { q: "Were you treated in a hallway or a temporary chair?", weight: 300, context: "Full facility fees often cannot be charged for non-private treatment areas." },
+    { q: "Did you receive any 'Routine Supplies' charges (e.g., gloves, gown)?", weight: 150, context: "These are usually included in the facility fee and cannot be billed separately (unbundling)." },
+    { q: "Was your 'Triage' wait time over 2 hours before seeing a doctor?", weight: 200, context: "Long waits can downgrade the 'acuity level' of the bill." },
+    { q: "Did you receive an 'Itemized Bill' automatically?", weight: 100, context: "Hospitals often hide errors in 'Summary' bills." }
   ],
-  'Ambulance': [
-    {
-      id: 'ambulance-choice',
-      question: 'Did you choose the ambulance company yourself?',
-      options: [
-        { label: 'No, emergency dispatch', value: 'No', amount: 350 },
-        { label: 'Yes, I chose them', value: 'Yes', amount: 0 }
-      ]
-    },
-    {
-      id: 'ambulance-mileage',
-      question: 'Was the transport distance less than 10 miles?',
-      options: [
-        { label: 'Yes, under 10 miles', value: 'Short', amount: 150 },
-        { label: 'No, longer distance', value: 'Long', amount: 0 }
-      ]
-    },
-    {
-      id: 'ambulance-network',
-      question: 'Was the ambulance company out-of-network?',
-      options: [
-        { label: 'Yes / Not sure', value: 'Yes', amount: 300 },
-        { label: 'No, in-network', value: 'No', amount: 0 }
-      ]
-    }
+  Ambulance: [
+    { q: "Did you receive oxygen or life-saving shocks during transport?", weight: 400, context: "If No, an 'ALS' (Advanced Life Support) charge is likely an overcharge vs. 'BLS'." },
+    { q: "Was the transport distance significantly shorter than what's on the bill?", weight: 200, context: "Mileage is a common area for 'padding' charges." },
+    { q: "Were you conscious and stable during the entire trip?", weight: 150, context: "Stable patients rarely require expensive ALS services." }
   ],
-  'Surgery & Inpatient': [
-    {
-      id: 'surgery-prior-auth',
-      question: 'Did your insurance pre-approve this surgery?',
-      options: [
-        { label: 'No / Not sure', value: 'No', amount: 400 },
-        { label: 'Yes, pre-approved', value: 'Yes', amount: 0 }
-      ]
-    },
-    {
-      id: 'surgery-anesthesia',
-      question: 'Were you charged separately for anesthesia?',
-      options: [
-        { label: 'Yes, separate charge', value: 'Yes', amount: 250 },
-        { label: 'No separate charge', value: 'No', amount: 0 }
-      ]
-    },
-    {
-      id: 'surgery-itemized',
-      question: 'Did you receive an itemized surgical bill?',
-      options: [
-        { label: 'No / Not sure', value: 'No', amount: 200 },
-        { label: 'Yes, I have it', value: 'Yes', amount: 0 }
-      ]
-    }
+  Surgery: [
+    { q: "Was there an 'Assistant Surgeon' listed you didn't meet?", weight: 500, context: "Surprise assistant surgeons are a major source of out-of-network overcharges." },
+    { q: "Does the 'Anesthesia' time match the actual surgery duration?", weight: 300, context: "Anesthesia is billed in 15-min increments; even a 15-min error is costly." },
+    { q: "Were you charged for a private room when you were in a ward?", weight: 450, context: "Room rate errors are very common in inpatient billing." }
   ],
-  'General Doctor Visit': [
-    {
-      id: 'general-itemized',
-      question: 'Did you receive a detailed itemized bill for this visit?',
-      options: [
-        { label: 'No / Not sure', value: 'No', amount: 200 },
-        { label: 'Yes, I have it', value: 'Yes', amount: 0 }
-      ]
-    },
-    {
-      id: 'general-routine',
-      question: 'Was this a routine check-up that should be 100% covered by insurance?',
-      options: [
-        { label: 'Yes, should be covered', value: 'Yes', amount: 250 },
-        { label: 'No, not routine', value: 'No', amount: 0 }
-      ]
-    },
-    {
-      id: 'general-time',
-      question: 'Did the doctor spend more than 15 minutes with you?',
-      options: [
-        { label: 'No, less than 15 min', value: 'Short', amount: 150 },
-        { label: 'Yes, 15+ minutes', value: 'Long', amount: 0 }
-      ]
-    }
+  General: [
+    { q: "Is this a 'New Patient' fee for a doctor you've seen before?", weight: 150, context: "Existing patients must be billed at lower 'Established Patient' rates." },
+    { q: "Did the consultation last less than 15 minutes?", weight: 100, context: "Consultation codes are strictly time-dependent." },
+    { q: "Were you billed for 'Preventive' care that should be 100% covered?", weight: 200, context: "Routine check-ups are often miscoded as diagnostic visits." }
   ]
 };
 
+// Dynamic question selection based on OCR analysis
+function getSmartQuestions(category, text) {
+  // Map category names to question bank keys
+  const categoryMap = {
+    'Emergency Room': 'ER',
+    'Ambulance': 'Ambulance',
+    'Surgery & Inpatient': 'Surgery',
+    'General Doctor Visit': 'General'
+  };
+  
+  const bankKey = categoryMap[category] || 'General';
+  let questions = questionBank[bankKey] || questionBank.General;
+  
+  // Analyze OCR text for specific codes to prioritize questions
+  const textUpper = text.toUpperCase();
+  let priorityIndices = [];
+  
+  if (bankKey === 'ER') {
+    // Prioritize time/facility questions if high-level codes detected
+    if (textUpper.includes('99285') || textUpper.includes('99284') || textUpper.includes('0450')) {
+      priorityIndices = [0, 1, 2]; // Doctor time, hallway treatment, routine supplies
+    }
+  } else if (bankKey === 'Ambulance') {
+    // Prioritize ALS questions if advanced codes detected
+    if (textUpper.includes('ALS') || textUpper.includes('A0427') || textUpper.includes('A0433')) {
+      priorityIndices = [0, 2]; // Oxygen/shocks, consciousness
+    }
+  } else if (bankKey === 'Surgery') {
+    // Prioritize assistant surgeon and anesthesia if surgery codes present
+    if (textUpper.includes('0360') || textUpper.includes('0361') || textUpper.includes('ANESTHESIA')) {
+      priorityIndices = [0, 1]; // Assistant surgeon, anesthesia time
+    }
+  }
+  
+  // Select 5 questions (prioritized first, then rest)
+  let selectedQuestions = [];
+  
+  // Add priority questions first
+  priorityIndices.forEach(idx => {
+    if (questions[idx]) selectedQuestions.push(questions[idx]);
+  });
+  
+  // Fill remaining slots with other questions
+  questions.forEach((q, idx) => {
+    if (!priorityIndices.includes(idx) && selectedQuestions.length < 5) {
+      selectedQuestions.push(q);
+    }
+  });
+  
+  // Format questions for quiz renderer (compatible with existing UI)
+  return selectedQuestions.map((q, idx) => ({
+    id: `${bankKey.toLowerCase()}-q${idx + 1}`,
+    question: q.q,
+    weight: q.weight,
+    context: q.context,
+    options: [
+      { label: 'Yes', value: 'yes', weight: q.weight },
+      { label: 'No', value: 'no', weight: 0 },
+      { label: 'Not Sure', value: 'not-sure', weight: q.weight * 0.5 }
+    ]
+  }));
+}
+
 // Initialize targeted quiz based on bill category
 function initializeTargetedQuiz(category) {
-  const questions = categoryQuestions[category] || categoryQuestions['General Doctor Visit'];
-  
-  // Inject detectedAmount into first General question if available
-  if (category === 'General Doctor Visit' && detectedAmount) {
-    questions[0].question = `Did you receive a detailed itemized bill for $${detectedAmount}?`;
-  }
+  // Get smart questions based on OCR analysis
+  const questions = getSmartQuestions(category, currentBillText || '');
   
   const quizContainer = document.getElementById('quiz-container');
   const quizProgress = document.getElementById('quiz-progress');
@@ -2981,15 +2958,15 @@ function initializeTargetedQuiz(category) {
   
   // Update header with category and amount
   if (auditorTitle) {
-    auditorTitle.textContent = `Auditing Your ${category} Bill`;
+    auditorTitle.textContent = `Smart Audit: ${category}`;
   }
   if (auditorSubtitle) {
-    const amountText = detectedAmount ? `$${detectedAmount}` : 'this';
-    auditorSubtitle.textContent = `Answer 3 quick questions about your ${amountText} bill to identify overcharges`;
+    const amountText = detectedAmount ? `$${detectedAmount}` : 'your';
+    auditorSubtitle.textContent = `${questions.length} targeted questions analyzing ${amountText} bill for common overcharges`;
   }
 
   let currentQuestion = 0;
-  let totalAmount = 0;
+  let totalPotentialSavings = 0;
 
   function renderQuestion(index) {
     const q = questions[index];
@@ -3001,9 +2978,10 @@ function initializeTargetedQuiz(category) {
     quizContainer.innerHTML = `
       <div class="quiz-question">
         <h3 class="question-title">${q.question}</h3>
+        <p class="question-context">${q.context}</p>
         <div class="quiz-options">
           ${q.options.map(option => `
-            <button class="quiz-option-btn" data-value="${option.value}" data-amount="${option.amount}">
+            <button class="quiz-option-btn" data-value="${option.value}" data-weight="${option.weight}">
               <span class="option-label">${option.label}</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -3017,8 +2995,8 @@ function initializeTargetedQuiz(category) {
     const optionButtons = quizContainer.querySelectorAll('.quiz-option-btn');
     optionButtons.forEach(btn => {
       btn.addEventListener('click', () => {
-        const amount = parseInt(btn.dataset.amount);
-        totalAmount += amount;
+        const weight = parseInt(btn.dataset.weight);
+        totalPotentialSavings += weight;
         
         btn.classList.add('selected');
         setTimeout(() => {
@@ -3042,7 +3020,17 @@ function initializeTargetedQuiz(category) {
     setTimeout(() => {
       quizAnalyzing.style.display = 'none';
       quizFinal.style.display = 'flex';
-      animateAmount(totalAmount);
+      
+      // Cap potential savings at bill total amount if detected
+      let cappedAmount = totalPotentialSavings;
+      if (detectedAmount) {
+        const billTotal = parseFloat(detectedAmount.replace(/,/g, ''));
+        if (totalPotentialSavings > billTotal) {
+          cappedAmount = Math.round(billTotal);
+        }
+      }
+      
+      animateAmount(cappedAmount);
 
       if (quizCtaBtn) {
         quizCtaBtn.onclick = () => {
