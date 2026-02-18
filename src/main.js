@@ -376,7 +376,7 @@ function renderQuickAuditor() {
               </svg>
             </label>
           </div>
-          <div class="privacy-notice" id="privacy-notice">Your documents are processed locally in your browser for 100% privacy.</div>
+          <div class="privacy-notice" id="privacy-notice">Your documents are processed locally in your browser for 100% privacy. • Drag & drop supported.</div>
           <div class="scan-progress" id="scan-progress" style="display:none;">
             <div class="scan-progress-bar">
               <div class="scan-progress-fill" id="scan-progress-fill"></div>
@@ -2510,15 +2510,16 @@ function router() {
 
 function setupBillScanning() {
   const billUpload = document.getElementById('bill-upload');
+  const dropZone = document.getElementById('auditor-cta-box');
   const scanProgress = document.getElementById('scan-progress');
   const scanProgressFill = document.getElementById('scan-progress-fill');
   const scanProgressText = document.getElementById('scan-progress-text');
   const privacyNotice = document.getElementById('privacy-notice');
 
-  if (!billUpload) return; // Exit if not on home page
+  if (!billUpload || !dropZone) return; // Exit if not on home page
 
-  billUpload.addEventListener('change', async (event) => {
-    const file = event.target.files[0];
+  // Process file function (used by both file input and drag-drop)
+  async function processFile(file) {
     if (!file) return;
 
     // Validate file type
@@ -2587,6 +2588,36 @@ function setupBillScanning() {
         privacyNotice.style.display = 'block';
         billUpload.value = '';
       }, 3000);
+    }
+  }
+
+  // File input change event
+  billUpload.addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    await processFile(file);
+  });
+
+  // Drag and drop events
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.add('drag-over');
+  });
+
+  dropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('drag-over');
+  });
+
+  dropZone.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('drag-over');
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      await processFile(files[0]);
     }
   });
 }

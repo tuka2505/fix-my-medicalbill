@@ -685,6 +685,14 @@ a{ color:inherit; }
   box-shadow: 0 12px 32px rgba(0,113,227,0.35);
 }
 
+/* Drag and drop state */
+.slim-auditor-bar.drag-over{
+  transform: translateY(-2px) scale(1.02);
+  background: linear-gradient(135deg, #0088ff, #006bd6);
+  box-shadow: 0 16px 48px rgba(0,113,227,0.45);
+  border: 2px dashed rgba(255,255,255,0.8);
+}
+
 .slim-bar-content{
   display: flex;
   align-items: center;
