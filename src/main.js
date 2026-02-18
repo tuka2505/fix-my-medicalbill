@@ -2504,6 +2504,80 @@ function router() {
     pdfHeader: "FixMyMedicalBill — Prior Authorization",
     generate: generatePriorAuthContent,
   });
+  
+  // Auto-fill form fields from saved audit data
+  initAutoFill();
+}
+
+// ========== AUTO-FILL FROM LOCAL STORAGE ==========
+
+function initAutoFill() {
+  try {
+    const savedAudit = localStorage.getItem('lastAudit');
+    if (!savedAudit) {
+      console.log('[AutoFill] No saved audit data found');
+      return;
+    }
+    
+    const auditData = JSON.parse(savedAudit);
+    console.log('[AutoFill] Retrieved audit data:', auditData);
+    
+    // Auto-fill billAmount field
+    const billAmountField = document.getElementById('billAmount');
+    if (billAmountField && auditData.billTotal) {
+      billAmountField.value = `$${auditData.billTotal.toLocaleString('en-US')}`;
+      console.log('[AutoFill] ✓ Filled billAmount:', billAmountField.value);
+    }
+    
+    // Auto-fill issueType field based on detected violations
+    const issueTypeField = document.getElementById('issueType') || 
+                           document.getElementById('urgentIssueType') || 
+                           document.getElementById('collectionIssueType');
+    
+    if (issueTypeField && auditData.auditFindings && auditData.auditFindings.length > 0) {
+      // Get the most common error type from audit findings
+      const errorTypes = auditData.auditFindings.map(f => f.errorType);
+      const mostCommonError = errorTypes[0]; // Take first detected error
+      
+      // Map error types to select options
+      const errorTypeMapping = {
+        'Upcoding': 'Incorrect coding (upcoding)',
+        'Unbundling': 'Unbundled charges',
+        'Phantom Billing': 'Phantom charges (billed but not received)',
+        'Facility Fee Abuse': 'Excessive facility fees',
+        'Charity Care Eligibility': 'Financial assistance qualifying',
+        'Balance Billing': 'Balance billing (No Surprises Act)',
+        'Out-of-Network': 'Out-of-network surprise billing'
+      };
+      
+      const mappedValue = errorTypeMapping[mostCommonError];
+      
+      // Try to find matching option in select
+      const options = Array.from(issueTypeField.options);
+      const matchingOption = options.find(opt => 
+        opt.value.toLowerCase().includes(mostCommonError.toLowerCase()) ||
+        opt.text.toLowerCase().includes(mostCommonError.toLowerCase()) ||
+        (mappedValue && (opt.value === mappedValue || opt.text === mappedValue))
+      );
+      
+      if (matchingOption) {
+        issueTypeField.value = matchingOption.value;
+        console.log('[AutoFill] ✓ Filled issueType:', matchingOption.value);
+      } else {
+        // Default to first non-placeholder option
+        const firstOption = options.find(opt => opt.value && opt.value !== '');
+        if (firstOption) {
+          issueTypeField.value = firstOption.value;
+          console.log('[AutoFill] ⚠️ No exact match. Using first option:', firstOption.value);
+        }
+      }
+    }
+    
+    console.log('[AutoFill] ✓ Auto-fill complete');
+    
+  } catch (error) {
+    console.error('[AutoFill] Error loading saved audit data:', error);
+  }
 }
 
 // ========== GLOBAL VARIABLES ==========
@@ -3585,6 +3659,13 @@ function initializeTargetedQuiz(category) {
           }
           
           quizCtaBtn.onclick = () => {
+            // Save audit results to localStorage before navigation
+            try {
+              localStorage.setItem('lastAudit', JSON.stringify(auditResults));
+              console.log('[LocalStorage] Saved audit results:', auditResults);
+            } catch (error) {
+              console.error('[LocalStorage] Failed to save audit results:', error);
+            }
             navigate(currentBillCategory.route);
           };
         }
