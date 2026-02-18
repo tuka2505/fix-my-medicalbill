@@ -2510,6 +2510,133 @@ function router() {
 let currentBillCategory = null;
 let currentBillText = null;
 let detectedAmount = null;
+let auditResults = {
+  detectedFlags: [],
+  errorProbability: 0,
+  estimatedRefund: 0,
+  initialSavings: 0,
+  adjustmentMultiplier: 1.0,
+  violationCount: 0,
+  finalVerdict: ''
+};
+let quizResponses = [];
+
+// ========== AI FLAG DETECTION FUNCTIONS ==========
+
+// Detect upcoding (high-level codes for low-severity visits)
+function detectUpcoding(category, text, responses) {
+  const textUpper = text.toUpperCase();
+  
+  if (category === 'Emergency Room') {
+    // Check for Level 4/5 codes but long wait times or brief visits
+    const hasHighLevelCode = textUpper.includes('99284') || textUpper.includes('99285') || textUpper.includes('LEVEL 5') || textUpper.includes('LEVEL 4');
+    const hasLongWait = responses.some(r => r.question.includes('Triage') && r.answer === 'yes');
+    const hasBriefVisit = responses.some(r => r.question.includes('5 minutes') && r.answer === 'yes');
+    
+    if (hasHighLevelCode && (hasLongWait || hasBriefVisit)) {
+      return {
+        detected: true,
+        severity: 'high',
+        description: 'High-level ER coding (Level 4/5) inconsistent with brief consultation or prolonged wait time',
+        impact: 350
+      };
+    }
+  }
+  
+  if (category === 'General Doctor Visit') {
+    const hasNewPatientFee = responses.some(r => r.question.includes('New Patient') && r.answer === 'yes');
+    if (hasNewPatientFee) {
+      return {
+        detected: true,
+        severity: 'moderate',
+        description: 'Charged as new patient for existing patient relationship',
+        impact: 150
+      };
+    }
+  }
+  
+  return { detected: false, severity: 'none', description: '', impact: 0 };
+}
+
+// Detect unbundling (separate charges for items included in facility fee)
+function detectUnbundling(category, text, responses) {
+  const textUpper = text.toUpperCase();
+  
+  if (category === 'Emergency Room') {
+    const hasRoutineSupplies = responses.some(r => r.question.includes('Routine Supplies') && r.answer === 'yes');
+    const hasFacilityFee = textUpper.includes('FACILITY') || textUpper.includes('0450');
+    
+    if (hasRoutineSupplies && hasFacilityFee) {
+      return {
+        detected: true,
+        severity: 'high',
+        description: 'Routine supplies billed separately despite facility fee (unbundling violation)',
+        impact: 200
+      };
+    }
+  }
+  
+  if (category === 'Surgery & Inpatient') {
+    const hasAssistantSurgeon = responses.some(r => r.question.includes('Assistant Surgeon') && r.answer === 'yes');
+    if (hasAssistantSurgeon) {
+      return {
+        detected: true,
+        severity: 'high',
+        description: 'Surprise assistant surgeon charges (likely out-of-network)',
+        impact: 500
+      };
+    }
+  }
+  
+  return { detected: false, severity: 'none', description: '', impact: 0 };
+}
+
+// Detect math errors (subtotal + tax ≠ total)
+function detectMathErrors(text) {
+  const textUpper = text.toUpperCase();
+  
+  // Extract subtotal
+  const subtotalMatch = text.match(/SUBTOTAL[\s:]*\$?([\d,]+\.\d{2})/i);
+  const taxMatch = text.match(/TAX[\s:]*\$?([\d,]+\.\d{2})/i);
+  const totalMatch = text.match(/TOTAL[\s:]*\$?([\d,]+\.\d{2})/i);
+  
+  if (subtotalMatch && totalMatch) {
+    const subtotal = parseFloat(subtotalMatch[1].replace(/,/g, ''));
+    const tax = taxMatch ? parseFloat(taxMatch[1].replace(/,/g, '')) : 0;
+    const total = parseFloat(totalMatch[1].replace(/,/g, ''));
+    
+    const calculatedTotal = subtotal + tax;
+    const difference = Math.abs(calculatedTotal - total);
+    
+    if (difference > 1.0) { // Allow $1 rounding tolerance
+      return {
+        detected: true,
+        severity: 'moderate',
+        description: `Math error: Subtotal ($${subtotal.toFixed(2)}) + Tax ($${tax.toFixed(2)}) ≠ Total ($${total.toFixed(2)})`,
+        impact: Math.round(difference)
+      };
+    }
+  }
+  
+  return { detected: false, severity: 'none', description: '', impact: 0 };
+}
+
+// Detect time-based coding errors
+function detectTimeErrors(category, text, responses) {
+  if (category === 'Surgery & Inpatient') {
+    const hasAnesthesiaTimeMismatch = responses.some(r => r.question.includes('Anesthesia') && r.answer === 'no');
+    if (hasAnesthesiaTimeMismatch) {
+      return {
+        detected: true,
+        severity: 'high',
+        description: 'Anesthesia time does not match surgery duration (billed in 15-min increments)',
+        impact: 300
+      };
+    }
+  }
+  
+  return { detected: false, severity: 'none', description: '', impact: 0 };
+}
 
 // ========== AMOUNT EXTRACTION LOGIC ==========
 
@@ -2967,6 +3094,7 @@ function initializeTargetedQuiz(category) {
 
   let currentQuestion = 0;
   let totalPotentialSavings = 0;
+  quizResponses = []; // Reset quiz responses
 
   function renderQuestion(index) {
     const q = questions[index];
@@ -2996,7 +3124,15 @@ function initializeTargetedQuiz(category) {
     optionButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         const weight = parseInt(btn.dataset.weight);
+        const answer = btn.dataset.value;
         totalPotentialSavings += weight;
+        
+        // Store response for audit analysis
+        quizResponses.push({
+          question: q.question,
+          answer: answer,
+          weight: weight
+        });
         
         btn.classList.add('selected');
         setTimeout(() => {
@@ -3018,19 +3154,140 @@ function initializeTargetedQuiz(category) {
     quizFinal.style.display = 'none';
 
     setTimeout(() => {
+      // ========== COMBINED AUDIT ENGINE ==========
+      
+      // Run AI flag detection
+      const upcodingFlag = detectUpcoding(currentBillCategory.category, currentBillText, quizResponses);
+      const unbundlingFlag = detectUnbundling(currentBillCategory.category, currentBillText, quizResponses);
+      const mathErrorFlag = detectMathErrors(currentBillText);
+      const timeErrorFlag = detectTimeErrors(currentBillCategory.category, currentBillText, quizResponses);
+      
+      // Collect detected flags
+      const detectedFlags = [];
+      let aiImpact = 0;
+      
+      if (upcodingFlag.detected) {
+        detectedFlags.push(upcodingFlag);
+        aiImpact += upcodingFlag.impact;
+      }
+      if (unbundlingFlag.detected) {
+        detectedFlags.push(unbundlingFlag);
+        aiImpact += unbundlingFlag.impact;
+      }
+      if (mathErrorFlag.detected) {
+        detectedFlags.push(mathErrorFlag);
+        aiImpact += mathErrorFlag.impact;
+      }
+      if (timeErrorFlag.detected) {
+        detectedFlags.push(timeErrorFlag);
+        aiImpact += timeErrorFlag.impact;
+      }
+      
+      // Calculate adjustment multiplier
+      const adjustmentMultiplier = detectedFlags.length > 0 ? 1.2 : 1.0;
+      
+      // Calculate initial savings from quiz responses
+      const initialSavings = totalPotentialSavings + aiImpact;
+      
+      // Calculate final refund with 40% cap
+      const billTotal = detectedAmount ? parseFloat(detectedAmount.replace(/,/g, '')) : 0;
+      const maxRefund = billTotal * 0.4;
+      const calculatedRefund = initialSavings * adjustmentMultiplier;
+      const finalRefund = Math.min(Math.round(calculatedRefund), Math.round(maxRefund));
+      
+      // Calculate error probability (0-100%)
+      const violationCount = detectedFlags.length + quizResponses.filter(r => r.answer === 'yes').length;
+      const errorProbability = Math.min(Math.round((violationCount / (questions.length + 4)) * 100), 95);
+      
+      // Generate final verdict
+      let verdict = '';
+      if (detectedFlags.length > 0) {
+        const flagDescriptions = detectedFlags.map(f => f.description.split('(')[0].trim()).join(', ');
+        verdict = `Our audit detected ${detectedFlags.length} billing violation${detectedFlags.length > 1 ? 's' : ''}: ${flagDescriptions}. `;
+      }
+      
+      if (errorProbability >= 70) {
+        verdict += `With ${errorProbability}% likelihood of billing errors based on your responses, you have a strong case for disputing these charges.`;
+      } else if (errorProbability >= 40) {
+        verdict += `Based on your bill analysis, there is a ${errorProbability}% probability of recoverable overcharges that warrant further investigation.`;
+      } else {
+        verdict += `While some potential issues were identified, additional documentation may strengthen your dispute case.`;
+      }
+      
+      // Store audit results globally
+      auditResults = {
+        detectedFlags: detectedFlags,
+        errorProbability: errorProbability,
+        estimatedRefund: finalRefund,
+        initialSavings: initialSavings,
+        adjustmentMultiplier: adjustmentMultiplier,
+        violationCount: violationCount,
+        finalVerdict: verdict,
+        billTotal: billTotal,
+        category: currentBillCategory.category
+      };
+      
+      // Display results
       quizAnalyzing.style.display = 'none';
       quizFinal.style.display = 'flex';
       
-      // Cap potential savings at bill total amount if detected
-      let cappedAmount = totalPotentialSavings;
-      if (detectedAmount) {
-        const billTotal = parseFloat(detectedAmount.replace(/,/g, ''));
-        if (totalPotentialSavings > billTotal) {
-          cappedAmount = Math.round(billTotal);
-        }
+      // Update result UI with detailed breakdown
+      const resultBadge = document.querySelector('.result-badge');
+      const resultDescription = document.querySelector('.result-description');
+      
+      if (resultBadge) {
+        const probabilityClass = errorProbability >= 70 ? 'high-probability' : 'moderate-probability';
+        resultBadge.innerHTML = `
+          <span class="probability-badge ${probabilityClass}">${errorProbability}% Likelihood of Refund</span>
+        `;
       }
       
-      animateAmount(cappedAmount);
+      if (resultDescription) {
+        let breakdownHtml = '<div class="audit-breakdown">';
+        
+        // Document Audit Section
+        if (detectedFlags.length > 0) {
+          breakdownHtml += '<div class="audit-section"><h4 class="audit-section-title">Document Audit</h4>';
+          detectedFlags.forEach(flag => {
+            const severityClass = flag.severity === 'high' ? 'flag-high' : 'flag-moderate';
+            breakdownHtml += `
+              <div class="audit-flag ${severityClass}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <line x1="12" y1="9" x2="12" y2="13" stroke-width="2" stroke-linecap="round"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17" stroke-width="2" stroke-linecap="round"></line>
+                </svg>
+                <span>${flag.description}</span>
+              </div>
+            `;
+          });
+          breakdownHtml += '</div>';
+        }
+        
+        // Experience Audit Section
+        const yesCount = quizResponses.filter(r => r.answer === 'yes').length;
+        if (yesCount > 0) {
+          breakdownHtml += `
+            <div class="audit-section">
+              <h4 class="audit-section-title">Experience Audit</h4>
+              <p class="audit-summary">Based on your responses, we found <strong>${yesCount} violation${yesCount > 1 ? 's' : ''}</strong> of standard billing practices that support your dispute.</p>
+            </div>
+          `;
+        }
+        
+        // Final Verdict Section
+        breakdownHtml += `
+          <div class="audit-section">
+            <h4 class="audit-section-title">Final Verdict</h4>
+            <p class="audit-verdict">${verdict}</p>
+          </div>
+        `;
+        
+        breakdownHtml += '</div>';
+        resultDescription.innerHTML = breakdownHtml;
+      }
+      
+      animateAmount(finalRefund);
 
       if (quizCtaBtn) {
         quizCtaBtn.onclick = () => {

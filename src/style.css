@@ -1232,6 +1232,115 @@ a{ color:inherit; }
   color: var(--accent);
 }
 
+/* Probability Badge */
+.probability-badge{
+  display: inline-block;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.probability-badge.high-probability{
+  background: linear-gradient(135deg, rgba(52,199,89,0.15), rgba(52,199,89,0.1));
+  border: 1px solid rgba(52,199,89,0.4);
+  color: #1e7a47;
+}
+
+.probability-badge.moderate-probability{
+  background: linear-gradient(135deg, rgba(0,113,227,0.15), rgba(0,168,255,0.1));
+  border: 1px solid rgba(0,113,227,0.4);
+  color: #0056b3;
+}
+
+/* Audit Breakdown */
+.audit-breakdown{
+  width: 100%;
+  max-width: 550px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin: 12px 0;
+  text-align: left;
+}
+
+.audit-section{
+  padding: 20px 24px;
+  background: rgba(255,255,255,0.5);
+  border: 1px solid rgba(0,113,227,0.12);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.audit-section-title{
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--textStrong);
+  margin: 0 0 14px 0;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+
+.audit-flag{
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.audit-flag:last-child{
+  margin-bottom: 0;
+}
+
+.audit-flag.flag-high{
+  background: rgba(255,59,48,0.08);
+  border: 1px solid rgba(255,59,48,0.2);
+  color: #c41e3a;
+}
+
+.audit-flag.flag-moderate{
+  background: rgba(255,149,0,0.08);
+  border: 1px solid rgba(255,149,0,0.2);
+  color: #c96d00;
+}
+
+.audit-flag svg{
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  stroke-width: 2px;
+}
+
+.audit-summary{
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0;
+  text-align: center;
+}
+
+.audit-summary strong{
+  color: var(--textStrong);
+  font-weight: 700;
+}
+
+.audit-verdict{
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text);
+  margin: 0;
+  text-align: center;
+  font-weight: 500;
+}
+
 /* Auditor Trust Row */
 .auditor-trust{
   display: flex;
@@ -2590,6 +2699,34 @@ a{ color:inherit; }
     font-size: 42px;
   }
 
+  .audit-breakdown{
+    max-width: 100%;
+    padding: 0 4px;
+  }
+
+  .audit-section{
+    padding: 16px 18px;
+  }
+
+  .audit-section-title{
+    font-size: 14px;
+  }
+
+  .audit-flag{
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .audit-flag svg{
+    width: 18px;
+    height: 18px;
+  }
+
+  .audit-summary,
+  .audit-verdict{
+    font-size: 13px;
+  }
+
   .situation-card-large{
     flex-direction: column;
     align-items: flex-start;
@@ -2799,6 +2936,28 @@ a{ color:inherit; }
 
   .option-label{
     font-size: 15px;
+  }
+
+  .audit-breakdown{
+    padding: 0 8px;
+  }
+
+  .audit-section{
+    padding: 18px 20px;
+  }
+
+  .audit-section-title{
+    font-size: 15px;
+  }
+
+  .audit-flag{
+    font-size: 13.5px;
+    padding: 11px 15px;
+  }
+
+  .audit-summary,
+  .audit-verdict{
+    font-size: 14px;
   }
 
   .result-amount{
