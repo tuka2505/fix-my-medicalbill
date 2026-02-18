@@ -1673,8 +1673,6 @@ function renderHomePage() {
       ${renderHeader()}
       <main class="main">
         ${renderHero()}
-        ${renderSituationalCards()}
-        ${renderBrowseButton()}
         ${renderQuickAuditor()}
         ${renderFullToolsGrid(cards)}
         ${renderSuccessStories()}
