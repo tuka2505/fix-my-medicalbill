@@ -50,6 +50,18 @@ const tools = [
     sectionId: "prior-auth",
     routePath: "/prior-authorization-request-appeal",
   },
+  {
+    title: "Good Faith Estimate Dispute",
+    desc: "Dispute a bill that exceeds your estimate (Self-Pay/Uninsured).",
+    sectionId: "gfe-dispute",
+    routePath: "/good-faith-estimate-dispute",
+  },
+  {
+    title: "Credit Report Removal",
+    desc: "Force removal of illegal medical debt from your credit report.",
+    sectionId: "credit-removal",
+    routePath: "/medical-credit-report-removal",
+  },
 ];
 
 const toolRoutes = tools;
@@ -63,6 +75,8 @@ const toolSeoCopy = {
   "/medical-debt-assistance-plan": "Seek financial assistance or a zero-interest payment plan based on hardship and household income.",
   "/medical-collections-debt-validation": "Send a formal FDCPA debt validation request and pause collection activity until verification.",
   "/prior-authorization-request-appeal": "Request or appeal prior authorization for medically necessary care with a documented rationale.",
+  "/good-faith-estimate-dispute": "Invoke your No Surprises Act PPDR rights to dispute a medical bill that exceeds your Good Faith Estimate by $400 or more.",
+  "/medical-credit-report-removal": "Use new FCRA rules to demand the removal of paid, under $500, or recent medical collections from your credit report.",
 };
 
 const infoPages = {
@@ -223,6 +237,26 @@ const issueTemplates = {
   "Urgent care — Unclear / Bundled Supply Charges": {
     letter: "The charges on my bill lack transparency and include vague or bundled supply charges without itemized CPT/HCPCS codes. I request a complete unbundled itemized bill showing specific codes for all services and supplies. Any 'S-codes' (non-standard codes) or global facility fees not supported by contractual agreements or CMS guidelines must be removed from my patient responsibility.",
     script: "My urgent care bill has unclear bundled charges without proper CPT codes. I need a fully itemized bill with all codes, and any unsupported facility fees or S-codes must be removed.",
+  },
+  "GFE — Billed $400+ over estimate": {
+    letter: "Under the No Surprises Act Patient-Provider Dispute Resolution (PPDR) process (45 CFR § 149.620), I am formally disputing this bill because the actual charges exceed my Good Faith Estimate by more than $400. Federal law requires self-pay/uninsured patients to receive a binding estimate, and any charges exceeding that estimate by this threshold constitute a violation. I demand an immediate adjustment to match the original estimate or I will initiate a formal PPDR claim with the CMS Help Desk at 1-800-985-3059.",
+    script: "I'm disputing this bill under the No Surprises Act PPDR process. The charges exceed my Good Faith Estimate by more than $400, which violates federal law. I need this adjusted immediately to match my estimate or I will file a formal complaint with CMS.",
+  },
+  "GFE — Never received an estimate": {
+    letter: "Under the No Surprises Act (45 CFR § 149.610), uninsured and self-pay patients are entitled to receive a Good Faith Estimate at least 1 business day before scheduled services or at the time of booking for services within 3 days. I never received this legally required estimate. The failure to provide a GFE is a federal violation, and I cannot be held responsible for charges I was not properly informed of in advance. I demand an immediate billing adjustment to a reasonable rate or I will file a complaint with the CMS No Surprises Help Desk.",
+    script: "I never received a Good Faith Estimate as required by the No Surprises Act. Without this mandatory disclosure, I cannot be held responsible for these charges. I need an adjustment to a reasonable rate or I will escalate to CMS immediately.",
+  },
+  "Credit — Debt is under $500": {
+    letter: "Under the Fair Credit Reporting Act (FCRA) as amended in 2023, medical debts under $500 cannot be reported on consumer credit reports. The account in question is below this threshold and must be immediately deleted from my credit file. This reporting constitutes a willful violation of federal credit reporting law. I demand deletion within 30 days and proof of removal from all three credit bureaus. Failure to comply will result in a formal complaint with the Consumer Financial Protection Bureau (CFPB).",
+    script: "This medical debt is under $500 and cannot legally be reported under the 2023 FCRA amendments. I demand immediate deletion from my credit report and proof of removal from all bureaus within 30 days, or I will file a CFPB complaint.",
+  },
+  "Credit — Debt is already paid/settled": {
+    letter: "Under the Fair Credit Reporting Act (FCRA) as amended in 2023, paid medical collection accounts must be removed from consumer credit reports immediately upon verification of payment. This debt has been fully satisfied, and continued reporting violates federal law. I demand immediate deletion of this tradeline from my credit file and written confirmation of removal from all three credit bureaus within 30 days. Any continued reporting will result in statutory damages under the FCRA.",
+    script: "This medical debt was already paid and must be removed under the 2023 FCRA rules. Paid medical collections cannot remain on credit reports. I demand immediate deletion and proof of removal, or I will pursue FCRA violations in court.",
+  },
+  "Credit — Debt is less than 1 year old": {
+    letter: "Under the Fair Credit Reporting Act (FCRA) as amended in 2023, medical collection accounts less than 365 days old cannot be reported on consumer credit reports. This account does not meet the minimum one-year aging requirement and must be immediately deleted from my credit file. Premature reporting of medical debt is a federal violation. I demand deletion within 30 days and written confirmation of removal from all three credit bureaus.",
+    script: "This medical debt is less than one year old and cannot be reported under the 2023 FCRA amendments. Medical collections must age for 365 days before reporting. I demand immediate deletion or I will file complaints with the CFPB and FTC.",
   }
 };
 
@@ -1611,6 +1645,161 @@ function getToolSectionMarkup(sectionId) {
           </div>
         </section>
       `;
+    case "gfe-dispute":
+      return `
+        <section id="gfe-dispute" class="section tool-section">
+          <h2 class="h2">Good Faith Estimate Dispute</h2>
+          <p class="text tool-subtitle">Dispute a bill exceeding your Good Faith Estimate under the No Surprises Act.</p>
+          <div class="tool-shell">
+            <div class="tool-split">
+              <div class="tool-panel">
+                <form id="gfe-dispute-form" class="tool-form">
+                  <div class="form-grid">
+                    <div class="field">
+                      <label for="gfeProviderName">Provider/Facility name</label>
+                      <input id="gfeProviderName" name="providerName" type="text" placeholder="Provider or facility" />
+                    </div>
+                    <div class="field">
+                      <label for="gfeDateOfService">Date of service</label>
+                      <input id="gfeDateOfService" name="dateOfService" type="text" placeholder="MM/DD/YYYY" />
+                    </div>
+                    <div class="field">
+                      <label for="gfeEstimatedAmount">Estimated Amount</label>
+                      <input id="gfeEstimatedAmount" name="estimatedAmount" type="text" placeholder="$1,500" />
+                    </div>
+                    <div class="field">
+                      <label for="gfeBilledAmount">Actual Billed Amount</label>
+                      <input id="gfeBilledAmount" name="billedAmount" type="text" placeholder="$2,800" />
+                    </div>
+                    <div class="field">
+                      <label for="gfeIssueType">Issue type</label>
+                      <select id="gfeIssueType" name="issueType" required>
+                        <option>Billed $400+ over estimate</option>
+                        <option>Never received an estimate</option>
+                        <option value="Other">Other (Write my own)</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="gfePatientName">Patient name</label>
+                      <input id="gfePatientName" name="patientName" type="text" placeholder="Full name" />
+                    </div>
+                    <div class="field">
+                      <label for="gfePatientPhone">Patient phone</label>
+                      <input id="gfePatientPhone" name="patientPhone" type="text" placeholder="(555) 123-4567" />
+                    </div>
+                    <div class="field">
+                      <label for="gfePatientEmail">Patient email</label>
+                      <input id="gfePatientEmail" name="patientEmail" type="text" placeholder="name@email.com" />
+                    </div>
+                    <div class="field field-full">
+                      <label for="gfePatientAddress">Patient address</label>
+                      <textarea id="gfePatientAddress" name="patientAddress" rows="3" placeholder="Street, City, State ZIP"></textarea>
+                    </div>
+                  </div>
+                  <div class="form-actions tool-actions">
+                    <button class="btn" type="submit">Generate</button>
+                    <button class="btn neutral" type="button" data-copy="letter" disabled>Copy Letter</button>
+                    <button class="btn neutral" type="button" data-copy="script" disabled>Copy Phone Script</button>
+                    <button class="btn neutral" type="button" data-download="pdf" disabled>Download PDF</button>
+                  </div>
+                </form>
+              </div>
+              <div class="tool-results">
+                <div class="results-grid">
+                  <div class="result-card">
+                    <div class="result-header">
+                      <div class="result-title">Dispute Letter</div>
+                    </div>
+                    <pre id="gfe-letter-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                  </div>
+                  <div class="result-card">
+                    <div class="result-header">
+                      <div class="result-title">Phone Script</div>
+                    </div>
+                    <pre id="gfe-script-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      `;
+    case "credit-removal":
+      return `
+        <section id="credit-removal" class="section tool-section">
+          <h2 class="h2">Credit Report Removal</h2>
+          <p class="text tool-subtitle">Demand removal of illegal medical debt from your credit report under FCRA rules.</p>
+          <div class="tool-shell">
+            <div class="tool-split">
+              <div class="tool-panel">
+                <form id="credit-removal-form" class="tool-form">
+                  <div class="form-grid">
+                    <div class="field">
+                      <label for="creditAgencyName">Credit Bureau / Collector Name</label>
+                      <input id="creditAgencyName" name="agencyName" type="text" placeholder="Experian, Equifax, TransUnion, or Collector" />
+                    </div>
+                    <div class="field">
+                      <label for="creditAccountNumber">Account Number</label>
+                      <input id="creditAccountNumber" name="accountNumber" type="text" placeholder="Account #" />
+                    </div>
+                    <div class="field">
+                      <label for="creditDebtAmount">Debt Amount</label>
+                      <input id="creditDebtAmount" name="debtAmount" type="text" placeholder="$345" />
+                    </div>
+                    <div class="field">
+                      <label for="creditIssueType">Issue type</label>
+                      <select id="creditIssueType" name="issueType" required>
+                        <option>Debt is under $500</option>
+                        <option>Debt is already paid/settled</option>
+                        <option>Debt is less than 1 year old</option>
+                        <option value="Other">Other (Write my own)</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="creditPatientName">Patient name</label>
+                      <input id="creditPatientName" name="patientName" type="text" placeholder="Full name" />
+                    </div>
+                    <div class="field">
+                      <label for="creditPatientPhone">Patient phone</label>
+                      <input id="creditPatientPhone" name="patientPhone" type="text" placeholder="(555) 123-4567" />
+                    </div>
+                    <div class="field">
+                      <label for="creditPatientEmail">Patient email</label>
+                      <input id="creditPatientEmail" name="patientEmail" type="text" placeholder="name@email.com" />
+                    </div>
+                    <div class="field field-full">
+                      <label for="creditPatientAddress">Patient address</label>
+                      <textarea id="creditPatientAddress" name="patientAddress" rows="3" placeholder="Street, City, State ZIP"></textarea>
+                    </div>
+                  </div>
+                  <div class="form-actions tool-actions">
+                    <button class="btn" type="submit">Generate</button>
+                    <button class="btn neutral" type="button" data-copy="letter" disabled>Copy Letter</button>
+                    <button class="btn neutral" type="button" data-copy="script" disabled>Copy Phone Script</button>
+                    <button class="btn neutral" type="button" data-download="pdf" disabled>Download PDF</button>
+                  </div>
+                </form>
+              </div>
+              <div class="tool-results">
+                <div class="results-grid">
+                  <div class="result-card">
+                    <div class="result-header">
+                      <div class="result-title">Dispute Letter</div>
+                    </div>
+                    <pre id="credit-letter-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                  </div>
+                  <div class="result-card">
+                    <div class="result-header">
+                      <div class="result-title">Phone Script</div>
+                    </div>
+                    <pre id="credit-script-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      `;
     default:
       return "";
   }
@@ -2570,6 +2759,139 @@ ${patientEmail}`;
 
   return { letter, script };
 }
+function generateGFEDisputeContent(data) {
+  const clean = (value, placeholder) => (value && value.trim() ? value.trim() : `[${placeholder}]`);
+  const today = new Date().toLocaleDateString();
+  const providerName = clean(data.providerName, "Provider/Facility Name");
+  const dateOfService = clean(data.dateOfService, "Date of Service");
+  const estimatedAmount = clean(data.estimatedAmount, "Estimated Amount");
+  const billedAmount = clean(data.billedAmount, "Billed Amount");
+  const issueType = clean(data.issueType, "Issue Type");
+  const patientName = clean(data.patientName, "Patient Name");
+  const patientAddress = clean(data.patientAddress, "Patient Address");
+  const patientPhone = clean(data.patientPhone, "Patient Phone");
+  const patientEmail = clean(data.patientEmail, "Patient Email");
+  
+  // Handle "Other" option with custom input
+  let issue;
+  if (data.issueType === "Other" && data.customReason) {
+    issue = {
+      letter: `I am disputing this charge under federal self-pay protections because: ${data.customReason.trim()}.`,
+      script: `I'm disputing this bill because: ${data.customReason.trim()}.`
+    };
+  } else {
+    const templateKey = `GFE — ${data.issueType || "Billed $400+ over estimate"}`;
+    issue = issueTemplates[templateKey] || {
+      letter: "Under the No Surprises Act, I am disputing charges that significantly exceed my Good Faith Estimate or were incurred without receiving a required estimate.",
+      script: "I'm disputing this bill under the No Surprises Act. The charges exceed my Good Faith Estimate or I never received an estimate as required by federal law."
+    };
+  }
+  
+  const issueLetter = normalizeHello(issue.letter);
+
+  const letter = `${today}
+
+To: ${providerName} Billing Department
+Re: Good Faith Estimate Dispute — Patient-Provider Dispute Resolution (PPDR)
+Date of service: ${dateOfService}
+Good Faith Estimate provided: ${estimatedAmount}
+Actual amount billed: ${billedAmount}
+
+To Whom It May Concern:
+
+I am formally disputing the charges on this account pursuant to the No Surprises Act Patient-Provider Dispute Resolution (PPDR) process under 45 CFR § 149.620.
+
+${issueLetter}
+
+Under federal law, uninsured and self-pay patients are entitled to receive a binding Good Faith Estimate. When the actual billed amount exceeds the estimate by $400 or more, patients have the right to initiate a PPDR dispute. 
+
+I demand an immediate adjustment of this bill to match the original Good Faith Estimate provided. If this matter is not resolved within 30 days, I will initiate a formal PPDR claim through the CMS No Surprises Help Desk at 1-800-985-3059. If no estimate was provided as required, I demand an adjustment to a reasonable and customary rate for these services.
+
+This account must be placed on hold and not reported to collections or credit bureaus while this federal dispute is pending.
+
+Sincerely,
+
+${patientName}
+${patientAddress}
+${patientPhone}
+${patientEmail}`;
+
+  const script = `Hello, my name is ${patientName}. I'm calling to dispute charges for my visit on ${dateOfService}. ${issue.script} Under the No Surprises Act PPDR process, I have the right to dispute bills that exceed my Good Faith Estimate by $400 or more. I need this adjusted to match my original estimate of ${estimatedAmount}, or I will file a formal complaint with the CMS Help Desk at 1-800-985-3059. Please place a hold on this account. My contact info is ${patientPhone} and ${patientEmail}.`;
+
+  return { letter, script };
+}
+function generateCreditRemovalContent(data) {
+  const clean = (value, placeholder) => (value && value.trim() ? value.trim() : `[${placeholder}]`);
+  const today = new Date().toLocaleDateString();
+  const agencyName = clean(data.agencyName, "Credit Bureau / Collector Name");
+  const accountNumber = clean(data.accountNumber, "Account Number");
+  const debtAmount = clean(data.debtAmount, "Debt Amount");
+  const issueType = clean(data.issueType, "Issue Type");
+  const patientName = clean(data.patientName, "Patient Name");
+  const patientAddress = clean(data.patientAddress, "Patient Address");
+  const patientPhone = clean(data.patientPhone, "Patient Phone");
+  const patientEmail = clean(data.patientEmail, "Patient Email");
+  
+  // Handle "Other" option with custom input
+  let issue;
+  if (data.issueType === "Other" && data.customReason) {
+    issue = {
+      letter: `Reporting this account violates my rights under the FCRA because: ${data.customReason.trim()}.`,
+      script: `This account violates FCRA rules because: ${data.customReason.trim()}.`
+    };
+  } else {
+    const templateKey = `Credit — ${data.issueType || "Debt is under $500"}`;
+    issue = issueTemplates[templateKey] || {
+      letter: "Under current FCRA regulations, medical debts under $500, paid medical debts, or debts less than 365 days old cannot be reported. I demand the immediate deletion of this tradeline from my credit file within 30 days.",
+      script: "Under the 2023 FCRA amendments, this medical debt cannot legally be on my credit report. I demand immediate deletion."
+    };
+  }
+  
+  const issueLetter = normalizeHello(issue.letter);
+
+  const letter = `${today}
+
+To: ${agencyName}
+Re: Demand for Deletion of Medical Debt Under FCRA
+Account Number: ${accountNumber}
+Amount: ${debtAmount}
+
+To Whom It May Concern:
+
+I am writing to formally dispute the medical collection account listed above and demand its immediate deletion from my credit file pursuant to the Fair Credit Reporting Act (FCRA) as amended in 2023.
+
+${issueLetter}
+
+The FCRA amendments enacted in 2023 prohibit the following medical debts from being reported on consumer credit reports:
+1. Medical collection debts under $500 (regardless of payment status or age)
+2. Paid or settled medical collection debts (must be removed immediately upon verification)
+3. Medical collection debts less than 365 days old (one-year waiting period required)
+
+This account falls under one or more of these prohibited categories and cannot legally remain on my credit file. Continued reporting constitutes a willful violation of federal consumer protection law.
+
+I demand the following actions within 30 days:
+1. Immediate deletion of this tradeline from my credit file at Experian, Equifax, and TransUnion.
+2. Written confirmation of deletion sent to my address below.
+3. Cessation of all collection activities on this account.
+
+Failure to comply will result in:
+- A formal complaint filed with the Consumer Financial Protection Bureau (CFPB)
+- A complaint filed with the Federal Trade Commission (FTC)
+- Potential legal action seeking statutory damages of $100 to $1,000 per violation under 15 U.S.C. § 1681n
+
+I expect immediate compliance with federal law.
+
+Sincerely,
+
+${patientName}
+${patientAddress}
+${patientPhone}
+${patientEmail}`;
+
+  const script = `Hello, my name is ${patientName}. I am disputing a medical collection account #${accountNumber} for ${debtAmount} that is being illegally reported on my credit file. ${issue.script} Under the 2023 FCRA amendments, medical debts under $500, paid debts, or debts less than one year old cannot be reported. I demand immediate deletion from all three credit bureaus and written confirmation within 30 days. If this is not resolved, I will file complaints with the CFPB and FTC and pursue statutory damages. My contact info is ${patientPhone} and ${patientEmail}.`;
+
+  return { letter, script };
+}
 // -------------------------------------------------------------------------
 
 
@@ -2679,6 +3001,22 @@ function router() {
     pdfFileName: "fixmymedicalbill-prior-authorization.pdf",
     pdfHeader: "FixMyMedicalBill — Prior Authorization",
     generate: generatePriorAuthContent,
+  });
+  setupTool({
+    formId: "gfe-dispute-form",
+    letterOutputId: "gfe-letter-output",
+    scriptOutputId: "gfe-script-output",
+    pdfFileName: "fixmymedicalbill-gfe-dispute.pdf",
+    pdfHeader: "FixMyMedicalBill — GFE Dispute",
+    generate: generateGFEDisputeContent,
+  });
+  setupTool({
+    formId: "credit-removal-form",
+    letterOutputId: "credit-letter-output",
+    scriptOutputId: "credit-script-output",
+    pdfFileName: "fixmymedicalbill-credit-removal.pdf",
+    pdfHeader: "FixMyMedicalBill — Credit Report Removal",
+    generate: generateCreditRemovalContent,
   });
   
   // Auto-fill form fields from saved audit data
