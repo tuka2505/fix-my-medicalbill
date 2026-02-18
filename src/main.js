@@ -1858,6 +1858,125 @@ function applyInputEnhancements(form) {
   });
 }
 
+// ========== STEP 4: AUTO-FILL SYSTEM FOR TOOL PAGES ==========
+
+function applyAutoFill(form) {
+  try {
+    // Action 1: Check for saved audit data
+    const savedData = localStorage.getItem('medicalAuditData');
+    if (!savedData) {
+      console.log('[Phase 2 AutoFill] No medicalAuditData found');
+      return;
+    }
+    
+    const auditData = JSON.parse(savedData);
+    console.log('[Phase 2 AutoFill] Retrieved audit data:', auditData);
+    
+    // Action 2: Map data to inputs
+    
+    // Fill amount fields (billAmount, totalAmount, totalDebtAmount, debtAmount)
+    const amountFieldNames = ['billAmount', 'totalAmount', 'totalDebtAmount', 'debtAmount'];
+    amountFieldNames.forEach(fieldName => {
+      const field = form.querySelector(`input[name="${fieldName}"]`);
+      if (field && auditData.amount) {
+        // Format currency using existing logic
+        const rawAmount = auditData.amount.replace(/[^0-9.]/g, '');
+        const number = parseFloat(rawAmount);
+        if (!isNaN(number)) {
+          field.value = `$${number.toLocaleString('en-US')}`;
+          console.log(`[Phase 2 AutoFill] ✓ Filled ${fieldName}: ${field.value}`);
+        }
+      }
+    });
+    
+    // Fill issueType dropdown based on findings
+    const issueTypeField = form.querySelector('select[name="issueType"]');
+    if (issueTypeField && auditData.findings && auditData.findings.length > 0) {
+      // Map error types to common dropdown values
+      const errorTypeMap = {
+        'Upcoding': ['upcoding', 'incorrect coding', 'wrong code'],
+        'Unbundling': ['unbundling', 'unbundled charges', 'separate billing'],
+        'Phantom Billing': ['phantom', 'not received', 'services not provided'],
+        'Facility Fee Abuse': ['facility fee', 'excessive fee', 'double billing'],
+        'Balance Billing': ['balance billing', 'surprise bill', 'out-of-network'],
+        'Charity Care Eligibility': ['financial assistance', 'charity care', 'indigent care']
+      };
+      
+      // Get the most common error type from findings
+      const primaryErrorType = auditData.findings[0]?.errorType || '';
+      console.log('[Phase 2 AutoFill] Primary error type:', primaryErrorType);
+      
+      // Try to find matching option
+      let matchFound = false;
+      const options = Array.from(issueTypeField.options);
+      
+      // First, try exact match with error type
+      for (const option of options) {
+        const optionTextLower = option.text.toLowerCase();
+        const optionValueLower = option.value.toLowerCase();
+        
+        // Check if option matches error type keywords
+        const keywords = errorTypeMap[primaryErrorType] || [primaryErrorType.toLowerCase()];
+        const hasMatch = keywords.some(keyword => 
+          optionTextLower.includes(keyword) || optionValueLower.includes(keyword)
+        );
+        
+        if (hasMatch && option.value !== '' && option.value !== 'Other') {
+          issueTypeField.value = option.value;
+          matchFound = true;
+          console.log('[Phase 2 AutoFill] ✓ Matched issueType:', option.value);
+          break;
+        }
+      }
+      
+      // If no match found, select "Other" and fill customReason
+      if (!matchFound) {
+        const otherOption = options.find(opt => opt.value === 'Other');
+        if (otherOption) {
+          issueTypeField.value = 'Other';
+          console.log('[Phase 2 AutoFill] No exact match. Using "Other"');
+          
+          // Trigger change event to create custom textarea
+          issueTypeField.dispatchEvent(new Event('change', { bubbles: true }));
+          
+          // Wait for custom field to be created, then fill it
+          setTimeout(() => {
+            const customReasonField = form.querySelector('textarea[name="customReason"]');
+            if (customReasonField && auditData.verdict) {
+              const findingsSummary = auditData.findings
+                .map(f => `${f.errorType}: ${f.question}`)
+                .join('. ');
+              customReasonField.value = `${auditData.verdict}\n\nSpecific findings: ${findingsSummary}`;
+              console.log('[Phase 2 AutoFill] ✓ Filled customReason with AI verdict');
+            }
+          }, 350); // Wait for animation to complete
+        }
+      }
+    }
+    
+    console.log('[Phase 2 AutoFill] ✓ Auto-fill complete');
+    
+  } catch (error) {
+    console.error('[Phase 2 AutoFill] Error during auto-fill:', error);
+  }
+}
+
+// Action 4: Cleanup localStorage on user interaction
+function setupAutoFillCleanup(form) {
+  const clearDataOnce = () => {
+    try {
+      localStorage.removeItem('medicalAuditData');
+      console.log('[Phase 2 AutoFill] ✓ Cleared medicalAuditData on user edit');
+    } catch (error) {
+      console.error('[Phase 2 AutoFill] Failed to clear data:', error);
+    }
+    // Remove listener after first manual edit
+    form.removeEventListener('input', clearDataOnce);
+  };
+  
+  form.addEventListener('input', clearDataOnce);
+}
+
 function setupTool(options) {
   const form = document.querySelector(`#${options.formId}`);
   if (!form) return;
@@ -1866,6 +1985,12 @@ function setupTool(options) {
   if (!section) return;
 
   applyInputEnhancements(form);
+  
+  // Action 3: Apply auto-fill from saved audit data
+  applyAutoFill(form);
+  
+  // Action 4: Setup cleanup listener
+  setupAutoFillCleanup(form);
 
   // Apple Premium Dynamic Custom Input System
   // Dynamically creates/removes custom input fields when "Other" is selected
@@ -1954,6 +2079,14 @@ function setupTool(options) {
     actionButtons.forEach((button) => {
       button.disabled = false;
     });
+    
+    // Action 4: Clear audit data after successful submission
+    try {
+      localStorage.removeItem('medicalAuditData');
+      console.log('[Phase 2 AutoFill] ✓ Cleared medicalAuditData after form submission');
+    } catch (error) {
+      console.error('[Phase 2 AutoFill] Failed to clear data on submission:', error);
+    }
   });
 
   copyButtons.forEach((button) => {
@@ -3682,14 +3815,45 @@ function initializeTargetedQuiz(category) {
           }
           
           quizCtaBtn.onclick = () => {
-            // Save audit results to localStorage before navigation
+            // ========== STEP 3: DYNAMIC AI ROUTING & DATA STORAGE ==========
+            
+            // Action 1: Save extracted audit data to localStorage
             try {
+              const medicalAuditData = {
+                amount: detectedAmount,
+                category: currentBillCategory.category,
+                verdict: aiVerdict.auditorNote || '',
+                findings: auditFindings
+              };
+              localStorage.setItem('medicalAuditData', JSON.stringify(medicalAuditData));
+              console.log('[Phase 2] Saved medicalAuditData:', medicalAuditData);
+              
+              // Keep lastAudit for backward compatibility
               localStorage.setItem('lastAudit', JSON.stringify(auditResults));
-              console.log('[LocalStorage] Saved audit results:', auditResults);
             } catch (error) {
-              console.error('[LocalStorage] Failed to save audit results:', error);
+              console.error('[Phase 2] Failed to save audit data:', error);
             }
-            navigate(currentBillCategory.route);
+            
+            // Action 2: Dynamic Route Mapping - prefer aiVerdict.recommendedTool
+            const routeMap = {
+              'Medical Bill Dispute Letter': '/medical-bill-dispute-letter',
+              'Urgent Care Bill Dispute': '/urgent-care-bill-dispute',
+              'Out-of-Network Billing Dispute': '/out-of-network-billing-dispute',
+              'Insurance Claim Denied Appeal': '/insurance-claim-denied-appeal',
+              'ER Bill Disputer': '/urgent-care-bill-dispute',
+              'Ambulance Bill Dispute': '/out-of-network-billing-dispute'
+            };
+            
+            let targetRoute = currentBillCategory.route; // Fallback
+            
+            if (aiVerdict.recommendedTool && routeMap[aiVerdict.recommendedTool]) {
+              targetRoute = routeMap[aiVerdict.recommendedTool];
+              console.log('[Phase 2] Using AI recommended route:', targetRoute);
+            } else {
+              console.log('[Phase 2] Using category fallback route:', targetRoute);
+            }
+            
+            navigate(targetRoute);
           };
         }
 
