@@ -2904,6 +2904,64 @@ function setupBillScanning() {
       currentBillCategory = classification;
       currentBillText = text;
 
+      // ========== VALIDATION: Check bill authenticity ==========
+      const requiredKeywords = ['TOTAL', 'AMOUNT', 'PATIENT', 'HOSPITAL'];
+      const hasValidKeywords = requiredKeywords.some(keyword => text.toUpperCase().includes(keyword));
+      const isLowConfidence = classification && classification.confidence === 'low';
+      
+      // If validation fails (low confidence OR no valid keywords), show error and stop
+      if (isLowConfidence || !hasValidKeywords) {
+        console.warn('[Validation] Bill validation failed:', {
+          lowConfidence: isLowConfidence,
+          noValidKeywords: !hasValidKeywords
+        });
+        clearInterval(progressInterval);
+        scanProgress.style.display = 'none';
+        privacyNotice.style.display = 'block';
+        billUpload.value = '';
+        
+        // Show validation error message above #auditor-cta-box
+        const auditorCtaBox = document.getElementById('auditor-cta-box');
+        if (auditorCtaBox) {
+          // Remove any existing validation error
+          const existingError = document.getElementById('validation-error-banner');
+          if (existingError) existingError.remove();
+          
+          // Create error banner with fade-in animation
+          const errorBanner = document.createElement('div');
+          errorBanner.id = 'validation-error-banner';
+          errorBanner.className = 'audit-flag flag-high';
+          errorBanner.style.cssText = 'margin: 0 auto 24px auto; max-width: 550px; opacity: 0; transition: opacity 0.3s ease;';
+          errorBanner.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              <line x1="12" y1="9" x2="12" y2="13" stroke-width="2" stroke-linecap="round"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17" stroke-width="2" stroke-linecap="round"></line>
+            </svg>
+            <span>올바른 의료 청구서 형식이 아닙니다. 이미지의 선명도를 확인하거나 다른 파일을 업로드해 주세요.</span>
+          `;
+          
+          // Insert before auditor-cta-box
+          auditorCtaBox.parentNode.insertBefore(errorBanner, auditorCtaBox);
+          
+          // Trigger fade-in animation
+          setTimeout(() => {
+            errorBanner.style.opacity = '1';
+          }, 10);
+          
+          // Auto-remove after 8 seconds
+          setTimeout(() => {
+            errorBanner.style.opacity = '0';
+            setTimeout(() => errorBanner.remove(), 300);
+          }, 8000);
+        }
+        
+        return; // Stop processing
+      }
+      
+      console.log('[Validation] ✓ Bill validation passed');
+      // ========== END VALIDATION ==========
+
       // Update UI with classification result
       setTimeout(() => {
         const categoryMessage = classification.category === 'General Doctor Visit' 
