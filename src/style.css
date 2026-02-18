@@ -3402,139 +3402,67 @@ a{ color:inherit; }
   }
 }
 
-/* === MOBILE OVERRIDES (APPLE-STYLE GOLDEN LAYOUT) === */
-/* 1. Global Mobile Fix to prevent right-side clipping */
-html, body {
-  overflow-x: hidden !important;
-  width: 100% !important;
-  position: relative;
-}
-
+/* 1. Global Reset & Header-to-Hero Gap */
+html, body { overflow-x: hidden !important; width: 100% !important; }
 @media (max-width: 640px) {
-  /* 1. Header & Global Reset */
-  :root{
-    --header-offset: 54px;
-  }
+  .header { height: 56px !important; }
+  .main { padding: 56px 16px 80px !important; } /* Tightest possible gap to header */
 
-  .header{
-    height: var(--header-offset);
-    padding: 0 12px !important;
-  }
-
-  .main{
-    padding: calc(var(--header-offset) + 4px) 16px 84px;
-  }
-
-  html,
-  body {
-    overflow-x: hidden !important;
-  }
-
-  /* 2. Hero Section (Apple Squeeze) */
+  /* 2. Hero Section - Force Absolute Centering */
   .hero {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
     text-align: center !important;
-    padding: 12px 16px !important;
+    padding: 20px 16px !important;
     margin-top: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
+    width: 100% !important;
   }
+  .hero-title { font-size: 27px !important; line-height: 1.2 !important; margin-bottom: 8px !important; }
+  .hero-subtitle { font-size: 14px !important; margin: 0 auto 16px !important; max-width: 280px !important; }
 
-  .hero-title {
-    font-size: 28px !important;
-    line-height: 1.1 !important;
-    margin-bottom: 8px !important;
-    word-break: keep-all;
-  }
-
-  .hero-sub,
-  .hero-subtitle {
-    font-size: 13.5px !important;
-    margin: 0 auto 12px !important;
-    text-align: center !important;
-  }
-
-  /* 3. Horizontal Stats Row (Key Fix) */
+  /* 3. The Stats Bar - Horizontal Row with Elegant Dividers */
   .hero-value-prop {
-    width: 100% !important;
     display: flex !important;
-    flex-direction: row !important;
-    justify-content: space-between !important;
+    flex-direction: row !important; /* Force horizontal */
+    justify-content: center !important; /* Center the entire row */
     align-items: center !important;
-    padding: 12px 8px !important;
+    width: 100% !important;
+    padding: 14px 0 !important;
     margin: 12px 0 !important;
-    gap: 0 !important;
+    background: rgba(255, 255, 255, 0.4) !important;
+    border-radius: 12px !important;
   }
-
   .stat-item {
-    flex: 1;
-    border-bottom: none !important;
-    border-right: 1px solid rgba(0,0,0,0.06) !important;
-    padding: 4px 6px !important;
-    text-align: center !important;
-  }
-
-  .stat-item:last-child {
-    border-right: none !important;
-  }
-
-  .stat-item .h2 {
-    font-size: 18px !important;
-  }
-
-  .stat-item p {
-    font-size: 10px !important;
-  }
-
-  .value-divider {
-    display: none !important;
-  }
-
-  /* 4. Trust Badges & Banner */
-  .hero-trust {
-    justify-content: center !important;
-    align-items: center !important;
-    flex-wrap: wrap !important;
-    gap: 6px !important;
-    font-size: 10px !important;
-    margin-top: 8px !important;
-    padding-top: 8px !important;
-  }
-
-  .hero-trust svg {
-    width: 10px;
-    height: 10px;
-  }
-
-  .trust-dot {
-    display: none !important;
-  }
-
-  .alert-banner {
-    margin: 8px 0 !important;
-    font-size: 10.5px !important;
-    padding: 8px !important;
-  }
-
-  /* 5. Final Banner Pull-up */
-  .quick-auditor-section {
-    margin-top: 4px !important;
-    padding: 16px !important;
-  }
-
-  #quick-auditor h2 {
-    font-size: 16px !important;
-  }
-
-  .form-actions {
+    flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 12px !important;
+    align-items: center !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.08) !important; /* Restore delicate divider */
+  }
+  .stat-item:last-child { border-right: none !important; }
+  .stat-item .h2 { font-size: 19px !important; margin-bottom: 2px !important; letter-spacing: -0.5px; }
+  .stat-item p { font-size: 10px !important; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.6; }
+
+  /* 4. Tool Pages - Fix Misaligned Inputs inside White Cards */
+  .tool-shell { padding: 0 !important; width: 100% !important; }
+  .tool-panel {
     width: 100% !important;
+    padding: 24px 20px !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important; /* Ensure everything inside is centered */
+  }
+  .field { width: 100% !important; display: flex !important; flex-direction: column !important; }
+  .field label { text-align: left !important; width: 100% !important; margin-left: 4px; }
+  input, select, textarea {
+    width: 100% !important;
+    box-sizing: border-box !important; /* Fixes the 'shoved-right' overflow issue */
   }
 
-  .btn {
-    width: 100% !important;
-    justify-content: center !important;
-  }
+  /* 5. Blue Banner & Buttons */
+  .quick-auditor-section { margin-top: 12px !important; padding: 24px 16px !important; }
+  .form-actions { display: flex !important; flex-direction: column !important; gap: 12px !important; width: 100% !important; }
+  .form-actions .btn { width: 100% !important; justify-content: center !important; min-height: 52px !important; }
 }
