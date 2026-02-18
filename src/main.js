@@ -1292,6 +1292,7 @@ function getToolSectionMarkup(sectionId) {
                       <label for="oonSituation">Situation</label>
                       <select id="oonSituation" name="situation" required>
                         <option>Emergency Services (Full NSA Protection)</option>
+                        <option>Ground Ambulance (State Law Check)</option>
                         <option>Non-emergency at In-Network Facility</option>
                         <option>Signed consent under duress / invalid notice</option>
                         <option value="Other">Other (Write my own)</option>
@@ -1513,6 +1514,10 @@ function getToolSectionMarkup(sectionId) {
                     <div class="field">
                       <label for="collectionDebtAmount">Debt amount</label>
                       <input id="collectionDebtAmount" name="debtAmount" type="text" placeholder="$2,150" />
+                    </div>
+                    <div class="field">
+                      <label for="collectionNoticeDate">Date of first notice</label>
+                      <input id="collectionNoticeDate" name="noticeDate" type="text" placeholder="MM/DD/YYYY" />
                     </div>
                     <div class="field">
                       <label for="collectionIssueType">Issue type</label>
@@ -2507,34 +2512,51 @@ function generateOutOfNetworkContent(data) {
   const patientPhone = clean(data.patientPhone, "Patient Phone");
   const patientEmail = clean(data.patientEmail, "Patient Email");
 
-  // Handle "Other" option with custom input
-  let situationLine;
-  if (data.situation === "Other" && data.customReason) {
-    situationLine = `I am disputing these out-of-network charges based on the following specific circumstances: ${data.customReason.trim()}. Any consent provided was not signed voluntarily with a full understanding of out-of-network cost estimates 72 hours prior to service, rendering it invalid under 45 CFR § 149.420.`;
-  } else if (data.situation === "Signed consent under duress / invalid notice") {
-    situationLine = "Any consent I provided was not signed voluntarily with a full understanding of out-of-network cost estimates at least 72 hours prior to the scheduled service, rendering it invalid under 45 CFR § 149.420. The notice and consent requirements of the No Surprises Act were not properly met, and therefore I am protected from balance billing.";
+  let letterBody = "";
+  let scriptBody = "";
+
+  if (data.situation === "Ground Ambulance (State Law Check)") {
+    letterBody = `I am writing to formally dispute the out-of-network charges for ground ambulance services provided on ${dateOfService}.
+
+While the federal No Surprises Act currently exempts ground ambulance transport, this service was involuntary and medically necessary. I am disputing this charge to verify if it is protected under applicable State Balance Billing Laws, which often prohibit surprise billing for emergency transport in my jurisdiction.
+
+I request a hold on this account while I verify my state's specific protections against surprise ground ambulance bills. I am willing to pay the in-network cost-sharing amount, but I reject any balance billing that exceeds the reasonable and customary rate for this service.`;
+    
+    scriptBody = `I received a surprise bill for ground ambulance transport on ${dateOfService}. Since this was an involuntary emergency service, I am verifying my protections under state balance billing laws. I am disputing this balance and requesting a hold on my account.`;
   } else {
-    situationLine = data.situation === "Emergency Services (Full NSA Protection)"
-        ? "As this was an emergency medical condition as defined under EMTALA, I am fully protected from balance billing under the No Surprises Act."
-        : "As I received care at an in-network facility but was treated by an out-of-network provider without proper advance notice and valid consent under 45 CFR § 149.420, I am protected from balance billing.";
-  }
+    // Standard NSA Logic
+    let situationLine;
+    if (data.situation === "Other" && data.customReason) {
+      situationLine = `I am disputing these out-of-network charges based on the following specific circumstances: ${data.customReason.trim()}. Any consent provided was not signed voluntarily with a full understanding of out-of-network cost estimates 72 hours prior to service, rendering it invalid under 45 CFR § 149.420.`;
+    } else if (data.situation === "Signed consent under duress / invalid notice") {
+      situationLine = "Any consent I provided was not signed voluntarily with a full understanding of out-of-network cost estimates at least 72 hours prior to the scheduled service, rendering it invalid under 45 CFR § 149.420. The notice and consent requirements of the No Surprises Act were not properly met, and therefore I am protected from balance billing.";
+    } else {
+      situationLine = data.situation === "Emergency Services (Full NSA Protection)"
+          ? "As this was an emergency medical condition as defined under EMTALA, I am fully protected from balance billing under the No Surprises Act."
+          : "As I received care at an in-network facility but was treated by an out-of-network provider without proper advance notice and valid consent under 45 CFR § 149.420, I am protected from balance billing.";
+    }
 
-  const letter = `${today}
-
-To: ${facilityName} Billing Department
-Re: Dispute of Out-of-Network Balance Bill (No Surprises Act)
-Date of service: ${dateOfService}
-Total amount billed: ${totalAmount}
-
-To Whom It May Concern:
-
-I am writing to formally dispute the out-of-network charges for the services rendered on ${dateOfService}. 
+    letterBody = `I am writing to formally dispute the out-of-network charges for the services rendered on ${dateOfService}. 
 
 Under the Federal No Surprises Act (Public Health Service Act § 2799A-1), it is illegal for providers to balance bill patients for out-of-network emergency services or out-of-network non-emergency services provided at an in-network facility. 
 
 ${situationLine}
 
-I am legally only responsible for my in-network cost-sharing amount. Please adjust this balance immediately. If this illegal balance billing is not corrected, I will submit a formal complaint to the federal No Surprises Help Desk and the State Attorney General.
+I am legally only responsible for my in-network cost-sharing amount. Please adjust this balance immediately. If this illegal balance billing is not corrected, I will submit a formal complaint to the federal No Surprises Help Desk and the State Attorney General.`;
+
+    scriptBody = `I received a surprise out-of-network bill for my visit on ${dateOfService} that violates the Federal No Surprises Act. ${situationLine} I expect this bill to be adjusted to my in-network rate immediately, or I will file a complaint with the federal CMS Help Desk.`;
+  }
+
+  const letter = `${today}
+
+To: ${facilityName} Billing Department
+Re: Dispute of Out-of-Network Charges
+Date of service: ${dateOfService}
+Total amount billed: ${totalAmount}
+
+To Whom It May Concern:
+
+${letterBody}
 
 Sincerely,
 
@@ -2542,7 +2564,7 @@ ${patientName}
 ${patientAddress}
 ${patientPhone}`;
 
-  const script = `Hello, my name is ${patientName}. I received a surprise out-of-network bill for my visit on ${dateOfService} that violates the Federal No Surprises Act. ${situationLine} I expect this bill to be adjusted to my in-network rate immediately, or I will file a complaint with the federal CMS Help Desk.`;
+  const script = `Hello, my name is ${patientName}. ${scriptBody}`;
 
   return { letter, script };
 }
@@ -2592,6 +2614,25 @@ function generateMedicalDebtContent(data) {
   const providerName = clean(data.providerName, "Hospital/Provider Name");
   const accountNumber = clean(data.accountNumber, "Account Number");
   const totalDebtAmount = clean(data.totalDebtAmount, "Total Debt Amount");
+  
+  // FPL (Federal Poverty Level) Logic - 2024 Guidelines
+  const incomeStr = data.householdIncome || "0";
+  const sizeStr = data.householdSize || "1";
+  const annualIncome = parseFloat(incomeStr.replace(/[^0-9.]/g, ""));
+  const familySize = parseInt(sizeStr.replace(/[^0-9]/g, ""), 10) || 1;
+
+  // 2024 Federal Poverty Guidelines (48 Contiguous States)
+  // $15,060 for first person + $5,380 for each additional person
+  const fplBase = 15060;
+  const fplPerPerson = 5380;
+  const povertyLevel = fplBase + ((familySize - 1) * fplPerPerson);
+  const percentFPL = (annualIncome / povertyLevel) * 100;
+  
+  const isUnder400 = percentFPL < 400;
+  const fplCitation = isUnder400 
+    ? `My household income of $${annualIncome.toLocaleString()} is ${Math.round(percentFPL)}% of the Federal Poverty Level (FPL). Under IRS Section 501(r) guidelines for non-profit hospital status, patients with income under 400% FPL are typically eligible for significant financial assistance or a total bill waiver.`
+    : `My household income is $${annualIncome.toLocaleString()}.`;
+
   const householdIncome = clean(data.householdIncome, "Household Income");
   const householdSize = clean(data.householdSize, "Household Size");
   const patientName = clean(data.patientName, "Patient Name");
@@ -2616,7 +2657,9 @@ To Whom It May Concern:
 
 As a tax-exempt hospital facility, you are mandated under IRS Section 501(r) to provide charity care or financial assistance to eligible patients. I am formally invoking my right to apply for your Financial Assistance Policy (FAP).
 
-Based on my current household income of ${householdIncome} and household size of ${householdSize}, I believe I may qualify for relief under your published FAP guidelines. I request that you provide me with:
+${fplCitation}
+
+Based on this, I request that you provide me with:
 
 1. A complete copy of your Financial Assistance Policy (FAP).
 2. The Financial Assistance Application form in plain language.
@@ -2633,7 +2676,7 @@ ${patientAddress}
 ${patientPhone}
 ${patientEmail}`;
 
-  const script = `Hello, my name is ${patientName}. I'm calling about account ${accountNumber} at ${providerName}. Under IRS Section 501(r), I am formally requesting financial assistance or Charity Care based on my household income of ${householdIncome} and household size of ${householdSize}. I need a copy of your FAP policy, the application, and confirmation that all collection activities will be paused during the review. If a full waiver is not available, I'd like a zero-interest plan capped at 5% of monthly discretionary income. My contact info is ${patientPhone} and ${patientEmail}.`;
+  const script = `Hello, my name is ${patientName}. I'm calling about account ${accountNumber} at ${providerName}. Under IRS Section 501(r), I am formally requesting financial assistance. My income is ${Math.round(percentFPL)}% of the Federal Poverty Level, which qualifies for Charity Care protections. I request a copy of your FAP policy and confirmation that all collection activities will be paused during this review. My contact info is ${patientPhone} and ${patientEmail}.`;
 
   return { letter, script };
 }
@@ -2649,10 +2692,29 @@ function generateCollectionsContent(data) {
   const patientPhone = clean(data.patientPhone, "Patient Phone");
   const patientEmail = clean(data.patientEmail, "Patient Email");
   
+  // 30-Day Window Logic
+  let timeSensitiveText = "";
+  let scriptUrgency = "";
+  
+  if (data.noticeDate) {
+    const todayDate = new Date();
+    const parts = data.noticeDate.split('/'); // Assuming MM/DD/YYYY from input mask
+    if (parts.length === 3) {
+       const noticeDate = new Date(parts[2], parts[0]-1, parts[1]);
+       const diffTime = todayDate - noticeDate;
+       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+       
+       if (diffDays <= 30) {
+         timeSensitiveText = `I am submitting this dispute within the 30-day validation period following your initial notice dated ${data.noticeDate}. Pursuant to 15 U.S.C. § 1692g(b), you must CEASE ALL COLLECTION EFFORTS until you obtain verification of the debt and mail it to me. Failure to pause collections during this mandatory period is a violation of federal law.`;
+         scriptUrgency = `I am calling within the 30-day validation window. You are federally required to stop all collection activity immediately until you send me proof of this debt.`;
+       }
+    }
+  }
+
   // Handle "Other" option with custom input for issue type
   let disputeReason;
   if (data.issueType === "Other" && data.customReason) {
-    disputeReason = `I am exercising my rights under the FDCPA to dispute this debt because: ${data.customReason.trim()}. Until full validation is provided, you must cease all collection efforts.`;
+    disputeReason = `I am exercising my rights under the FDCPA to dispute this debt because: ${data.customReason.trim()}.`;
   } else if (data.issueType) {
     const issueTypeText = clean(data.issueType, "Issue Type");
     disputeReason = `I am disputing this debt on the following grounds: ${issueTypeText}.`;
@@ -2671,6 +2733,8 @@ Amount: ${debtAmount}
 To Whom It May Concern:
 
 Pursuant to the Fair Debt Collection Practices Act (FDCPA), 15 U.S.C. § 1692g, I am exercising my right to request formal validation of this debt. ${disputeReason}
+
+${timeSensitiveText}
 
 I demand that you provide the following documentation within 30 days:
 
@@ -2695,7 +2759,7 @@ ${patientAddress}
 ${patientPhone}
 ${patientEmail}`;
 
-  const script = `Hello, my name is ${patientName}. I am formally exercising my rights under the Fair Debt Collection Practices Act, 15 U.S.C. § 1692g, to request full debt validation. I need you to send by mail: the original signed contract, complete itemized accounting from the original provider, proof of your collection license, statute of limitations verification, and proof of legal debt assignment. Until this is provided, you must cease all collection calls, stop reporting to credit bureaus, and halt any legal actions. Failure to comply will result in CFPB, FTC, and State Attorney General complaints. My contact info is ${patientPhone} and ${patientEmail}.`;
+  const script = `Hello, my name is ${patientName}. I am formally exercising my rights under the Fair Debt Collection Practices Act. ${scriptUrgency || "I am requesting full debt validation."} I need you to mail me the original signed contract and itemized accounting. Until this is provided, you must cease all collection calls and stop reporting to credit bureaus. My contact info is ${patientPhone} and ${patientEmail}.`;
 
   return { letter, script };
 }
@@ -2772,40 +2836,101 @@ function generateGFEDisputeContent(data) {
   const patientPhone = clean(data.patientPhone, "Patient Phone");
   const patientEmail = clean(data.patientEmail, "Patient Email");
   
-  // Handle "Other" option with custom input
-  let issue;
-  if (data.issueType === "Other" && data.customReason) {
-    issue = {
-      letter: `I am disputing this charge under federal self-pay protections because: ${data.customReason.trim()}.`,
-      script: `I'm disputing this bill because: ${data.customReason.trim()}.`
-    };
-  } else {
-    const templateKey = `GFE — ${data.issueType || "Billed $400+ over estimate"}`;
-    issue = issueTemplates[templateKey] || {
-      letter: "Under the No Surprises Act, I am disputing charges that significantly exceed my Good Faith Estimate or were incurred without receiving a required estimate.",
-      script: "I'm disputing this bill under the No Surprises Act. The charges exceed my Good Faith Estimate or I never received an estimate as required by federal law."
-    };
-  }
+  // Parse amounts into numbers (strip $ and commas)
+  const parseAmount = (str) => {
+    const cleaned = str.replace(/[$,]/g, '').trim();
+    return parseFloat(cleaned) || 0;
+  };
   
-  const issueLetter = normalizeHello(issue.letter);
-
-  const letter = `${today}
+  const estimatedNum = parseAmount(data.estimatedAmount || '0');
+  const billedNum = parseAmount(data.billedAmount || '0');
+  const difference = billedNum - estimatedNum;
+  
+  // Handle "Never received an estimate" option separately
+  if (data.issueType === "Never received an estimate") {
+    const letter = `${today}
 
 To: ${providerName} Billing Department
-Re: Good Faith Estimate Dispute — Patient-Provider Dispute Resolution (PPDR)
+Re: Good Faith Estimate Violation — No Estimate Provided
+Date of service: ${dateOfService}
+Actual amount billed: ${billedAmount}
+
+To Whom It May Concern:
+
+Under the No Surprises Act (45 CFR § 149.610), uninsured and self-pay patients are entitled to receive a Good Faith Estimate at least 1 business day before scheduled services or at the time of booking for services within 3 days. I never received this legally required estimate. The failure to provide a GFE is a federal violation, and I cannot be held responsible for charges I was not properly informed of in advance.
+
+I demand an immediate billing adjustment to a reasonable and customary rate for these services. This account must be placed on hold and not reported to collections or credit bureaus while this matter is investigated.
+
+If this is not resolved within 30 days, I will file a formal complaint with the CMS No Surprises Help Desk at 1-800-985-3059.
+
+Sincerely,
+
+${patientName}
+${patientAddress}
+${patientPhone}
+${patientEmail}`;
+
+    const script = `Hello, my name is ${patientName}. I never received a Good Faith Estimate as required by the No Surprises Act. Without this mandatory disclosure, I cannot be held responsible for these charges. I need an adjustment to a reasonable rate or I will escalate to CMS immediately at 1-800-985-3059. My contact info is ${patientPhone} and ${patientEmail}.`;
+    
+    return { letter, script };
+  }
+  
+  // Handle "Other" option with custom input
+  if (data.issueType === "Other" && data.customReason) {
+    const letter = `${today}
+
+To: ${providerName} Billing Department
+Re: Good Faith Estimate Dispute
 Date of service: ${dateOfService}
 Good Faith Estimate provided: ${estimatedAmount}
 Actual amount billed: ${billedAmount}
 
 To Whom It May Concern:
 
+I am disputing this charge under federal self-pay protections because: ${data.customReason.trim()}.
+
+I request an immediate billing adjustment to reflect the original Good Faith Estimate or a reasonable and customary rate for these services. This account must be placed on hold and not reported to collections or credit bureaus while this matter is resolved.
+
+Sincerely,
+
+${patientName}
+${patientAddress}
+${patientPhone}
+${patientEmail}`;
+
+    const script = `Hello, my name is ${patientName}. I'm disputing this bill because: ${data.customReason.trim()}. I need a billing adjustment. My contact info is ${patientPhone} and ${patientEmail}.`;
+    
+    return { letter, script };
+  }
+  
+  // CONDITION C: Billed amount does not exceed estimate (no valid dispute)
+  if (difference <= 0) {
+    return { 
+      letter: "System Notice: Your billed amount does not exceed your Good Faith Estimate. A Good Faith Estimate dispute is not applicable in this case. If you believe there are other billing errors, please use the Medical Bill Dispute Letter tool instead.", 
+      script: "N/A — No dispute necessary. The billed amount is equal to or less than your estimate." 
+    };
+  }
+  
+  // CONDITION A: Difference >= $400 (Federal PPDR Protection Applies)
+  if (difference >= 400) {
+    const letter = `${today}
+
+To: ${providerName} Billing Department
+Re: Good Faith Estimate Dispute — Patient-Provider Dispute Resolution (PPDR)
+Date of service: ${dateOfService}
+Good Faith Estimate provided: ${estimatedAmount}
+Actual amount billed: ${billedAmount}
+Difference: $${difference.toFixed(2)}
+
+To Whom It May Concern:
+
 I am formally disputing the charges on this account pursuant to the No Surprises Act Patient-Provider Dispute Resolution (PPDR) process under 45 CFR § 149.620.
 
-${issueLetter}
+The billed amount of ${billedAmount} exceeds my Good Faith Estimate of ${estimatedAmount} by $${difference.toFixed(2)}. Because this exceeds the $400 threshold established by federal law, I am protected under the No Surprises Act PPDR process.
 
-Under federal law, uninsured and self-pay patients are entitled to receive a binding Good Faith Estimate. When the actual billed amount exceeds the estimate by $400 or more, patients have the right to initiate a PPDR dispute. 
+Under federal law, uninsured and self-pay patients are entitled to receive a binding Good Faith Estimate. When the actual billed amount exceeds the estimate by $400 or more, patients have the right to initiate a PPDR dispute and demand that the provider honor the original estimate.
 
-I demand an immediate adjustment of this bill to match the original Good Faith Estimate provided. If this matter is not resolved within 30 days, I will initiate a formal PPDR claim through the CMS No Surprises Help Desk at 1-800-985-3059. If no estimate was provided as required, I demand an adjustment to a reasonable and customary rate for these services.
+I demand an immediate adjustment of this bill to match the original Good Faith Estimate of ${estimatedAmount}. If this matter is not resolved within 30 days, I will initiate a formal PPDR claim through the CMS No Surprises Help Desk at 1-800-985-3059.
 
 This account must be placed on hold and not reported to collections or credit bureaus while this federal dispute is pending.
 
@@ -2816,8 +2941,40 @@ ${patientAddress}
 ${patientPhone}
 ${patientEmail}`;
 
-  const script = `Hello, my name is ${patientName}. I'm calling to dispute charges for my visit on ${dateOfService}. ${issue.script} Under the No Surprises Act PPDR process, I have the right to dispute bills that exceed my Good Faith Estimate by $400 or more. I need this adjusted to match my original estimate of ${estimatedAmount}, or I will file a formal complaint with the CMS Help Desk at 1-800-985-3059. Please place a hold on this account. My contact info is ${patientPhone} and ${patientEmail}.`;
+    const script = `Hello, my name is ${patientName}. I'm calling to dispute charges for my visit on ${dateOfService}. The billed amount of ${billedAmount} exceeds my Good Faith Estimate of ${estimatedAmount} by $${difference.toFixed(2)}. Because this exceeds the $400 federal threshold, I am protected under the No Surprises Act PPDR process. I demand this be adjusted to match my original estimate immediately, or I will file a formal complaint with the CMS Help Desk at 1-800-985-3059. Please place a hold on this account. My contact info is ${patientPhone} and ${patientEmail}.`;
+    
+    return { letter, script };
+  }
+  
+  // CONDITION B: 0 < Difference < $400 (Standard Negotiation, No Federal Protection)
+  const letter = `${today}
 
+To: ${providerName} Billing Department
+Re: Good Faith Estimate Billing Discrepancy
+Date of service: ${dateOfService}
+Good Faith Estimate provided: ${estimatedAmount}
+Actual amount billed: ${billedAmount}
+Difference: $${difference.toFixed(2)}
+
+To Whom It May Concern:
+
+I am writing to request a billing adjustment for the charges on this account. The billed amount of ${billedAmount} exceeds my Good Faith Estimate of ${estimatedAmount} by $${difference.toFixed(2)}.
+
+While this discrepancy does not meet the federal PPDR threshold of $400, it violates the principle of good faith billing that underlies the No Surprises Act. Patients who receive a Good Faith Estimate rely on that estimate to make informed financial decisions about their care.
+
+I request a billing adjustment to reflect the original Good Faith Estimate of ${estimatedAmount}. Charging significantly more than the estimate provided undermines patient trust and contradicts the intent of federal billing transparency requirements.
+
+Please review this account and provide a written response within 30 days regarding your willingness to honor the original estimate. This account should be placed on hold from collections while this request is under review.
+
+Sincerely,
+
+${patientName}
+${patientAddress}
+${patientPhone}
+${patientEmail}`;
+
+  const script = `Hello, my name is ${patientName}. I'm calling about my bill for ${dateOfService}. The amount of ${billedAmount} is $${difference.toFixed(2)} more than my Good Faith Estimate of ${estimatedAmount}. While this doesn't meet the $400 federal threshold, it still violates good faith billing principles. I'm requesting an adjustment to match the original estimate. Please review this and place a hold on collections. My contact info is ${patientPhone} and ${patientEmail}.`;
+  
   return { letter, script };
 }
 function generateCreditRemovalContent(data) {
@@ -2832,19 +2989,27 @@ function generateCreditRemovalContent(data) {
   const patientPhone = clean(data.patientPhone, "Patient Phone");
   const patientEmail = clean(data.patientEmail, "Patient Email");
   
-  // Handle "Other" option with custom input
+  // Math Validation for < $500 Rule
+  const cleanAmountNum = parseFloat((data.debtAmount || "0").replace(/[^0-9.]/g, ""));
+  const isUnder500 = cleanAmountNum > 0 && cleanAmountNum < 500;
+  
   let issue;
+  let additionalArgument = "";
+  
   if (data.issueType === "Other" && data.customReason) {
     issue = {
       letter: `Reporting this account violates my rights under the FCRA because: ${data.customReason.trim()}.`,
       script: `This account violates FCRA rules because: ${data.customReason.trim()}.`
     };
   } else {
+    // If user selected "Debt is under $500", use that template.
+    // If they selected something else, but the math says < $500, we will Force/Add that argument.
     const templateKey = `Credit — ${data.issueType || "Debt is under $500"}`;
-    issue = issueTemplates[templateKey] || {
-      letter: "Under current FCRA regulations, medical debts under $500, paid medical debts, or debts less than 365 days old cannot be reported. I demand the immediate deletion of this tradeline from my credit file within 30 days.",
-      script: "Under the 2023 FCRA amendments, this medical debt cannot legally be on my credit report. I demand immediate deletion."
-    };
+    issue = issueTemplates[templateKey] || issueTemplates["Credit — Debt is under $500"];
+  }
+  
+  if (isUnder500 && data.issueType !== "Debt is under $500") {
+     additionalArgument = `\n\nCRITICALLY, the balance of this account ($${cleanAmountNum}) is under the $500 federal reporting threshold. Under the Consumer Financial Protection Bureau (CFPB) guidelines and the three bureaus' (Equifax, Experian, TransUnion) own settlement rules, medical collection debt under $500 MUST NOT appear on credit reports. This single fact legally mandates immediate deletion.`;
   }
   
   const issueLetter = normalizeHello(issue.letter);
@@ -2860,7 +3025,7 @@ To Whom It May Concern:
 
 I am writing to formally dispute the medical collection account listed above and demand its immediate deletion from my credit file pursuant to the Fair Credit Reporting Act (FCRA) as amended in 2023.
 
-${issueLetter}
+${issueLetter}${additionalArgument}
 
 The FCRA amendments enacted in 2023 prohibit the following medical debts from being reported on consumer credit reports:
 1. Medical collection debts under $500 (regardless of payment status or age)
@@ -2888,7 +3053,7 @@ ${patientAddress}
 ${patientPhone}
 ${patientEmail}`;
 
-  const script = `Hello, my name is ${patientName}. I am disputing a medical collection account #${accountNumber} for ${debtAmount} that is being illegally reported on my credit file. ${issue.script} Under the 2023 FCRA amendments, medical debts under $500, paid debts, or debts less than one year old cannot be reported. I demand immediate deletion from all three credit bureaus and written confirmation within 30 days. If this is not resolved, I will file complaints with the CFPB and FTC and pursue statutory damages. My contact info is ${patientPhone} and ${patientEmail}.`;
+  const script = `Hello, my name is ${patientName}. I am disputing a medical collection account #${accountNumber} for ${debtAmount} that is being illegally reported on my credit file. ${issue.script} ${isUnder500 ? "Also, since this debt is under $500, it is automatically banned from credit reporting." : ""} I demand immediate deletion from all three credit bureaus and written confirmation within 30 days. If this is not resolved, I will file complaints with the CFPB. My contact info is ${patientPhone} and ${patientEmail}.`;
 
   return { letter, script };
 }
