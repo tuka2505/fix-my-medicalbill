@@ -148,21 +148,25 @@ const infoPages = {
 };
 
 const issueTemplates = {
-  "Duplicate charge": {
-    letter: "A duplicate charge appears for the same service, which may constitute unbundling or an NCCI (National Correct Coding Initiative) edit violation. Please audit the clinical record and immediately reverse the redundant entry.",
-    script: "I am calling to report a duplicate charge that violates correct coding guidelines. I need this audited and removed immediately to avoid filing a formal billing dispute.",
+  "Duplicate charge (Phantom Billing)": {
+    letter: "I have identified a duplicate charge for the same service rendered on the same date, which constitutes phantom billing and likely violates National Correct Coding Initiative (NCCI) edits. I demand a comprehensive clinical audit of the medical records to justify this redundant entry. Under the Fair Credit Billing Act (FCBA), I request that all collection activities be paused while this dispute is pending, and that this account not be reported as delinquent to any credit bureau.",
+    script: "I am calling to report a duplicate charge that violates NCCI coding guidelines. I need this audited and removed immediately, and I'm invoking Fair Credit Billing Act protections to pause collections during this dispute.",
   },
-  "Service not received": {
-    letter: "I am being billed for a service/supply that was never rendered. Billing for undocumented services is a violation of federal billing standards. Please verify the provider's clinical notes and remove this phantom charge.",
-    script: "My bill includes a charge for a service I never received. I am requesting an immediate clinical audit to remove this unsupported charge.",
+  "Unbundling / NCCI Edit Violation": {
+    letter: "The bill reflects unbundling of services that should have been billed as a single comprehensive code per NCCI guidelines. This practice artificially inflates charges and violates Centers for Medicare & Medicaid Services (CMS) coding standards. I demand a full audit by a certified medical coder (CPC) and immediate correction of these charges. Under the Fair Credit Billing Act, this account must not be reported to credit agencies while this dispute is under investigation.",
+    script: "I'm disputing unbundled charges that violate NCCI edits. These services should be billed under one comprehensive code. I need a coding audit and I'm invoking FCBA protections to freeze collections.",
   },
-  "Wrong procedure/code": {
-    letter: "The CPT/HCPCS codes do not accurately reflect the services provided. I request a formal coding review by a certified medical coder (CPC) to correct this miscoding/upcoding error.",
-    script: "The CPT codes on my bill do not match my treatment. I am requesting a formal review by your coding department for potential upcoding.",
+  "Modifier Abuse (-25 / -59)": {
+    letter: "I am disputing the inappropriate use of CPT modifiers -25 and/or -59, which appear to have been applied to bypass edits and inflate reimbursement. The clinical documentation does not support separate, significant procedures or distinct diagnostic services as required by AMA CPT guidelines. I request an immediate audit by a certified coder and reversal of these improper charges. Under the Fair Credit Billing Act, I demand that this account be placed on hold and not reported to credit bureaus during this dispute.",
+    script: "I'm disputing modifier abuse on my bill — specifically -25 or -59 modifiers that don't meet CPT requirements. I need a coding review and FCBA protection from collections during this dispute.",
   },
-  "Overcharge / incorrect amount": {
-    letter: "The billed amount vastly exceeds the Fair Market Value and the 80th percentile of usual and customary rates (UCR) for this ZIP code based on FAIR Health data. I request a billing adjustment to a reasonable rate.",
-    script: "This charge is significantly higher than the FAIR Health consumer benchmark for our area. I'd like to negotiate this down to a customary rate.",
+  "Upcoding (Wrong E/M Level)": {
+    letter: "The Evaluation and Management (E/M) service level billed does not accurately reflect the complexity of the visit as documented in the medical record. The history, exam, and medical decision-making (MDM) do not meet the criteria for the reported CPT code, constituting upcoding. I request a formal coding review by a certified medical coder (CPC) to correct this violation. Under the Fair Credit Billing Act, I demand that collection activities cease and that this account not be reported to credit bureaus while this matter is investigated.",
+    script: "I'm disputing upcoded E/M levels on my bill. The documented visit doesn't match the high-level code charged. I need a formal coding audit and FCBA protection to stop collections.",
+  },
+  "Overcharge / Exceeds FAIR Health UCR": {
+    letter: "The billed amount vastly exceeds the 80th percentile of usual, customary, and reasonable (UCR) rates for this ZIP code based on FAIR Health Consumer benchmarks. This constitutes price gouging. I request an immediate billing adjustment to a fair market rate consistent with industry standards. Under the Fair Credit Billing Act, this account must be placed on hold and not reported to credit agencies while this dispute is resolved.",
+    script: "This charge is significantly higher than FAIR Health consumer benchmarks for our area. I need this adjusted to a customary rate and I'm invoking FCBA protection to pause collections.",
   },
   "Out-of-network / surprise billing": {
     letter: "This charge violates the Federal No Surprises Act (Public Health Service Act § 2799A-1). I was treated at an in-network facility and had no choice over the provider. I demand this balance be adjusted to my in-network cost-sharing rate immediately.",
@@ -192,29 +196,33 @@ const issueTemplates = {
     letter: "This denial is unsupported by clinical evidence. Please provide a copy of the specific internal rule, guideline, or protocol used to deny this claim, as required by ERISA guidelines.",
     script: "I am formally appealing this denial. I request a copy of the exact clinical criteria and plan language used to make this adverse determination.",
   },
-  "Claim denied — Medically Unnecessary": {
-    letter: "The 'medically unnecessary' denial contradicts my provider's clinical assessment. Attached/available are medical records proving necessity. If upheld, I will file a grievance with the State Department of Insurance.",
-    script: "I am appealing a 'not medically necessary' denial. My doctor's records prove otherwise. Please initiate a formal clinical appeal.",
+  "Claim denied — Medically Unnecessary (Need Peer-to-Peer)": {
+    letter: "The 'medically unnecessary' denial contradicts my treating physician's clinical assessment and peer-reviewed medical literature supporting this treatment. I demand a Peer-to-Peer review with a board-certified physician in the relevant specialty. If this denial is upheld without proper clinical justification, I will file a formal complaint with the State Department of Insurance and pursue an external review under ERISA Section 503 (if applicable to an employer-sponsored plan). Provide the specific clinical criteria and Evidence of Coverage language used to deny this claim.",
+    script: "I am appealing a 'medically unnecessary' denial that contradicts my doctor's clinical judgment. I formally request a Peer-to-Peer review and will escalate to the State DOI and invoke ERISA rights if this is not resolved.",
   },
-  "Claim denied — Prior Auth Missing": {
-    letter: "Authorization was misapplied or clinically impossible to obtain prior to treatment due to the urgent nature of the care. I request a retrospective review and authorization based on medical necessity.",
-    script: "I'm appealing a prior auth denial. Due to clinical urgency, prior auth was not feasible. I am requesting a retrospective review.",
+  "Claim denied — Coding / Administrative Error": {
+    letter: "This denial appears to be the result of a coding or administrative error, not a clinical determination. I request immediate reprocessing of this claim with corrected information. If this matter is not resolved promptly, I will file a grievance with the State Department of Insurance and, if applicable, escalate under ERISA Section 503 for employer-sponsored plans.",
+    script: "I'm appealing a denial caused by coding or administrative errors. I need this claim reprocessed immediately or I will file complaints with the State DOI and pursue ERISA remedies.",
   },
-  "Claim denied — Out-of-network": {
-    letter: "Adequate in-network care was not reasonably available without unreasonable delay (Network Adequacy failure). Therefore, this must be processed at the in-network benefit level to comply with state/federal regulations.",
-    script: "I'm appealing an out-of-network denial due to network inadequacy. There were no available in-network providers, so this must be covered.",
+  "Claim denied — Prior Auth Missing / Urgent Care Exception": {
+    letter: "Prior authorization was clinically impossible to obtain due to the urgent or emergent nature of the care required. Delaying treatment would have posed a significant risk to my health. I request a retrospective review and authorization based on medical necessity. If this appeal is denied, I will file a complaint with the State Department of Insurance and, for ERISA-governed plans, pursue external review under Section 503.",
+    script: "I'm appealing a prior auth denial for urgent care that couldn't wait. I'm requesting a retrospective review and will escalate to State DOI and ERISA external review if needed.",
   },
-  "Urgent care — High Facility Fee": {
-    letter: "I am disputing the Level 4/5 Evaluation and Management (E/M) code (e.g., 99214/99215) and facility fee. The complexity of medical decision-making (MDM) for this minor visit does not meet AMA CPT guidelines for high-level billing.",
-    script: "I am disputing the E/M coding level for my urgent care visit. The minor treatment I received does not meet the AMA guidelines for a Level 4 or 5 charge.",
+  "Claim denied — Network Inadequacy (No in-network option)": {
+    letter: "Adequate in-network care was not reasonably available within an acceptable timeframe or geographic distance (network adequacy failure). Federal and state regulations require that this claim be processed at the in-network benefit level when network adequacy standards are not met. If this determination is not reversed, I will file a network adequacy complaint with the State Department of Insurance and, if applicable, pursue ERISA remedies.",
+    script: "I'm appealing an out-of-network denial due to network inadequacy. No in-network providers were available, so this must be covered at in-network rates or I will file State DOI and ERISA complaints.",
   },
-  "Urgent care — Upcoding/Wrong Level": {
-    letter: "The billed E/M service level is a textbook case of upcoding. The clinical documentation does not support the history, exam, and medical decision-making required for this CPT code. Please adjust to an appropriate Level 2 or 3 code.",
-    script: "I am disputing my urgent care bill for upcoding. The level of service charged is not supported by the minor treatment I received.",
+  "Urgent care — Invalid Facility Fee (Freestanding POS 20)": {
+    letter: "I am disputing the facility fee charged for services rendered at a freestanding urgent care center. Per CMS guidelines, freestanding clinics are designated as Place of Service (POS) code 20 and are not eligible to bill hospital facility fees, which are reserved for hospital outpatient departments (POS 22). I demand proof of POS 22 designation or immediate removal of this illegal facility fee. Medicare Administrative Contractors (MACs) and commercial payers do not recognize facility fees for POS 20 sites.",
+    script: "I'm disputing a facility fee charged by a freestanding urgent care clinic. Freestanding clinics are POS 20 and cannot legally charge hospital facility fees, which are only for POS 22 hospital outpatient sites. Remove this charge immediately.",
   },
-  "Urgent care — Unclear Charges": {
-    letter: "The charges lack transparency. I request an itemized breakdown with CPT codes. Any 'S-codes' or global facility fees that are not contractually justified must be removed from my patient responsibility.",
-    script: "My urgent care bill is unclear. I need an itemized bill with CPT codes to verify I am not being hit with unauthorized facility fees.",
+  "Urgent care — E/M Upcoding (Level 4/5 for minor issue)": {
+    letter: "The billed Evaluation and Management (E/M) code of Level 4 or 5 (CPT 99214/99215 or equivalent facility codes) does not reflect the actual complexity of medical decision-making (MDM), history, or examination performed during my visit for a minor ailment. This is textbook upcoding and violates AMA CPT coding guidelines. I request a formal coding audit by a certified coder and adjustment to the appropriate Level 2 or 3 code.",
+    script: "I'm disputing upcoded E/M levels for my urgent care visit. The minor treatment I received does not meet AMA CPT guidelines for Level 4 or 5 charges. I need a coding audit and adjustment.",
+  },
+  "Urgent care — Unclear / Bundled Supply Charges": {
+    letter: "The charges on my bill lack transparency and include vague or bundled supply charges without itemized CPT/HCPCS codes. I request a complete unbundled itemized bill showing specific codes for all services and supplies. Any 'S-codes' (non-standard codes) or global facility fees not supported by contractual agreements or CMS guidelines must be removed from my patient responsibility.",
+    script: "My urgent care bill has unclear bundled charges without proper CPT codes. I need a fully itemized bill with all codes, and any unsupported facility fees or S-codes must be removed.",
   }
 };
 
@@ -1002,13 +1010,11 @@ function getToolSectionMarkup(sectionId) {
                     <div class="field">
                       <label for="issueType">Issue type</label>
                       <select id="issueType" name="issueType" required>
-                        <option>Duplicate charge</option>
-                        <option>Service not received</option>
-                        <option>Wrong procedure/code</option>
-                        <option>Overcharge / incorrect amount</option>
-                        <option>Out-of-network / surprise billing</option>
-                        <option>Request itemized bill</option>
-                        <option>Claim denied (insurance)</option>
+                        <option>Duplicate charge (Phantom Billing)</option>
+                        <option>Unbundling / NCCI Edit Violation</option>
+                        <option>Modifier Abuse (-25 / -59)</option>
+                        <option>Upcoding (Wrong E/M Level)</option>
+                        <option>Overcharge / Exceeds FAIR Health UCR</option>
                         <option value="Other">Other (Write my own)</option>
                       </select>
                     </div>
@@ -1098,9 +1104,10 @@ function getToolSectionMarkup(sectionId) {
                     <div class="field">
                       <label for="denialReason">Denial reason</label>
                       <select id="denialReason" name="denialReason" required>
-                        <option>Medically Unnecessary</option>
-                        <option>Prior Auth Missing</option>
-                        <option>Out-of-network</option>
+                        <option>Medically Unnecessary (Need Peer-to-Peer)</option>
+                        <option>Coding / Administrative Error</option>
+                        <option>Prior Auth Missing / Urgent Care Exception</option>
+                        <option>Network Inadequacy (No in-network option)</option>
                         <option value="Other">Other (Write my own)</option>
                       </select>
                     </div>
@@ -1174,9 +1181,9 @@ function getToolSectionMarkup(sectionId) {
                     <div class="field">
                       <label for="urgentIssueType">Issue type</label>
                       <select id="urgentIssueType" name="issueType" required>
-                        <option>High Facility Fee</option>
-                        <option>Upcoding/Wrong Level</option>
-                        <option>Unclear Charges</option>
+                        <option>Invalid Facility Fee (Freestanding POS 20)</option>
+                        <option>E/M Upcoding (Level 4/5 for minor issue)</option>
+                        <option>Unclear / Bundled Supply Charges</option>
                         <option value="Other">Other (Write my own)</option>
                       </select>
                     </div>
@@ -1247,17 +1254,13 @@ function getToolSectionMarkup(sectionId) {
                       <label for="oonTotalAmount">Total amount</label>
                       <input id="oonTotalAmount" name="totalAmount" type="text" placeholder="$1,850" />
                     </div>
-                    <d  <option>Unsure / Complexity not listed</option>
-                        <option value="Other">Other (Write my own)</option>
-                      </select>
-                    </div>
-                    <div class="field field-full custom-input-wrapper" id="oonSituation-custom" style="display: none;">
-                      <label for="oonSituation-customReason">Describe your specific situation</label>
-                      <textarea id="oonSituation-customReason" name="customReason" rows="4" placeholder="Please describe your out-of-network billing situation..."></textarea="field">
+                    <div class="field">
                       <label for="oonSituation">Situation</label>
                       <select id="oonSituation" name="situation" required>
-                        <option>Emergency Visit</option>
-                        <option>Non-emergency but no choice of provider</option>
+                        <option>Emergency Services (Full NSA Protection)</option>
+                        <option>Non-emergency at In-Network Facility</option>
+                        <option>Signed consent under duress / invalid notice</option>
+                        <option value="Other">Other (Write my own)</option>
                       </select>
                     </div>
                     <div class="field">
@@ -2157,8 +2160,8 @@ function generateDisputeContent(data) {
   let issue;
   if (data.issueType === "Other" && data.customReason) {
     issue = {
-      letter: `This dispute is based on the following specific circumstances: ${data.customReason.trim()}`,
-      script: `I'm disputing this bill because: ${data.customReason.trim()}`
+      letter: `I am formally disputing this balance due to the following specific discrepancies: ${data.customReason.trim()}. I request a full clinical audit of the medical records pertaining to this issue to justify these charges.`,
+      script: `I'm disputing this bill because: ${data.customReason.trim()}. I need a clinical audit of the records.`
     };
   } else {
     issue = issueTemplates[data.issueType] || {
@@ -2197,6 +2200,8 @@ ${issueLetter}
 
 Please place my account on an immediate collections hold while this dispute is investigated. I expect a written response within 30 days detailing your findings, the exact CPT/HCPCS codes billed, and an adjusted statement reflecting the corrected balance.
 
+Under federal consumer protection guidelines, I demand that this account not be reported as delinquent to any credit reporting agency while this dispute is pending.
+
 Sincerely,
 
 ${patientName}
@@ -2225,11 +2230,11 @@ function generateClaimDeniedContent(data) {
   let issue;
   if (data.denialReason === "Other" && data.customReason) {
     issue = {
-      letter: `This appeal is based on the following specific circumstances: ${data.customReason.trim()}`,
-      script: `I'm appealing because: ${data.customReason.trim()}`
+      letter: `I am formally appealing this claim denial based on the following specific circumstances: ${data.customReason.trim()}. I request a comprehensive review of the clinical records and Evidence of Coverage to justify this adverse determination.`,
+      script: `I'm appealing this denial because: ${data.customReason.trim()}. I need a full clinical review.`
     };
   } else {
-    const templateKey = `Claim denied — ${data.denialReason || "Medically Unnecessary"}`;
+    const templateKey = `Claim denied — ${data.denialReason || "Medically Unnecessary (Need Peer-to-Peer)"}`;
     issue = issueTemplates[templateKey] || issueTemplates["Claim denied (insurance)"];
   }
 
@@ -2319,13 +2324,13 @@ function generateOutOfNetworkContent(data) {
   // Handle "Other" option with custom input
   let situationLine;
   if (data.situation === "Other" && data.customReason) {
-    situationLine = `This dispute is based on the following specific circumstances: ${data.customReason.trim()}`;
-  } else if (data.situation === "Unsure / Complexity not listed") {
-    situationLine = "I am disputing these out-of-network charges. I believe I am protected from balance billing under the Federal No Surprises Act, as I did not provide informed written consent to be treated by an out-of-network provider.";
+    situationLine = `I am disputing these out-of-network charges based on the following specific circumstances: ${data.customReason.trim()}. Any consent provided was not signed voluntarily with a full understanding of out-of-network cost estimates 72 hours prior to service, rendering it invalid under 45 CFR § 149.420.`;
+  } else if (data.situation === "Signed consent under duress / invalid notice") {
+    situationLine = "Any consent I provided was not signed voluntarily with a full understanding of out-of-network cost estimates at least 72 hours prior to the scheduled service, rendering it invalid under 45 CFR § 149.420. The notice and consent requirements of the No Surprises Act were not properly met, and therefore I am protected from balance billing.";
   } else {
-    situationLine = situation === "Emergency Visit"
-        ? "As this was an emergency medical condition, I am protected from balance billing."
-        : "As I received care at an in-network facility but was treated by an out-of-network provider without giving prior written consent, I am protected from balance billing.";
+    situationLine = data.situation === "Emergency Services (Full NSA Protection)"
+        ? "As this was an emergency medical condition as defined under EMTALA, I am fully protected from balance billing under the No Surprises Act."
+        : "As I received care at an in-network facility but was treated by an out-of-network provider without proper advance notice and valid consent under 45 CFR § 149.420, I am protected from balance billing.";
   }
 
   const letter = `${today}
@@ -3268,7 +3273,8 @@ function setupBillScanning() {
 const ExpertQuestionBank = {
   Universal: [
     { id: 'u_itemized', q: "Did you receive a detailed 'Itemized Bill' with specific billing codes?", weight: 0, errorType: 'Audit Requirement', context: "Hospitals often hide massive errors in summary bills. You have a legal right to an itemized bill.", triggers: [] },
-    { id: 'u_charity', q: "Is your household income under $50,000/year? (Financial Assistance Check)", weight: 1000, errorType: 'Charity Care', context: "Non-profit hospitals are legally required to forgive or discount bills for low-to-middle income patients.", triggers: [] }
+    { id: 'u_charity', q: "Is your household income under $50,000/year? (Financial Assistance Check)", weight: 1000, errorType: 'Charity Care', context: "Non-profit hospitals are legally required to forgive or discount bills for low-to-middle income patients.", triggers: [] },
+    { id: 'u_lab', q: "Are there 3 or more separate 'Lab' or 'Pathology' charges on the same date?", weight: 150, errorType: 'Lab Unbundling', context: "Routine blood work should be billed as a single panel, not broken down into multiple expensive items.", triggers: ['lab', 'pathology', 'blood', 'panel', '80053'] }
   ],
   ER: [
     { id: 'er_time', q: "Did the doctor spend less than 10 minutes with you directly?", weight: 250, errorType: 'Upcoding', context: "High-level ER codes (Level 4/5) require comprehensive exams and complex medical decision making.", triggers: ['99284', '99285', 'level 4', 'level 5', 'critical'] },
@@ -3289,7 +3295,9 @@ const ExpertQuestionBank = {
   General: [
     { id: 'gen_new_patient', q: "Have you seen this doctor or clinic within the last 3 years?", weight: 150, errorType: 'Upcoding', context: "Existing patients must be legally billed at lower 'Established Patient' rates, not 'New Patient' rates.", triggers: ['new patient', '99204', '99205'] },
     { id: 'gen_time', q: "Did the consultation last less than 15 minutes?", weight: 120, errorType: 'Time Upcoding', context: "Extended consultation codes (e.g., 99214, 99215) require specific time thresholds that are often ignored.", triggers: ['consultation', 'office visit'] },
-    { id: 'gen_preventive', q: "Was this a routine annual check-up (Preventive Care)?", weight: 200, errorType: 'Miscoding', context: "Routine preventive care should be 100% covered by insurance under the ACA, with no copay or deductible.", triggers: ['preventive', 'wellness', 'check up', 'physical'] }
+    { id: 'gen_preventive_orig', q: "Was this a routine annual check-up (Preventive Care)?", weight: 200, errorType: 'Miscoding', context: "Routine preventive care should be 100% covered by insurance under the ACA, with no copay or deductible.", triggers: ['preventive', 'wellness', 'check up', 'physical'] },
+    { id: 'gen_modifier', q: "Does the bill show a 'Modifier 25' or 'Modifier 59' next to any code?", weight: 250, errorType: 'Unbundling (Modifier Abuse)', context: "Providers often use these modifiers to illegally charge for two services when only one was performed.", triggers: ['modifier', '-25', '-59', '25', '59'] },
+    { id: 'gen_preventive', q: "Was this originally scheduled as a 'Free Preventive/Annual Check-up'?", weight: 200, errorType: 'Upcoding (Preventive to Diagnostic)', context: "If you mentioned a minor ache during a free check-up, they might have illegally upcoded it to a paid diagnostic visit.", triggers: ['preventive', 'wellness', 'annual', 'physical'] }
   ]
 };
 
@@ -3517,6 +3525,7 @@ function initializeTargetedQuiz(category) {
   let totalPotentialSavings = 0;
   let totalEstimatedSavings = 0; // Track estimated savings from "Yes" answers
   let auditFindings = []; // Track error types and questions for AI analysis
+  let notSureCount = 0; // ========== STEP 7: Track "Not Sure" answers ==========
   quizResponses = []; // Reset quiz responses
 
   function renderQuestion(index) {
@@ -3549,6 +3558,12 @@ function initializeTargetedQuiz(category) {
         const weight = parseInt(btn.dataset.weight);
         const answer = btn.dataset.value;
         totalPotentialSavings += weight;
+        
+        // ========== STEP 7: Track "Not Sure" answers ==========
+        if (answer === 'not-sure') {
+          notSureCount++;
+          console.log(`[Phase 3] Not Sure count: ${notSureCount}`);
+        }
         
         // Track audit findings for "Yes" answers
         if (answer === 'yes' && weight > 0) {
@@ -3622,6 +3637,71 @@ function initializeTargetedQuiz(category) {
     // Call Gemini AI and wait for response
     (async () => {
       try {
+        // ========== STEP 7: "NOT SURE" PENALTY OVERRIDE ==========
+        // If user answered "Not Sure" too many times, skip AI and route to itemized bill
+        if (notSureCount >= 3 || (notSureCount >= 2 && questions.length <= 4)) {
+          console.log(`[Phase 3] Not Sure penalty triggered: ${notSureCount} uncertain answers out of ${questions.length} questions`);
+          
+          // Stop analyzing animation
+          if (messageInterval) clearInterval(messageInterval);
+          quizAnalyzing.style.display = 'none';
+          
+          // Override with $0 refund (insufficient information)
+          const finalRefund = 0;
+          const errorProbability = 0;
+          
+          // Custom verdict for uncertain responses
+          const verdict = `We noticed several "Not Sure" responses in your audit. Without specific details about the charges, procedures, and timing on your bill, we cannot provide an accurate refund estimate. To protect your rights and uncover hidden billing codes, we strongly recommend requesting an Itemized Bill immediately. This document will reveal the exact CPT codes, quantities, and charges — giving you the clarity needed for a proper audit.`;
+          
+          // Override AI verdict to route to itemized bill tool
+          const aiVerdict = {
+            auditorNote: verdict,
+            recommendedTool: 'Request Itemized Bill',
+            estimatedRefund: 0
+          };
+          
+          // Store override results
+          auditResults = {
+            detectedFlags: [],
+            errorProbability: errorProbability,
+            estimatedRefund: finalRefund,
+            finalVerdict: verdict,
+            billTotal: detectedAmount ? parseFloat(detectedAmount.replace(/,/g, '')) : 0,
+            category: currentBillCategory.category,
+            auditFindings: auditFindings,
+            aiVerdict: aiVerdict,
+            notSurePenalty: true // Flag for routing logic
+          };
+          
+          console.log('[Phase 3] Override audit results:', auditResults);
+          
+          // Display override results
+          quizFinal.style.display = 'flex';
+          quizRefundAmount.textContent = '$0';
+          quizVerdict.textContent = verdict;
+          
+          // Override CTA button to route to itemized bill tool
+          quizCtaBtn.textContent = 'Request Itemized Bill →';
+          quizCtaBtn.onclick = () => {
+            // Save override data to localStorage
+            const medicalAuditData = {
+              amount: detectedAmount || '0',
+              category: currentBillCategory.category,
+              verdict: verdict,
+              findings: auditFindings
+            };
+            
+            localStorage.setItem('medicalAuditData', JSON.stringify(medicalAuditData));
+            localStorage.setItem('lastAudit', JSON.stringify(auditResults));
+            console.log('[Phase 3] Saved override data, routing to itemized bill tool');
+            
+            // Route to itemized bill tool
+            window.location.hash = '/request-itemized-medical-bill';
+          };
+          
+          return; // Skip normal audit processing
+        }
+        
         // ========== COMBINED AUDIT ENGINE ==========
         
         // Run AI flag detection
