@@ -1,7 +1,11 @@
 {
   "rewrites": [
     {
-      "source": "/((?!ads\\.txt|robots\\.txt|sitemap\\.xml|manifest\\.json|browserconfig\\.xml|favicon).*)",
+      "source": "/(ads.txt|sitemap.xml|robots.txt|manifest.json|browserconfig.xml)",
+      "destination": "/$1"
+    },
+    {
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
