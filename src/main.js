@@ -2755,6 +2755,52 @@ function classifyBill(text) {
   }
 
   const normalizedText = text.toUpperCase();
+  
+  // ========== ACTION 1: EOB INTERCEPTOR ==========
+  // Detect "Explanation of Benefits" documents
+  const eobKeywords = [
+    'EXPLANATION OF BENEFITS',
+    'THIS IS NOT A BILL',
+    'AMOUNT ALLOWED',
+    'AMOUNT NOT COVERED',
+    'PLAN PAYS',
+    'YOU MAY OWE',
+    'YOUR PLAN PAID',
+    'BENEFIT SUMMARY'
+  ];
+  
+  const hasEobKeyword = eobKeywords.some(keyword => normalizedText.includes(keyword));
+  
+  if (hasEobKeyword) {
+    console.log('[EOB Interceptor] ✓ Explanation of Benefits detected. Redirecting to Claim Denied Appeal.');
+    return {
+      category: 'Claim Denied',
+      route: '/insurance-claim-denied-appeal',
+      confidence: 'high',
+      isEOB: true
+    };
+  }
+  // ========== END EOB INTERCEPTOR ==========
+  
+  // ========== ACTION 2: GATEKEEPER - Check basic medical bill keywords ==========
+  const basicMedicalKeywords = [
+    'TOTAL',
+    'AMOUNT',
+    'PATIENT',
+    'HOSPITAL',
+    'CLINIC',
+    'STATEMENT',
+    'INVOICE',
+    'BILL',
+    'CHARGE',
+    'SERVICE',
+    'MEDICAL',
+    'PROVIDER'
+  ];
+  
+  const hasMedicalKeyword = basicMedicalKeywords.some(keyword => normalizedText.includes(keyword));
+  // ========== END GATEKEEPER CHECK ==========
+
   const categories = {
     'Emergency Room': { codeScore: 0, keywordScore: 0, route: '/urgent-care-bill-dispute' },
     'Ambulance': { codeScore: 0, keywordScore: 0, route: '/out-of-network-billing-dispute' },
@@ -2891,6 +2937,13 @@ function classifyBill(text) {
     }
   });
 
+  // ========== ACTION 2: GATEKEEPER - Reject if no score and no medical keywords ==========
+  if (bestScore === 0 && !hasMedicalKeyword) {
+    console.warn('[Gatekeeper] ❌ No medical bill keywords found and score is 0. Rejecting document.');
+    return null; // Invalid document
+  }
+  // ========== END GATEKEEPER ==========
+
   if (bestScore === 0) {
     console.log('[Classification] No specific category detected, defaulting to Hospital Bill Audit');
     return {
@@ -2975,66 +3028,36 @@ function setupBillScanning() {
 
       // Classify the bill
       const classification = classifyBill(text);
-      currentBillCategory = classification;
-      currentBillText = text;
-
-      // ========== VALIDATION: Check bill authenticity ==========
-      const requiredKeywords = ['TOTAL', 'AMOUNT', 'PATIENT', 'HOSPITAL'];
-      const hasValidKeywords = requiredKeywords.some(keyword => text.toUpperCase().includes(keyword));
-      const isLowConfidence = classification && classification.confidence === 'low';
       
-      // If validation fails (low confidence OR no valid keywords), show error and stop
-      if (isLowConfidence || !hasValidKeywords) {
-        console.warn('[Validation] Bill validation failed:', {
-          lowConfidence: isLowConfidence,
-          noValidKeywords: !hasValidKeywords
-        });
+      // ========== ACTION 3: HALT PROCESS IF INVALID ==========
+      // Check if classification returned null (invalid document)
+      if (!classification) {
+        console.error('[Validation] ❌ Invalid document detected by classifyBill. Halting process.');
         clearInterval(progressInterval);
-        scanProgress.style.display = 'none';
-        privacyNotice.style.display = 'block';
-        billUpload.value = '';
+        scanProgressFill.style.width = '100%';
+        scanProgressText.textContent = '❌ Error: No valid medical bill detected. Please upload a clear hospital bill or receipt.';
+        scanProgressText.style.color = '#ff3b30';
+        scanProgressText.style.fontWeight = '700';
         
-        // Show validation error message above #auditor-cta-box
-        const auditorCtaBox = document.getElementById('auditor-cta-box');
-        if (auditorCtaBox) {
-          // Remove any existing validation error
-          const existingError = document.getElementById('validation-error-banner');
-          if (existingError) existingError.remove();
-          
-          // Create error banner with fade-in animation
-          const errorBanner = document.createElement('div');
-          errorBanner.id = 'validation-error-banner';
-          errorBanner.className = 'audit-flag flag-high';
-          errorBanner.style.cssText = 'margin: 0 auto 24px auto; max-width: 550px; opacity: 0; transition: opacity 0.3s ease;';
-          errorBanner.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-              <line x1="12" y1="9" x2="12" y2="13" stroke-width="2" stroke-linecap="round"></line>
-              <line x1="12" y1="17" x2="12.01" y2="17" stroke-width="2" stroke-linecap="round"></line>
-            </svg>
-            <span>올바른 의료 청구서 형식이 아닙니다. 이미지의 선명도를 확인하거나 다른 파일을 업로드해 주세요.</span>
-          `;
-          
-          // Insert before auditor-cta-box
-          auditorCtaBox.parentNode.insertBefore(errorBanner, auditorCtaBox);
-          
-          // Trigger fade-in animation
-          setTimeout(() => {
-            errorBanner.style.opacity = '1';
-          }, 10);
-          
-          // Auto-remove after 8 seconds
-          setTimeout(() => {
-            errorBanner.style.opacity = '0';
-            setTimeout(() => errorBanner.remove(), 300);
-          }, 8000);
-        }
+        // Reset after 4 seconds
+        setTimeout(() => {
+          scanProgress.style.display = 'none';
+          privacyNotice.style.display = 'block';
+          billUpload.value = '';
+          // Reset progress bar
+          scanProgressFill.style.width = '0%';
+          scanProgressText.style.color = '';
+          scanProgressText.textContent = 'Initializing scanner...';
+        }, 4000);
         
         return; // Stop processing
       }
       
-      console.log('[Validation] ✓ Bill validation passed');
-      // ========== END VALIDATION ==========
+      currentBillCategory = classification;
+      currentBillText = text;
+      
+      console.log('[Validation] ✓ Classification passed:', classification.category);
+      // ========== END HALT PROCESS ==========
 
       // Update UI with classification result
       setTimeout(() => {
