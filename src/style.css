@@ -787,7 +787,9 @@ a{ color:inherit; }
 .auditor-header{
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 12px;
+  text-align: center;
 }
 
 .auditor-title{
@@ -796,6 +798,7 @@ a{ color:inherit; }
   letter-spacing: -0.02em;
   color: var(--textStrong);
   margin: 0;
+  text-align: center;
 }
 
 .auditor-subtitle{
@@ -803,6 +806,8 @@ a{ color:inherit; }
   line-height: 1.5;
   color: var(--muted);
   margin: 0;
+  text-align: center;
+  max-width: 600px;
 }
 
 /* CTA Box (Visible by Default) */
@@ -901,6 +906,7 @@ a{ color:inherit; }
   flex-direction: column;
   gap: 32px;
   align-items: center;
+  justify-content: center;
 }
 
 
@@ -966,8 +972,10 @@ a{ color:inherit; }
 .quiz-progress-container{
   width: 100%;
   max-width: 500px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8px;
 }
 
@@ -998,11 +1006,17 @@ a{ color:inherit; }
 .quiz-container{
   width: 100%;
   max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .quiz-question{
+  width: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 24px;
   animation: fadeInUp 0.4s ease;
 }
@@ -1038,8 +1052,12 @@ a{ color:inherit; }
 }
 
 .quiz-options{
+  width: 100%;
+  max-width: 450px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 12px;
 }
 
@@ -1055,7 +1073,7 @@ a{ color:inherit; }
   box-shadow: 0 8px 20px rgba(0,0,0,0.06);
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  text-align: left;
+  text-align: center;
   width: 100%;
 }
 
@@ -1091,6 +1109,7 @@ a{ color:inherit; }
 .quiz-result-container{
   width: 100%;
   max-width: 600px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2435,10 +2454,12 @@ a{ color:inherit; }
 
   .auditor-title{
     font-size: 22px;
+    text-align: center;
   }
 
   .auditor-subtitle{
     font-size: 14px;
+    text-align: center;
   }
 
   .auditor-cta-btn{
@@ -2552,6 +2573,7 @@ a{ color:inherit; }
   /* Quiz - Small Mobile */
   .question-title{
     font-size: 18px;
+    text-align: center;
   }
 
   .question-context{
@@ -2673,10 +2695,12 @@ a{ color:inherit; }
 
   .auditor-title{
     font-size: 24px;
+    text-align: center;
   }
 
   .auditor-subtitle{
     font-size: 15px;
+    text-align: center;
   }
 
   /* CTA Box - Mobile */
@@ -2755,10 +2779,12 @@ a{ color:inherit; }
 
   .auditor-title{
     font-size: 26px;
+    text-align: center;
   }
 
   .question-title{
     font-size: 20px;
+    text-align: center;
   }
 
   .question-context{
