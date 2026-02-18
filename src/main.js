@@ -1483,10 +1483,10 @@ function getToolSectionMarkup(sectionId) {
                     <div class="field">
                       <label for="collectionIssueType">Issue type</label>
                       <select id="collectionIssueType" name="issueType" required>
-                        <option>Not my debt</option>
-                        <option>Incorrect amount</option>
-                        <option>Identity theft</option>
-                        <option>Statute of limitations</option>
+                        <option>Unverified Debt (Require Original Contract)</option>
+                        <option>Amount Discrepancy (Balance doesn't match)</option>
+                        <option>Statute of Limitations Expired (Time-barred)</option>
+                        <option>Identity Theft / Not My Debt</option>
                         <option value="Other">Other (Write my own)</option>
                       </select>
                     </div>
@@ -1548,12 +1548,7 @@ function getToolSectionMarkup(sectionId) {
                     <div class="field">
                       <label for="priorAuthInsuranceCompany">Insurance company</label>
                       <input id="priorAuthInsuranceCompany" name="insuranceCompany" type="text" placeholder="Insurance name" />
-                    </  <option value="Other">Other (Write my own)</option>
-                      </select>
                     </div>
-                    <div class="field field-full custom-input-wrapper" id="priorAuthReason-custom" style="display: none;">
-                      <label for="priorAuthReason-customReason">Describe your specific situation</label>
-                      <textarea id="priorAuthReason-customReason" name="customReason" rows="4" placeholder="Please describe your prior authorization situation..."></textarea
                     <div class="field">
                       <label for="priorAuthProviderName">Provider name</label>
                       <input id="priorAuthProviderName" name="providerName" type="text" placeholder="Provider or facility" />
@@ -1565,8 +1560,10 @@ function getToolSectionMarkup(sectionId) {
                     <div class="field">
                       <label for="priorAuthReason">Reason for request</label>
                       <select id="priorAuthReason" name="requestReason" required>
-                        <option>New Request</option>
-                        <option>Appeal of Denied Auth</option>
+                        <option>New Request (Standard Review)</option>
+                        <option>Urgent/Expedited Request (72-hour requirement)</option>
+                        <option>Appeal of Denied Auth (Request Peer-to-Peer)</option>
+                        <option value="Other">Other (Write my own)</option>
                       </select>
                     </div>
                     <div class="field">
@@ -2380,14 +2377,15 @@ Date of visit: ${dateOfVisit}
 
 To Whom It May Concern:
 
-Pursuant to my rights under the HIPAA Privacy Rule (45 CFR § 164.524) and state consumer protection laws, I am formally requesting a complete, unbundled itemized bill for the account listed above.
+Under the HIPAA Privacy Rule (45 CFR § 164.524), I am entitled to access my complete medical and billing records. I require a fully unbundled itemized statement with all Revenue Codes, CPT/HCPCS codes, and individual line-item charges. A "Summary Bill" is unacceptable and non-compliant with this request.
 
 This itemized statement MUST include:
 1. Every individual service, supply, and medication provided.
 2. The specific CPT, HCPCS, and Revenue codes for each item.
 3. The individual unbundled price for each line item.
+4. Date and time stamps for each separately billable service.
 
-I will not make any payments until I have received this document and verified the charges for accuracy against my medical records. Please place a 30-day hold on this account and ensure it is not forwarded to collections during this time.
+I will not make any payments until I have received this document and verified the charges for accuracy against my medical records. Please place a 30-day hold on this account and ensure it is not forwarded to collections during this time. Any attempts to report this account as delinquent while this request is pending will be considered a violation of my consumer rights.
 
 Sincerely,
 
@@ -2395,7 +2393,7 @@ ${patientName}
 ${patientAddress}
 ${patientPhone}`;
 
-  const script = `Hello, my name is ${patientName}. For account ${accountNumber}, I am exercising my HIPAA rights to request a complete, unbundled itemized bill that includes all CPT and HCPCS codes. I will not be paying the balance until I review these codes. Please place a hold on my account so it does not go to collections.`;
+  const script = `Hello, my name is ${patientName}. For account ${accountNumber}, I am exercising my HIPAA rights under 45 CFR § 164.524 to request a complete, unbundled itemized bill that includes all Revenue Codes, CPT, and HCPCS codes. A summary bill is not compliant with this request. I will not be paying the balance until I review these codes. Please place a hold on my account so it does not go to collections.`;
 
   return { letter, script };
 }
@@ -2415,7 +2413,7 @@ function generateMedicalDebtContent(data) {
   // Include special circumstances if provided
   const specialCircumstances = data.specialCircumstances && data.specialCircumstances.trim();
   const specialCircumstancesText = specialCircumstances 
-    ? `\n\nAdditionally, I am facing the following special financial circumstances:\n${specialCircumstances}` 
+    ? `\n\nAdditionally, my financial capacity has been severely impacted by the following circumstances: ${specialCircumstances}. Under federal guidelines, I request an immediate hold on any Extraordinary Collection Actions (ECAs) while this application is processed.` 
     : '';
 
   const letter = `${today}
@@ -2425,11 +2423,20 @@ Re: Financial Assistance / Charity Care Request
 Account: ${accountNumber}
 Balance: ${totalDebtAmount}
 
-Hello,
+To Whom It May Concern:
 
-I am formally requesting consideration under your Financial Assistance Policy (Charity Care). Based on my current household income of ${householdIncome} and household size of ${householdSize}, I believe I may qualify for relief. If I do not qualify for a full waiver, I request a zero-interest payment plan that does not exceed 5% of my monthly discretionary income.${specialCircumstancesText}
+As a tax-exempt hospital facility, you are mandated under IRS Section 501(r) to provide charity care or financial assistance to eligible patients. I am formally invoking my right to apply for your Financial Assistance Policy (FAP).
 
-Please confirm the required documentation, application steps, and timeline for review.
+Based on my current household income of ${householdIncome} and household size of ${householdSize}, I believe I may qualify for relief under your published FAP guidelines. I request that you provide me with:
+
+1. A complete copy of your Financial Assistance Policy (FAP).
+2. The Financial Assistance Application form in plain language.
+3. A plain language summary translated if needed.
+4. Confirmation that all collection activities will be suspended during the application review period.
+
+If I do not qualify for a full waiver, I request a zero-interest payment plan that does not exceed 5% of my monthly discretionary income, consistent with IRS 501(r) requirements.${specialCircumstancesText}
+
+Under IRS Section 501(r), you are prohibited from engaging in Extraordinary Collection Actions (ECAs) — including reporting to credit bureaus, filing lawsuits, or garnishing wages — until you have made reasonable efforts to determine my eligibility for financial assistance. I expect a written response within 30 days confirming receipt of this request and next steps.
 
 Sincerely,
 ${patientName}
@@ -2437,7 +2444,7 @@ ${patientAddress}
 ${patientPhone}
 ${patientEmail}`;
 
-  const script = `Hello, my name is ${patientName}. I'm calling about account ${accountNumber} at ${providerName}. I'm requesting financial assistance or Charity Care based on my household income of ${householdIncome} and household size of ${householdSize}. If a full waiver is not available, I'd like a zero-interest plan capped at 5% of monthly discretionary income. My contact info is ${patientPhone} and ${patientEmail}.`;
+  const script = `Hello, my name is ${patientName}. I'm calling about account ${accountNumber} at ${providerName}. Under IRS Section 501(r), I am formally requesting financial assistance or Charity Care based on my household income of ${householdIncome} and household size of ${householdSize}. I need a copy of your FAP policy, the application, and confirmation that all collection activities will be paused during the review. If a full waiver is not available, I'd like a zero-interest plan capped at 5% of monthly discretionary income. My contact info is ${patientPhone} and ${patientEmail}.`;
 
   return { letter, script };
 }
@@ -2456,10 +2463,10 @@ function generateCollectionsContent(data) {
   // Handle "Other" option with custom input for issue type
   let disputeReason;
   if (data.issueType === "Other" && data.customReason) {
-    disputeReason = `This debt validation request is based on the following specific circumstances:\n${data.customReason.trim()}`;
+    disputeReason = `I am exercising my rights under the FDCPA to dispute this debt because: ${data.customReason.trim()}. Until full validation is provided, you must cease all collection efforts.`;
   } else if (data.issueType) {
     const issueTypeText = clean(data.issueType, "Issue Type");
-    disputeReason = `I am disputing this debt because: ${issueTypeText}.`;
+    disputeReason = `I am disputing this debt on the following grounds: ${issueTypeText}.`;
   } else {
     disputeReason = "I do not acknowledge this debt as mine at this time.";
   }
@@ -2472,11 +2479,26 @@ Original provider: ${originalProvider}
 Account: ${accountNumber}
 Amount: ${debtAmount}
 
-Hello,
+To Whom It May Concern:
 
-I am formally requesting verification of this debt under the Fair Debt Collection Practices Act (FDCPA). ${disputeReason} Please provide the name and address of the original creditor and documentation proving I am responsible for this amount.
+Pursuant to the Fair Debt Collection Practices Act (FDCPA), 15 U.S.C. § 1692g, I am exercising my right to request formal validation of this debt. ${disputeReason}
 
-Cease and desist all collection activities and phone calls until this debt is fully verified in writing.
+I demand that you provide the following documentation within 30 days:
+
+1. The original signed contract or agreement establishing my liability.
+2. A complete itemized accounting from the original healthcare provider showing how the balance was calculated.
+3. Proof that you are licensed to collect debts in my state.
+4. Verification that the statute of limitations has not expired on this debt.
+5. Documentation proving the legal assignment or transfer of this debt from the original creditor to your agency.
+
+Until this debt is properly validated in writing, I require that you:
+- CEASE AND DESIST all collection activities, phone calls, and written communications.
+- REFRAIN from reporting this account to any credit reporting agency or updating any existing tradeline.
+- HALT any legal proceedings, wage garnishments, or bank levies.
+
+Pursuant to 15 U.S.C. § 1692g, if you cannot provide original proof of this debt and a complete itemized accounting from the original healthcare provider within 30 days, this debt must be removed from my credit profile immediately.
+
+Any violation of the FDCPA will result in formal complaints filed with the Consumer Financial Protection Bureau (CFPB), the Federal Trade Commission (FTC), and my State Attorney General's office, as well as potential legal action for statutory damages.
 
 Sincerely,
 ${patientName}
@@ -2484,7 +2506,7 @@ ${patientAddress}
 ${patientPhone}
 ${patientEmail}`;
 
-  const script = `Hello, my name is ${patientName}. I am requesting formal validation of this debt under the FDCPA. Please send all verification documents by mail and cease all collection calls until the debt is verified. My contact info is ${patientPhone} and ${patientEmail}.`;
+  const script = `Hello, my name is ${patientName}. I am formally exercising my rights under the Fair Debt Collection Practices Act, 15 U.S.C. § 1692g, to request full debt validation. I need you to send by mail: the original signed contract, complete itemized accounting from the original provider, proof of your collection license, statute of limitations verification, and proof of legal debt assignment. Until this is provided, you must cease all collection calls, stop reporting to credit bureaus, and halt any legal actions. Failure to comply will result in CFPB, FTC, and State Attorney General complaints. My contact info is ${patientPhone} and ${patientEmail}.`;
 
   return { letter, script };
 }
@@ -2500,27 +2522,43 @@ function generatePriorAuthContent(data) {
   const patientPhone = clean(data.patientPhone, "Patient Phone");
   const patientEmail = clean(data.patientEmail, "Patient Email");
   
-  // Handle "Other" option with custom input
+  // Handle "Other" option with custom input and specific request types
   let reasonText;
+  let urgencyAddendum = '';
+  
   if (data.requestReason === "Other" && data.customReason) {
-    reasonText = data.customReason.trim();
+    reasonText = `This request is necessary due to the following clinical factors: ${data.customReason.trim()}.`;
+  } else if (data.requestReason === "Urgent/Expedited Request (72-hour requirement)") {
+    reasonText = "This procedure is medically necessary based on peer-reviewed clinical guidelines and my treating physician's assessment.";
+    urgencyAddendum = "\n\nDue to the urgent nature of my condition, any delay in treatment could seriously jeopardize my health. I am formally invoking the 72-hour expedited review timeline as mandated by federal regulations. Under these regulations, health plans must make a determination on urgent prior authorization requests within 72 hours. Failure to meet this timeline will be considered a denial, and I will proceed with the service and file an immediate grievance.";
+  } else if (data.requestReason === "Appeal of Denied Auth (Request Peer-to-Peer)") {
+    reasonText = "This is a formal appeal of a previously denied prior authorization. The procedure is medically necessary as evidenced by clinical documentation and peer-reviewed medical literature.";
+    urgencyAddendum = "\n\nI am formally requesting a Peer-to-Peer review between the denying medical director and my treating physician to discuss the clinical evidence and medical necessity of this procedure. Under state and federal regulations, I am entitled to have a physician of the same or similar specialty review this case. Please provide the name, credentials, and direct contact information of the reviewing physician, along with the specific internal clinical criteria or guideline used to deny this authorization.";
   } else {
-    reasonText = requestReason === "New Request" 
-      ? "This procedure is medically necessary based on clinical guidelines and my current diagnosis."
-      : "This is an appeal of a previously denied prior authorization. This procedure is medically necessary and the denial should be reversed.";
+    reasonText = "This procedure is medically necessary based on clinical guidelines and my current diagnosis as documented by my treating physician.";
   }
 
   const letter = `${today}
 
 To: ${insuranceCompany} Utilization Review Department
-Re: Prior authorization request
+Re: Prior Authorization Request
 Provider: ${providerName}
 Service: ${service}
-Reason: ${requestReason}
+Request Type: ${requestReason}
 
-Hello,
+To the Utilization Review Department:
 
-I am writing to request prior authorization for ${service}. ${reasonText} Delays in approval may result in a significant decline in my health status. If this request is denied, please provide the specific clinical criteria used for your review in writing.
+I am writing to request prior authorization for ${service}. ${reasonText}${urgencyAddendum}
+
+Delays in approval may result in a significant decline in my health status and could constitute a breach of the plan's duty to provide timely access to medically necessary care. 
+
+If this request is denied, I require the following in writing:
+1. The specific clinical criteria, medical policy, or guideline used to make this determination.
+2. The name and credentials of the physician who reviewed this case.
+3. A detailed explanation of how my case fails to meet medical necessity criteria.
+4. Information on my appeal rights, including external review options.
+
+I expect a determination within the legally mandated timeframe. Any unreasonable delay will be escalated to the State Department of Insurance as a violation of timely access regulations.
 
 Sincerely,
 ${patientName}
@@ -2528,7 +2566,7 @@ ${patientAddress}
 ${patientPhone}
 ${patientEmail}`;
 
-  const script = `Hello, my name is ${patientName}. I'm calling about a prior authorization for ${service} with ${insuranceCompany}. This service is medically necessary, and any delay could worsen my health. Please provide the status and the clinical criteria used if denied. My contact info is ${patientPhone} and ${patientEmail}.`;
+  const script = `Hello, my name is ${patientName}. I'm calling about a prior authorization request for ${service} with ${insuranceCompany}. ${data.requestReason === "Urgent/Expedited Request (72-hour requirement)" ? "This is an urgent request requiring a 72-hour expedited review due to the serious nature of my condition." : data.requestReason === "Appeal of Denied Auth (Request Peer-to-Peer)" ? "This is an appeal of a denial, and I am formally requesting a Peer-to-Peer review with the medical director and my treating physician." : "This service is medically necessary based on my physician's clinical assessment."} If denied, I need the specific clinical criteria, the reviewing physician's name and credentials, and information on my appeal rights. My contact info is ${patientPhone} and ${patientEmail}.`;
 
   return { letter, script };
 }
