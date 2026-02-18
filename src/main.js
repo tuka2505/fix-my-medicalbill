@@ -2506,6 +2506,144 @@ function router() {
   });
 }
 
+// ========== GLOBAL VARIABLES ==========
+let currentBillCategory = null;
+let currentBillText = null;
+
+// ========== MEDICAL BILL CLASSIFICATION LOGIC ==========
+
+function classifyBill(text) {
+  if (!text || text.trim().length === 0) {
+    console.warn('No text provided for classification');
+    return null;
+  }
+
+  const normalizedText = text.toUpperCase();
+  const categories = {
+    'Emergency Room': { codeScore: 0, keywordScore: 0, route: '/urgent-care-bill-dispute' },
+    'Ambulance': { codeScore: 0, keywordScore: 0, route: '/out-of-network-billing-dispute' },
+    'Surgery & Inpatient': { codeScore: 0, keywordScore: 0, route: '/medical-bill-dispute-letter' }
+  };
+
+  // ===== EMERGENCY ROOM (ER) =====
+  // CPT Codes
+  const erCptCodes = ['99281', '99282', '99283', '99284', '99285'];
+  erCptCodes.forEach(code => {
+    if (normalizedText.includes(code)) {
+      categories['Emergency Room'].codeScore += 10;
+      console.log(`[ER] CPT Code found: ${code}`);
+    }
+  });
+
+  // Revenue Code
+  if (/REV\s*0*450|REVENUE\s*0*450|0450/.test(normalizedText)) {
+    categories['Emergency Room'].codeScore += 10;
+    console.log('[ER] Revenue Code 0450 found');
+  }
+
+  // Keywords
+  if (/EMERGENCY\s*(DEPT|DEPARTMENT|ROOM|SERVICE)/i.test(text)) {
+    categories['Emergency Room'].keywordScore += 5;
+    console.log('[ER] Emergency keyword found');
+  }
+  if (/TRIAGE/i.test(text)) {
+    categories['Emergency Room'].keywordScore += 3;
+    console.log('[ER] Triage keyword found');
+  }
+  if (/FACILITY\s*FEE/i.test(text)) {
+    categories['Emergency Room'].keywordScore += 3;
+    console.log('[ER] Facility Fee keyword found');
+  }
+
+  // ===== AMBULANCE =====
+  // HCPCS Codes
+  const ambulanceHcpcs = ['A0425', 'A0426', 'A0427', 'A0428', 'A0429', 'A0433'];
+  ambulanceHcpcs.forEach(code => {
+    if (normalizedText.includes(code)) {
+      categories['Ambulance'].codeScore += 10;
+      console.log(`[Ambulance] HCPCS Code found: ${code}`);
+    }
+  });
+
+  // Keywords
+  if (/AMBULANCE/i.test(text)) {
+    categories['Ambulance'].keywordScore += 5;
+    console.log('[Ambulance] Ambulance keyword found');
+  }
+  if (/PARAMEDIC/i.test(text)) {
+    categories['Ambulance'].keywordScore += 3;
+    console.log('[Ambulance] Paramedic keyword found');
+  }
+  if (/GROUND\s*TRANSPORT/i.test(text)) {
+    categories['Ambulance'].keywordScore += 4;
+    console.log('[Ambulance] Ground Transport keyword found');
+  }
+  if (/LIFE\s*SUPPORT\s*(ALS|BLS)/i.test(text)) {
+    categories['Ambulance'].keywordScore += 4;
+    console.log('[Ambulance] Life Support keyword found');
+  }
+
+  // ===== SURGERY & INPATIENT =====
+  // Revenue Codes
+  if (/REV\s*0*36[01]|REVENUE\s*0*36[01]|036[01]/.test(normalizedText)) {
+    categories['Surgery & Inpatient'].codeScore += 10;
+    console.log('[Surgery] Operating Room Revenue Code found');
+  }
+  if (/REV\s*0*250|REVENUE\s*0*250|0250/.test(normalizedText)) {
+    categories['Surgery & Inpatient'].codeScore += 8;
+    console.log('[Surgery] Pharmacy Revenue Code found');
+  }
+
+  // Keywords
+  if (/OPERATING\s*ROOM/i.test(text)) {
+    categories['Surgery & Inpatient'].keywordScore += 5;
+    console.log('[Surgery] Operating Room keyword found');
+  }
+  if (/ANESTHESIA/i.test(text)) {
+    categories['Surgery & Inpatient'].keywordScore += 4;
+    console.log('[Surgery] Anesthesia keyword found');
+  }
+  if (/SURGICAL/i.test(text)) {
+    categories['Surgery & Inpatient'].keywordScore += 4;
+    console.log('[Surgery] Surgical keyword found');
+  }
+  if (/INPATIENT/i.test(text)) {
+    categories['Surgery & Inpatient'].keywordScore += 4;
+    console.log('[Surgery] Inpatient keyword found');
+  }
+
+  // ===== DETERMINE WINNER =====
+  let bestCategory = null;
+  let bestScore = 0;
+
+  Object.entries(categories).forEach(([category, scores]) => {
+    // Prioritize code matches (weight 2x) over keywords
+    const totalScore = (scores.codeScore * 2) + scores.keywordScore;
+    console.log(`[Classification] ${category}: Code=${scores.codeScore}, Keyword=${scores.keywordScore}, Total=${totalScore}`);
+    
+    if (totalScore > bestScore) {
+      bestScore = totalScore;
+      bestCategory = category;
+    }
+  });
+
+  if (bestScore === 0) {
+    console.log('[Classification] No specific category detected, defaulting to Hospital Bill Audit');
+    return {
+      category: 'Hospital Bill Audit',
+      route: '/medical-bill-dispute-letter',
+      confidence: 'low'
+    };
+  }
+
+  console.log(`[Classification] Winner: ${bestCategory} with score ${bestScore}`);
+  return {
+    category: bestCategory,
+    route: categories[bestCategory].route,
+    confidence: bestScore >= 10 ? 'high' : 'medium'
+  };
+}
+
 // ========== OCR BILL SCANNING LOGIC ==========
 
 function setupBillScanning() {
@@ -2568,14 +2706,43 @@ function setupBillScanning() {
       // Clean up
       await worker.terminate();
 
-      // Show success message
+      // Classify the bill
+      const classification = classifyBill(text);
+      currentBillCategory = classification;
+      currentBillText = text;
+
+      // Update UI with classification result
       setTimeout(() => {
-        scanProgressText.textContent = 'Scan complete! Check console for results.';
+        scanProgressText.textContent = `Analysis Complete: ${classification.category} detected.`;
+        scanProgressText.style.color = 'rgba(52, 199, 89, 1)';
+        scanProgressText.style.fontWeight = '700';
+        
+        // Add action button to navigate to appropriate tool
+        const slimBarContent = dropZone.querySelector('.slim-bar-content');
+        if (slimBarContent) {
+          slimBarContent.innerHTML = `
+            <span class="slim-bar-text">✓ ${classification.category} Bill Detected</span>
+            <button class="slim-bar-btn" id="goto-dispute-btn">
+              Start Dispute Process
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </button>
+          `;
+          
+          // Add click handler for navigation
+          const gotoBtn = document.getElementById('goto-dispute-btn');
+          if (gotoBtn) {
+            gotoBtn.addEventListener('click', () => {
+              navigate(classification.route);
+            });
+          }
+        }
+        
         setTimeout(() => {
           scanProgress.style.display = 'none';
-          privacyNotice.style.display = 'block';
           billUpload.value = ''; // Reset file input
-        }, 2000);
+        }, 3000);
       }, 500);
 
     } catch (error) {
