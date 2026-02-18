@@ -2509,6 +2509,40 @@ function router() {
 // ========== GLOBAL VARIABLES ==========
 let currentBillCategory = null;
 let currentBillText = null;
+let detectedAmount = null;
+
+// ========== AMOUNT EXTRACTION LOGIC ==========
+
+function extractAmount(text) {
+  if (!text) return null;
+
+  // Patterns to match common bill amount labels
+  const patterns = [
+    /TOTAL[\s:]*\$?([\d,]+\.\d{2})/i,
+    /AMOUNT\s+DUE[\s:]*\$?([\d,]+\.\d{2})/i,
+    /BALANCE\s+DUE[\s:]*\$?([\d,]+\.\d{2})/i,
+    /TOTAL\s+AMOUNT[\s:]*\$?([\d,]+\.\d{2})/i,
+    /PATIENT\s+BALANCE[\s:]*\$?([\d,]+\.\d{2})/i,
+    /\$([\d,]+\.\d{2})/g // Fallback: any dollar amount
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      const amount = match[1].replace(/,/g, '');
+      const numAmount = parseFloat(amount);
+      
+      // Only accept reasonable amounts ($10 - $100,000)
+      if (numAmount >= 10 && numAmount <= 100000) {
+        console.log(`[Amount Extraction] Detected: $${match[1]} (parsed: ${numAmount})`);
+        return match[1]; // Return with commas for display
+      }
+    }
+  }
+
+  console.log('[Amount Extraction] No valid amount found');
+  return null;
+}
 
 // ========== MEDICAL BILL CLASSIFICATION LOGIC ==========
 
@@ -2522,7 +2556,8 @@ function classifyBill(text) {
   const categories = {
     'Emergency Room': { codeScore: 0, keywordScore: 0, route: '/urgent-care-bill-dispute' },
     'Ambulance': { codeScore: 0, keywordScore: 0, route: '/out-of-network-billing-dispute' },
-    'Surgery & Inpatient': { codeScore: 0, keywordScore: 0, route: '/medical-bill-dispute-letter' }
+    'Surgery & Inpatient': { codeScore: 0, keywordScore: 0, route: '/medical-bill-dispute-letter' },
+    'General Doctor Visit': { codeScore: 0, keywordScore: 0, route: '/medical-bill-dispute-letter' }
   };
 
   // ===== EMERGENCY ROOM (ER) =====
@@ -2610,6 +2645,33 @@ function classifyBill(text) {
   if (/INPATIENT/i.test(text)) {
     categories['Surgery & Inpatient'].keywordScore += 4;
     console.log('[Surgery] Inpatient keyword found');
+  }
+
+  // ===== GENERAL DOCTOR VISIT =====
+  // Keywords
+  if (/CHECK\s*UP/i.test(text)) {
+    categories['General Doctor Visit'].keywordScore += 5;
+    console.log('[General] Check Up keyword found');
+  }
+  if (/PHYSICIAN/i.test(text)) {
+    categories['General Doctor Visit'].keywordScore += 4;
+    console.log('[General] Physician keyword found');
+  }
+  if (/OFFICE\s*VISIT/i.test(text)) {
+    categories['General Doctor Visit'].keywordScore += 5;
+    console.log('[General] Office Visit keyword found');
+  }
+  if (/EXAMINATION/i.test(text)) {
+    categories['General Doctor Visit'].keywordScore += 3;
+    console.log('[General] Examination keyword found');
+  }
+  if (/\bINVOICE\b/i.test(text)) {
+    categories['General Doctor Visit'].keywordScore += 2;
+    console.log('[General] Invoice keyword found');
+  }
+  if (/CONSULTATION/i.test(text)) {
+    categories['General Doctor Visit'].keywordScore += 4;
+    console.log('[General] Consultation keyword found');
   }
 
   // ===== DETERMINE WINNER =====
@@ -2706,6 +2768,9 @@ function setupBillScanning() {
       // Clean up
       await worker.terminate();
 
+      // Extract amount from bill
+      detectedAmount = extractAmount(text);
+
       // Classify the bill
       const classification = classifyBill(text);
       currentBillCategory = classification;
@@ -2713,36 +2778,29 @@ function setupBillScanning() {
 
       // Update UI with classification result
       setTimeout(() => {
-        scanProgressText.textContent = `Analysis Complete: ${classification.category} detected.`;
+        const categoryMessage = classification.category === 'General Doctor Visit' 
+          ? 'General Consultation detected'
+          : `${classification.category} detected`;
+        
+        scanProgressText.textContent = `✓ ${categoryMessage} ${detectedAmount ? '($' + detectedAmount + ')' : ''}`;
         scanProgressText.style.color = 'rgba(52, 199, 89, 1)';
         scanProgressText.style.fontWeight = '700';
         
-        // Add action button to navigate to appropriate tool
-        const slimBarContent = dropZone.querySelector('.slim-bar-content');
-        if (slimBarContent) {
-          slimBarContent.innerHTML = `
-            <span class="slim-bar-text">✓ ${classification.category} Bill Detected</span>
-            <button class="slim-bar-btn" id="goto-dispute-btn">
-              Start Dispute Process
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-              </svg>
-            </button>
-          `;
-          
-          // Add click handler for navigation
-          const gotoBtn = document.getElementById('goto-dispute-btn');
-          if (gotoBtn) {
-            gotoBtn.addEventListener('click', () => {
-              navigate(classification.route);
-            });
-          }
-        }
-        
+        // Automatically start quiz after brief delay
         setTimeout(() => {
-          scanProgress.style.display = 'none';
-          billUpload.value = ''; // Reset file input
-        }, 3000);
+          const auditorCtaBox = document.getElementById('auditor-cta-box');
+          const auditorQuizWrapper = document.getElementById('auditor-quiz-wrapper');
+          
+          if (auditorCtaBox && auditorQuizWrapper) {
+            scanProgress.style.display = 'none';
+            auditorCtaBox.style.display = 'none';
+            auditorQuizWrapper.style.display = 'block';
+            billUpload.value = ''; // Reset file input
+            
+            // Initialize targeted quiz based on category
+            initializeTargetedQuiz(classification.category);
+          }
+        }, 1500);
       }, 500);
 
     } catch (error) {
@@ -2787,6 +2845,233 @@ function setupBillScanning() {
       await processFile(files[0]);
     }
   });
+}
+
+// ========== CATEGORY-SPECIFIC QUESTION SETS ==========
+
+const categoryQuestions = {
+  'Emergency Room': [
+    {
+      id: 'er-facility-fee',
+      question: 'Were you charged a "Facility Fee" in addition to the doctor\'s fee?',
+      options: [
+        { label: 'Yes, I see it on my bill', value: 'Yes', amount: 300 },
+        { label: 'No facility fee listed', value: 'No', amount: 0 }
+      ]
+    },
+    {
+      id: 'er-triage-level',
+      question: 'Was your ER visit coded as Level 4 or 5 (high severity)?',
+      options: [
+        { label: 'Yes, Level 4 or 5', value: 'High', amount: 0 },
+        { label: 'No, seemed routine', value: 'Low', amount: 250 }
+      ]
+    },
+    {
+      id: 'er-itemized',
+      question: 'Did you receive an itemized bill showing all charges?',
+      options: [
+        { label: 'No / Not sure', value: 'No', amount: 200 },
+        { label: 'Yes, I have it', value: 'Yes', amount: 0 }
+      ]
+    }
+  ],
+  'Ambulance': [
+    {
+      id: 'ambulance-choice',
+      question: 'Did you choose the ambulance company yourself?',
+      options: [
+        { label: 'No, emergency dispatch', value: 'No', amount: 350 },
+        { label: 'Yes, I chose them', value: 'Yes', amount: 0 }
+      ]
+    },
+    {
+      id: 'ambulance-mileage',
+      question: 'Was the transport distance less than 10 miles?',
+      options: [
+        { label: 'Yes, under 10 miles', value: 'Short', amount: 150 },
+        { label: 'No, longer distance', value: 'Long', amount: 0 }
+      ]
+    },
+    {
+      id: 'ambulance-network',
+      question: 'Was the ambulance company out-of-network?',
+      options: [
+        { label: 'Yes / Not sure', value: 'Yes', amount: 300 },
+        { label: 'No, in-network', value: 'No', amount: 0 }
+      ]
+    }
+  ],
+  'Surgery & Inpatient': [
+    {
+      id: 'surgery-prior-auth',
+      question: 'Did your insurance pre-approve this surgery?',
+      options: [
+        { label: 'No / Not sure', value: 'No', amount: 400 },
+        { label: 'Yes, pre-approved', value: 'Yes', amount: 0 }
+      ]
+    },
+    {
+      id: 'surgery-anesthesia',
+      question: 'Were you charged separately for anesthesia?',
+      options: [
+        { label: 'Yes, separate charge', value: 'Yes', amount: 250 },
+        { label: 'No separate charge', value: 'No', amount: 0 }
+      ]
+    },
+    {
+      id: 'surgery-itemized',
+      question: 'Did you receive an itemized surgical bill?',
+      options: [
+        { label: 'No / Not sure', value: 'No', amount: 200 },
+        { label: 'Yes, I have it', value: 'Yes', amount: 0 }
+      ]
+    }
+  ],
+  'General Doctor Visit': [
+    {
+      id: 'general-itemized',
+      question: 'Did you receive a detailed itemized bill for this visit?',
+      options: [
+        { label: 'No / Not sure', value: 'No', amount: 200 },
+        { label: 'Yes, I have it', value: 'Yes', amount: 0 }
+      ]
+    },
+    {
+      id: 'general-routine',
+      question: 'Was this a routine check-up that should be 100% covered by insurance?',
+      options: [
+        { label: 'Yes, should be covered', value: 'Yes', amount: 250 },
+        { label: 'No, not routine', value: 'No', amount: 0 }
+      ]
+    },
+    {
+      id: 'general-time',
+      question: 'Did the doctor spend more than 15 minutes with you?',
+      options: [
+        { label: 'No, less than 15 min', value: 'Short', amount: 150 },
+        { label: 'Yes, 15+ minutes', value: 'Long', amount: 0 }
+      ]
+    }
+  ]
+};
+
+// Initialize targeted quiz based on bill category
+function initializeTargetedQuiz(category) {
+  const questions = categoryQuestions[category] || categoryQuestions['General Doctor Visit'];
+  
+  // Inject detectedAmount into first General question if available
+  if (category === 'General Doctor Visit' && detectedAmount) {
+    questions[0].question = `Did you receive a detailed itemized bill for $${detectedAmount}?`;
+  }
+  
+  const quizContainer = document.getElementById('quiz-container');
+  const quizProgress = document.getElementById('quiz-progress');
+  const quizProgressText = document.getElementById('quiz-progress-text');
+  const quizResult = document.getElementById('quiz-result');
+  const quizAnalyzing = document.getElementById('quiz-analyzing');
+  const quizFinal = document.getElementById('quiz-final');
+  const resultAmount = document.getElementById('result-amount');
+  const quizCtaBtn = document.getElementById('quiz-cta-btn');
+  const quizResetBtn = document.getElementById('quiz-reset-btn');
+  const auditorTitle = document.querySelector('.auditor-title');
+  const auditorSubtitle = document.querySelector('.auditor-subtitle');
+
+  if (!quizContainer) return;
+  
+  // Update header with category and amount
+  if (auditorTitle) {
+    auditorTitle.textContent = `Auditing Your ${category} Bill`;
+  }
+  if (auditorSubtitle) {
+    const amountText = detectedAmount ? `$${detectedAmount}` : 'this';
+    auditorSubtitle.textContent = `Answer 3 quick questions about your ${amountText} bill to identify overcharges`;
+  }
+
+  let currentQuestion = 0;
+  let totalAmount = 0;
+
+  function renderQuestion(index) {
+    const q = questions[index];
+    const progress = ((index + 1) / questions.length) * 100;
+    
+    quizProgress.style.width = `${progress}%`;
+    quizProgressText.textContent = `Question ${index + 1} of ${questions.length}`;
+
+    quizContainer.innerHTML = `
+      <div class="quiz-question">
+        <h3 class="question-title">${q.question}</h3>
+        <div class="quiz-options">
+          ${q.options.map(option => `
+            <button class="quiz-option-btn" data-value="${option.value}" data-amount="${option.amount}">
+              <span class="option-label">${option.label}</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    const optionButtons = quizContainer.querySelectorAll('.quiz-option-btn');
+    optionButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const amount = parseInt(btn.dataset.amount);
+        totalAmount += amount;
+        
+        btn.classList.add('selected');
+        setTimeout(() => {
+          if (currentQuestion < questions.length - 1) {
+            currentQuestion++;
+            renderQuestion(currentQuestion);
+          } else {
+            showResults();
+          }
+        }, 400);
+      });
+    });
+  }
+
+  function showResults() {
+    quizContainer.style.display = 'none';
+    quizResult.style.display = 'flex';
+    quizAnalyzing.style.display = 'flex';
+    quizFinal.style.display = 'none';
+
+    setTimeout(() => {
+      quizAnalyzing.style.display = 'none';
+      quizFinal.style.display = 'flex';
+      animateAmount(totalAmount);
+
+      if (quizCtaBtn) {
+        quizCtaBtn.onclick = () => {
+          navigate(currentBillCategory.route);
+        };
+      }
+
+      if (quizResetBtn) {
+        quizResetBtn.onclick = () => {
+          location.reload();
+        };
+      }
+    }, 2000);
+  }
+
+  function animateAmount(target) {
+    let current = 0;
+    const increment = target / 30;
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        current = target;
+        clearInterval(timer);
+      }
+      resultAmount.textContent = `$${Math.round(current)}`;
+    }, 50);
+  }
+
+  renderQuestion(0);
 }
 
 // ========== INTERACTIVE QUIZ LOGIC ==========
