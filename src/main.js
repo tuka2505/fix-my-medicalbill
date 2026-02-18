@@ -399,65 +399,86 @@ function renderQuickAuditor() {
   return `
     <section id="quick-auditor" class="quick-auditor-section">
       <div class="auditor-container">
-        <div class="auditor-header">
-          <h2 class="auditor-title">Find Your Hidden Medical Refund</h2>
-          <p class="auditor-subtitle">Answer 4 quick questions to estimate your potential recovery amount</p>
-        </div>
-        
-        <!-- Progress Bar -->
-        <div class="quiz-progress-container">
-          <div class="quiz-progress-bar">
-            <div class="quiz-progress-fill" id="quiz-progress"></div>
+        <!-- CTA Box (Always Visible) -->
+        <div class="auditor-cta-box" id="auditor-cta-box">
+          <div class="cta-box-icon">💰</div>
+          <h3 class="cta-box-title">Not sure if you were overcharged?</h3>
+          <p class="cta-box-subtitle">Answer 4 quick questions to find out how much you could recover</p>
+          <button class="cta-box-btn" id="start-quiz-btn">
+            Check My Bill for Errors
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </button>
+          <div class="cta-box-trust">
+            <span>✓ 100% Free</span>
+            <span>✓ No Signup Required</span>
+            <span>✓ Takes 30 Seconds</span>
           </div>
-          <div class="quiz-progress-text" id="quiz-progress-text">Question 1 of 4</div>
         </div>
 
-        <!-- Quiz Container -->
-        <div class="quiz-container" id="quiz-container">
-          <!-- Questions will be injected here by JavaScript -->
-        </div>
-
-        <!-- Result Container (hidden initially) -->
-        <div class="quiz-result-container" id="quiz-result" style="display: none;">
-          <div class="quiz-analyzing" id="quiz-analyzing">
-            <div class="analyzing-spinner"></div>
-            <p class="analyzing-text">Analyzing your bill...</p>
+        <!-- Quiz Interface (Hidden by Default) -->
+        <div class="auditor-quiz-wrapper" id="auditor-quiz-wrapper" style="display: none;">
+          <div class="auditor-header">
+            <h2 class="auditor-title">Find Your Hidden Medical Refund</h2>
+            <p class="auditor-subtitle">Answer 4 quick questions to estimate your potential recovery amount</p>
           </div>
           
-          <div class="quiz-final-result" id="quiz-final" style="display: none;">
-            <div class="result-badge">Estimated Recovery</div>
-            <div class="result-amount" id="result-amount">$0</div>
-            <p class="result-description">Based on your answers, you may be entitled to recover this amount from billing errors and overcharges.</p>
-            <button class="result-cta-btn" id="quiz-cta-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-              </svg>
-              Start My Dispute Now
-            </button>
-            <button class="result-reset-btn" id="quiz-reset-btn">Start Over</button>
+          <!-- Progress Bar -->
+          <div class="quiz-progress-container">
+            <div class="quiz-progress-bar">
+              <div class="quiz-progress-fill" id="quiz-progress"></div>
+            </div>
+            <div class="quiz-progress-text" id="quiz-progress-text">Question 1 of 4</div>
           </div>
-        </div>
 
-        <div class="auditor-trust">
-          <div class="trust-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
-            </svg>
-            <span>100% Private</span>
+          <!-- Quiz Container -->
+          <div class="quiz-container" id="quiz-container">
+            <!-- Questions will be injected here by JavaScript -->
           </div>
-          <div class="trust-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
-              <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-            </svg>
-            <span>98% AI Accuracy</span>
+
+          <!-- Result Container (hidden initially) -->
+          <div class="quiz-result-container" id="quiz-result" style="display: none;">
+            <div class="quiz-analyzing" id="quiz-analyzing">
+              <div class="analyzing-spinner"></div>
+              <p class="analyzing-text">Analyzing your bill...</p>
+            </div>
+            
+            <div class="quiz-final-result" id="quiz-final" style="display: none;">
+              <div class="result-badge">Estimated Recovery</div>
+              <div class="result-amount" id="result-amount">$0</div>
+              <p class="result-description">Based on your answers, you may be entitled to recover this amount from billing errors and overcharges.</p>
+              <button class="result-cta-btn" id="quiz-cta-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Start My Dispute Now
+              </button>
+              <button class="result-reset-btn" id="quiz-reset-btn">Start Over</button>
+            </div>
           </div>
-          <div class="trust-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
-              <path d="M12 6v6l4 2" stroke-width="1.5" stroke-linecap="round"></path>
-            </svg>
-            <span>Takes 30 Seconds</span>
+
+          <div class="auditor-trust">
+            <div class="trust-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
+              </svg>
+              <span>100% Private</span>
+            </div>
+            <div class="trust-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
+                <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+              <span>98% AI Accuracy</span>
+            </div>
+            <div class="trust-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
+                <path d="M12 6v6l4 2" stroke-width="1.5" stroke-linecap="round"></path>
+              </svg>
+              <span>Takes 30 Seconds</span>
+            </div>
           </div>
         </div>
       </div>
@@ -465,7 +486,7 @@ function renderQuickAuditor() {
   `;
 }
 
-function renderToolsSection(cards) {
+function renderSituationalCards() {
   return `
     <section id="situational-tools" class="situational-tools-section">
       <div class="situational-header">
@@ -507,16 +528,25 @@ function renderToolsSection(cards) {
           </svg>
         </a>
       </div>
-      <div class="browse-all-container">
-        <button class="browse-all-btn" onclick="document.getElementById('all-tools').scrollIntoView({behavior: 'smooth', block: 'start'})">
-          Explore All 8+ Medical Audit Tools
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-          </svg>
-        </button>
-      </div>
     </section>
+  `;
+}
 
+function renderBrowseButton() {
+  return `
+    <div class="browse-all-container">
+      <button class="browse-all-btn" onclick="document.getElementById('all-tools').scrollIntoView({behavior: 'smooth', block: 'start'})">
+        Explore All 8+ Medical Audit Tools
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+    </div>
+  `;
+}
+
+function renderFullToolsGrid(cards) {
+  return `
     <section id="all-tools" class="section tools-grid-section">
       <div class="tools-header">
         <h2 class="h2">All Medical Dispute Tools</h2>
@@ -1643,9 +1673,11 @@ function renderHomePage() {
       ${renderHeader()}
       <main class="main">
         ${renderHero()}
-        ${renderSuccessStories()}
+        ${renderSituationalCards()}
+        ${renderBrowseButton()}
         ${renderQuickAuditor()}
-        ${renderToolsSection(cards)}
+        ${renderFullToolsGrid(cards)}
+        ${renderSuccessStories()}
         ${renderResourcesSection()}
         ${renderFooter()}
       </main>
@@ -2511,6 +2543,9 @@ function router() {
 // ========== INTERACTIVE QUIZ LOGIC ==========
 
 function setupQuizLogic() {
+  const startQuizBtn = document.getElementById('start-quiz-btn');
+  const auditorCtaBox = document.getElementById('auditor-cta-box');
+  const auditorQuizWrapper = document.getElementById('auditor-quiz-wrapper');
   const quizContainer = document.getElementById('quiz-container');
   const quizResult = document.getElementById('quiz-result');
   const quizProgress = document.getElementById('quiz-progress');
@@ -2522,6 +2557,15 @@ function setupQuizLogic() {
   const quizResetBtn = document.getElementById('quiz-reset-btn');
 
   if (!quizContainer) return; // Exit if not on home page
+
+  // Show quiz when CTA button is clicked
+  if (startQuizBtn) {
+    startQuizBtn.addEventListener('click', () => {
+      auditorCtaBox.style.display = 'none';
+      auditorQuizWrapper.style.display = 'block';
+      renderQuestion(0);
+    });
+  }
 
   let currentQuestion = 0;
   let totalAmount = 0;
@@ -2658,7 +2702,8 @@ function setupQuizLogic() {
     selectedServiceRoute = '/medical-bill-dispute-letter';
     quizContainer.style.display = 'block';
     quizResult.style.display = 'none';
-    renderQuestion(0);
+    auditorQuizWrapper.style.display = 'none';
+    auditorCtaBox.style.display = 'block';
   }
 
   // Reset button handler
@@ -2666,8 +2711,7 @@ function setupQuizLogic() {
     quizResetBtn.addEventListener('click', resetQuiz);
   }
 
-  // Initialize quiz
-  renderQuestion(0);
+  // Don't initialize quiz automatically - wait for CTA button click
 }
 
 // ========== END QUIZ LOGIC ==========
