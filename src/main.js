@@ -2517,7 +2517,8 @@ let auditResults = {
   initialSavings: 0,
   adjustmentMultiplier: 1.0,
   violationCount: 0,
-  finalVerdict: ''
+  finalVerdict: '',
+  auditFindings: [] // Track error types from quiz responses
 };
 let quizResponses = [];
 
@@ -2974,35 +2975,38 @@ function setupBillScanning() {
   });
 }
 
-// ========== SMART QUESTION ENGINE - WEIGHTED QUESTION BANK ==========
+// ========== SMART QUESTION ENGINE - EXPERT QUESTION BANK ==========
 
-const questionBank = {
+const ExpertQuestionBank = {
+  Universal: [
+    { id: 'u_itemized', q: "Did you receive a detailed 'Itemized Bill' with specific billing codes?", weight: 0, errorType: 'Audit Requirement', context: "Hospitals often hide massive errors in summary bills. You have a legal right to an itemized bill.", triggers: [] },
+    { id: 'u_charity', q: "Is your household income under $50,000/year? (Financial Assistance Check)", weight: 1000, errorType: 'Charity Care', context: "Non-profit hospitals are legally required to forgive or discount bills for low-to-middle income patients.", triggers: [] }
+  ],
   ER: [
-    { q: "Did the doctor spend less than 5 minutes with you?", weight: 250, context: "High-level ER codes (99284/5) require comprehensive exam time." },
-    { q: "Were you treated in a hallway or a temporary chair?", weight: 300, context: "Full facility fees often cannot be charged for non-private treatment areas." },
-    { q: "Did you receive any 'Routine Supplies' charges (e.g., gloves, gown)?", weight: 150, context: "These are usually included in the facility fee and cannot be billed separately (unbundling)." },
-    { q: "Was your 'Triage' wait time over 2 hours before seeing a doctor?", weight: 200, context: "Long waits can downgrade the 'acuity level' of the bill." },
-    { q: "Did you receive an 'Itemized Bill' automatically?", weight: 100, context: "Hospitals often hide errors in 'Summary' bills." }
+    { id: 'er_time', q: "Did the doctor spend less than 10 minutes with you directly?", weight: 250, errorType: 'Upcoding', context: "High-level ER codes (Level 4/5) require comprehensive exams and complex medical decision making.", triggers: ['99284', '99285', 'level 4', 'level 5', 'critical'] },
+    { id: 'er_hallway', q: "Were you treated in a hallway or temporary chair instead of a private room?", weight: 300, errorType: 'Facility Fee Error', context: "Hospitals often illegally charge full 'Facility Fees' even if you didn't get a room.", triggers: ['0450', 'facility', 'room'] },
+    { id: 'er_triage', q: "Did you only see a triage nurse and leave without receiving actual treatment?", weight: 500, errorType: 'Phantom Charge', context: "Charging an ER visit fee just for taking your blood pressure is a common billing violation.", triggers: ['triage', 'emergency'] },
+    { id: 'er_supplies', q: "Are there separate charges for routine items like gloves, gowns, or IV tubing?", weight: 150, errorType: 'Unbundling', context: "Routine supplies are legally bundled into the Facility Fee and cannot be billed separately.", triggers: ['supplies', 'iv', 'kit', 'tray'] }
   ],
   Ambulance: [
-    { q: "Did you receive oxygen or life-saving shocks during transport?", weight: 400, context: "If No, an 'ALS' (Advanced Life Support) charge is likely an overcharge vs. 'BLS'." },
-    { q: "Was the transport distance significantly shorter than what's on the bill?", weight: 200, context: "Mileage is a common area for 'padding' charges." },
-    { q: "Were you conscious and stable during the entire trip?", weight: 150, context: "Stable patients rarely require expensive ALS services." }
+    { id: 'amb_als', q: "Did the paramedics use oxygen, a defibrillator, or IV medications during transport?", weight: 400, errorType: 'Upcoding (ALS vs BLS)', context: "If no advanced life-saving equipment was used, you should only be billed for basic transport (BLS).", triggers: ['als', 'a0427', 'advanced', 'life support'] },
+    { id: 'amb_mileage', q: "Was the actual driving distance to the hospital less than 10 miles?", weight: 150, errorType: 'Mileage Padding', context: "Ambulance companies frequently inflate the mileage driven to increase the bill.", triggers: ['mileage', 'miles', 'a0425'] },
+    { id: 'amb_choice', q: "Were you forced to use an out-of-network ambulance company without your consent?", weight: 800, errorType: 'Surprise Billing', context: "Under the No Surprises Act, you cannot be balance-billed for out-of-network emergency transport.", triggers: ['transport', 'ems', 'ambulance'] }
   ],
   Surgery: [
-    { q: "Was there an 'Assistant Surgeon' listed you didn't meet?", weight: 500, context: "Surprise assistant surgeons are a major source of out-of-network overcharges." },
-    { q: "Does the 'Anesthesia' time match the actual surgery duration?", weight: 300, context: "Anesthesia is billed in 15-min increments; even a 15-min error is costly." },
-    { q: "Were you charged for a private room when you were in a ward?", weight: 450, context: "Room rate errors are very common in inpatient billing." }
+    { id: 'surg_assistant', q: "Is there an 'Assistant Surgeon' listed on the bill whom you never met?", weight: 600, errorType: 'Ghost Provider', context: "Surprise assistant surgeons are a major source of illegal out-of-network overcharges.", triggers: ['assistant', 'asst', 'surgeon', 'surgery'] },
+    { id: 'surg_anesthesia', q: "Does the billed anesthesia time exceed the actual time you were in surgery?", weight: 300, errorType: 'Time Overcharge', context: "Anesthesia is billed in 15-minute increments. Even a small error can cost hundreds.", triggers: ['anesthesia', 'time', 'minutes'] },
+    { id: 'surg_observation', q: "Were you kept in the hospital for less than 24 hours?", weight: 450, errorType: 'Inpatient vs Observation', context: "If you stayed under 24 hours, it should be billed as 'Observation' (cheaper), not 'Inpatient Admission'.", triggers: ['admission', 'inpatient', 'room and board'] }
   ],
   General: [
-    { q: "Is this a 'New Patient' fee for a doctor you've seen before?", weight: 150, context: "Existing patients must be billed at lower 'Established Patient' rates." },
-    { q: "Did the consultation last less than 15 minutes?", weight: 100, context: "Consultation codes are strictly time-dependent." },
-    { q: "Were you billed for 'Preventive' care that should be 100% covered?", weight: 200, context: "Routine check-ups are often miscoded as diagnostic visits." }
+    { id: 'gen_new_patient', q: "Have you seen this doctor or clinic within the last 3 years?", weight: 150, errorType: 'Upcoding', context: "Existing patients must be legally billed at lower 'Established Patient' rates, not 'New Patient' rates.", triggers: ['new patient', '99204', '99205'] },
+    { id: 'gen_time', q: "Did the consultation last less than 15 minutes?", weight: 120, errorType: 'Time Upcoding', context: "Extended consultation codes (e.g., 99214, 99215) require specific time thresholds that are often ignored.", triggers: ['consultation', 'office visit'] },
+    { id: 'gen_preventive', q: "Was this a routine annual check-up (Preventive Care)?", weight: 200, errorType: 'Miscoding', context: "Routine preventive care should be 100% covered by insurance under the ACA, with no copay or deductible.", triggers: ['preventive', 'wellness', 'check up', 'physical'] }
   ]
 };
 
-// Dynamic question selection based on OCR analysis
-function getSmartQuestions(category, text) {
+// Dynamic question selection based on trigger keyword matching
+function buildDynamicQuiz(category, extractedText) {
   // Map category names to question bank keys
   const categoryMap = {
     'Emergency Room': 'ER',
@@ -3012,49 +3016,52 @@ function getSmartQuestions(category, text) {
   };
   
   const bankKey = categoryMap[category] || 'General';
-  let questions = questionBank[bankKey] || questionBank.General;
+  const categoryQuestions = ExpertQuestionBank[bankKey] || ExpertQuestionBank.General;
+  const textLower = extractedText.toLowerCase();
   
-  // Analyze OCR text for specific codes to prioritize questions
-  const textUpper = text.toUpperCase();
-  let priorityIndices = [];
+  // Initialize with Universal questions (always first)
+  let selectedQuestions = [...ExpertQuestionBank.Universal];
   
-  if (bankKey === 'ER') {
-    // Prioritize time/facility questions if high-level codes detected
-    if (textUpper.includes('99285') || textUpper.includes('99284') || textUpper.includes('0450')) {
-      priorityIndices = [0, 1, 2]; // Doctor time, hallway treatment, routine supplies
+  // Keyword matching: scan extractedText against triggers
+  const triggeredQuestions = [];
+  const nonTriggeredQuestions = [];
+  
+  categoryQuestions.forEach(q => {
+    if (q.triggers && q.triggers.length > 0) {
+      // Check if any trigger keyword matches
+      const hasMatch = q.triggers.some(trigger => textLower.includes(trigger.toLowerCase()));
+      if (hasMatch) {
+        triggeredQuestions.push(q);
+      } else {
+        nonTriggeredQuestions.push(q);
+      }
+    } else {
+      nonTriggeredQuestions.push(q);
     }
-  } else if (bankKey === 'Ambulance') {
-    // Prioritize ALS questions if advanced codes detected
-    if (textUpper.includes('ALS') || textUpper.includes('A0427') || textUpper.includes('A0433')) {
-      priorityIndices = [0, 2]; // Oxygen/shocks, consciousness
-    }
-  } else if (bankKey === 'Surgery') {
-    // Prioritize assistant surgeon and anesthesia if surgery codes present
-    if (textUpper.includes('0360') || textUpper.includes('0361') || textUpper.includes('ANESTHESIA')) {
-      priorityIndices = [0, 1]; // Assistant surgeon, anesthesia time
-    }
+  });
+  
+  // Add triggered questions first (prioritized)
+  selectedQuestions.push(...triggeredQuestions);
+  
+  // Fill remaining slots to reach 6-7 questions total
+  const targetCount = Math.min(7, 2 + categoryQuestions.length); // 2 universal + category questions
+  let remainingSlots = targetCount - selectedQuestions.length;
+  
+  if (remainingSlots > 0) {
+    selectedQuestions.push(...nonTriggeredQuestions.slice(0, remainingSlots));
   }
   
-  // Select 5 questions (prioritized first, then rest)
-  let selectedQuestions = [];
-  
-  // Add priority questions first
-  priorityIndices.forEach(idx => {
-    if (questions[idx]) selectedQuestions.push(questions[idx]);
-  });
-  
-  // Fill remaining slots with other questions
-  questions.forEach((q, idx) => {
-    if (!priorityIndices.includes(idx) && selectedQuestions.length < 5) {
-      selectedQuestions.push(q);
-    }
-  });
+  // Ensure we don't exceed 7 questions
+  if (selectedQuestions.length > 7) {
+    selectedQuestions = selectedQuestions.slice(0, 7);
+  }
   
   // Format questions for quiz renderer (compatible with existing UI)
-  return selectedQuestions.map((q, idx) => ({
-    id: `${bankKey.toLowerCase()}-q${idx + 1}`,
+  return selectedQuestions.map(q => ({
+    id: q.id,
     question: q.q,
     weight: q.weight,
+    errorType: q.errorType,
     context: q.context,
     options: [
       { label: 'Yes', value: 'yes', weight: q.weight },
@@ -3066,8 +3073,11 @@ function getSmartQuestions(category, text) {
 
 // Initialize targeted quiz based on bill category
 function initializeTargetedQuiz(category) {
-  // Get smart questions based on OCR analysis
-  const questions = getSmartQuestions(category, currentBillText || '');
+  // Build dynamic quiz using expert question bank with trigger matching
+  const questions = buildDynamicQuiz(category, currentBillText || '');
+  
+  console.log(`[Dynamic Quiz] Selected ${questions.length} questions for ${category}`);
+  console.log('[Dynamic Quiz] Question IDs:', questions.map(q => q.id).join(', '));
   
   const quizContainer = document.getElementById('quiz-container');
   const quizProgress = document.getElementById('quiz-progress');
@@ -3094,6 +3104,8 @@ function initializeTargetedQuiz(category) {
 
   let currentQuestion = 0;
   let totalPotentialSavings = 0;
+  let totalEstimatedSavings = 0; // Track estimated savings from "Yes" answers
+  let auditFindings = []; // Track error types and questions for AI analysis
   quizResponses = []; // Reset quiz responses
 
   function renderQuestion(index) {
@@ -3127,12 +3139,26 @@ function initializeTargetedQuiz(category) {
         const answer = btn.dataset.value;
         totalPotentialSavings += weight;
         
+        // Track audit findings for "Yes" answers
+        if (answer === 'yes' && weight > 0) {
+          totalEstimatedSavings += weight;
+          auditFindings.push({
+            errorType: q.errorType,
+            question: q.question,
+            weight: weight
+          });
+        }
+        
         // Store response for audit analysis
         quizResponses.push({
+          id: q.id,
           question: q.question,
           answer: answer,
-          weight: weight
+          weight: weight,
+          errorType: q.errorType
         });
+        
+        console.log(`[Quiz Response] ${q.id}: ${answer} (weight: ${weight}, errorType: ${q.errorType})`);
         
         btn.classList.add('selected');
         setTimeout(() => {
@@ -3140,6 +3166,7 @@ function initializeTargetedQuiz(category) {
             currentQuestion++;
             renderQuestion(currentQuestion);
           } else {
+            console.log(`[Quiz Complete] Total findings: ${auditFindings.length}, Estimated savings: $${totalEstimatedSavings}`);
             showResults();
           }
         }, 400);
@@ -3224,8 +3251,11 @@ function initializeTargetedQuiz(category) {
         violationCount: violationCount,
         finalVerdict: verdict,
         billTotal: billTotal,
-        category: currentBillCategory.category
+        category: currentBillCategory.category,
+        auditFindings: auditFindings // Store error types and questions from quiz
       };
+      
+      console.log('[Audit Results] Stored globally:', auditResults);
       
       // Display results
       quizAnalyzing.style.display = 'none';
