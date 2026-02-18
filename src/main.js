@@ -3078,15 +3078,22 @@ async function generateAIVerdict(extractedText, auditFindings, detectedAmount) {
   try {
     console.log('[Gemini API] Calling AI with audit findings:', auditFindings);
     
+    // Validate API key exists
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
-      console.error('[Gemini API] API key not found in environment variables');
+      console.error('[Gemini API] ❌ API Key is missing! Check .env file and VITE_GEMINI_API_KEY variable.');
       throw new Error('API key missing');
     }
     
+    console.log('[Gemini API] ✓ API Key detected (length:', apiKey.length, 'chars)');
+    
     const prompt = `You are an expert US Medical Billing Auditor. Analyze this OCR text from a medical bill: '${extractedText.substring(0, 500)}'. The user answered 'Yes' to these audit questions, flagging these potential errors: ${JSON.stringify(auditFindings)}. Based on a total bill of $${detectedAmount}, provide a JSON response with exactly these keys (NO Markdown, strictly valid JSON):\n{ "refundProbability": "High (85%)", "estimatedRefund": 450, "auditorNote": "3-sentence professional explanation of violations like Upcoding/Unbundling.", "recommendedTool": "ER Bill Disputer" }`;
     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    // Use stable v1 endpoint with query parameter authentication
+    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    console.log('[Gemini API] Calling URL: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=***');
+    
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -3100,12 +3107,16 @@ async function generateAIVerdict(extractedText, auditFindings, detectedAmount) {
       })
     });
     
+    console.log('[Gemini API] Response status:', response.status, response.statusText);
+    
     if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('[Gemini API] ❌ Error response body:', errorBody);
       throw new Error(`API request failed: ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
-    console.log('[Gemini API] Raw response:', data);
+    console.log('[Gemini API] ✓ Raw response received:', data);
     
     // Extract text from Gemini response
     let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
