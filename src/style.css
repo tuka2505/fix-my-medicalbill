@@ -2561,8 +2561,71 @@ a{ color:inherit; }
 
 /* Responsive */
 @media (max-width: 640px){
+  /* === 1. Hero Section & Typography (Apple-Style Minimalist) === */
+  .hero {
+    text-align: center !important;
+    padding: 16px !important;
+  }
+
+  .hero-title {
+    font-size: 26px !important;
+    line-height: 1.2;
+    margin-bottom: 8px !important;
+  }
+
+  .hero-sub, 
+  .hero-subtitle {
+    font-size: 14px !important;
+    margin: 0 auto 16px !important;
+    max-width: 100%;
+  }
+
+  /* === 2. Fix the "Stuck-to-the-Left" Stats Box === */
+  .hero-value-prop {
+    width: 100% !important;
+    margin: 12px 0 !important;
+    display: flex !important;
+    flex-direction: row !important; /* Ensure horizontal layout */
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 12px !important;
+    gap: 16px !important;
+  }
+
+  .stat-item {
+    flex: 1;
+    text-align: center;
+  }
+
+  .value-divider {
+    display: block !important; /* Restore divider if needed or hide it */
+    height: 30px !important;
+    width: 1px !important;
+    margin: 0 !important;
+  }
+
+  /* === 3. Hero Trust & Badges === */
+  .hero-trust {
+    justify-content: center !important;
+    font-size: 11px !important;
+    gap: 8px !important;
+    flex-wrap: wrap;
+  }
+
+  .alert-banner {
+    font-size: 11px !important;
+    padding: 8px !important;
+    display: inline-block; /* Center aligned */
+    margin: 0 auto 12px;
+  }
+
+  /* === 4. Pull Up the Blue Banner === */
+  .quick-auditor-section {
+    margin-top: 8px !important;
+  }
+
+  /* === Existing Mobile Styles === */
   .h1{ font-size: 38px; }
-  .hero{ padding: 18px 20px; }
   .header{ padding: 0 18px; }
   .main{ padding: calc(var(--header-offset) + 8px) 18px 120px; }
   
@@ -3336,5 +3399,75 @@ a{ color:inherit; }
   
   .guide-cta {
     padding: 32px 24px;
+  }
+}
+
+/* === MOBILE OVERRIDES (APPLE-STYLE MINIMALIST) === */
+/* Placed at the end to ensure priority over previous media queries */
+@media (max-width: 640px){
+  /* 1. Hero Section & Typography */
+  .hero {
+    text-align: center !important;
+    padding: 16px !important;
+  }
+
+  .hero-title {
+    font-size: 26px !important;
+    line-height: 1.2;
+    margin-bottom: 8px !important;
+  }
+
+  .hero-sub, 
+  .hero-subtitle {
+    font-size: 14px !important;
+    margin: 0 auto 16px !important;
+    max-width: 100%;
+  }
+
+  /* 2. Fix the "Stuck-to-the-Left" Stats Box */
+  .hero-value-prop {
+    width: 100% !important;
+    margin: 12px 0 !important;
+    display: flex !important;
+    flex-direction: row !important; /* Ensure horizontal layout */
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 12px !important;
+    gap: 16px !important;
+  }
+
+  .stat-item {
+    flex: 1;
+    text-align: center;
+  }
+
+  .value-divider {
+    display: block !important;
+    height: 30px !important;
+    width: 1px !important;
+    margin: 0 !important;
+  }
+
+  /* 3. Hero Trust & Badges */
+  .hero-trust {
+    flex-direction: row !important; /* Force row layout */
+    justify-content: center !important;
+    font-size: 11px !important;
+    gap: 8px !important;
+    flex-wrap: wrap;
+    margin-top: 12px !important;
+    padding-top: 12px !important;
+  }
+
+  .alert-banner {
+    font-size: 11px !important;
+    padding: 8px !important;
+    display: inline-block;
+    margin: 0 auto 12px;
+  }
+
+  /* 4. Pull Up the Blue Banner */
+  .quick-auditor-section {
+    margin-top: 8px !important;
   }
 }
