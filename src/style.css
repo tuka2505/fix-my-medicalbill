@@ -200,6 +200,25 @@ a{ color:inherit; }
   box-shadow: 0 14px 30px rgba(0,0,0,.06);
 }
 
+/* Mobile menu button (hidden by default) */
+.mobile-menu-btn{
+  display: none;
+  background: rgba(255,255,255,.72);
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.mobile-menu-btn:hover{
+  background: rgba(255,255,255,.90);
+  box-shadow: 0 10px 20px rgba(0,0,0,.08);
+}
+
 /* Layout */
 .main{
   max-width: var(--max);
@@ -1380,6 +1399,45 @@ a{ color:inherit; }
     --header-offset: 72px;
     --section-gap: 78px;
     --section-gap-sm: 62px;
+  }
+
+  /* Hide desktop navigation */
+  .desktop-nav{
+    display: none;
+  }
+
+  /* Show mobile menu button */
+  .mobile-menu-btn{
+    display: block;
+  }
+
+  /* Reduce spacing below header */
+  .main{
+    padding-top: calc(var(--header-offset) + 16px);
+  }
+
+  .hero{
+    padding: 28px 20px;
+    margin-top: 0;
+  }
+
+  /* Adjust hero title for mobile */
+  .hero-title{
+    font-size: 36px !important;
+  }
+
+  .hero-sub{
+    font-size: 16px !important;
+  }
+
+  .hero-actions{
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .hero-actions .btn-primary,
+  .hero-actions .btn-secondary{
+    width: 100%;
   }
 }
 

@@ -242,7 +242,8 @@ function renderHeader() {
           <span class="brand-badge" aria-hidden="true"></span>
           <span>FixMyMedicalBill</span>
         </a>
-        <nav class="nav">
+        <button class="mobile-menu-btn" aria-label="Toggle menu">☰</button>
+        <nav class="nav desktop-nav">
           <a href="/#tools">Tools</a>
           <a href="/#resources">Resources</a>
           <a href="/faq" data-route="/faq">FAQ</a>
