@@ -397,39 +397,67 @@ function renderSuccessStories() {
 
 function renderQuickAuditor() {
   return `
-    <section class="quick-auditor-section">
+    <section id="quick-auditor" class="quick-auditor-section">
       <div class="auditor-container">
         <div class="auditor-header">
-          <h2 class="auditor-title">Not sure if you were overcharged?</h2>
-          <p class="auditor-subtitle">Our 30-Second Quick Auditor helps identify billing errors before you pay.</p>
+          <h2 class="auditor-title">Find Your Hidden Medical Refund</h2>
+          <p class="auditor-subtitle">Answer 4 quick questions to estimate your potential recovery amount</p>
         </div>
-        <button class="auditor-cta-btn" onclick="window.location.href='/medical-bill-dispute-letter'" data-route="/medical-bill-dispute-letter">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-            <path d="M9 11l3 3L22 4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-          </svg>
-          Check My Bill for Errors
-        </button>
-        <div class="auditor-features">
-          <div class="auditor-feature">
+        
+        <!-- Progress Bar -->
+        <div class="quiz-progress-container">
+          <div class="quiz-progress-bar">
+            <div class="quiz-progress-fill" id="quiz-progress"></div>
+          </div>
+          <div class="quiz-progress-text" id="quiz-progress-text">Question 1 of 4</div>
+        </div>
+
+        <!-- Quiz Container -->
+        <div class="quiz-container" id="quiz-container">
+          <!-- Questions will be injected here by JavaScript -->
+        </div>
+
+        <!-- Result Container (hidden initially) -->
+        <div class="quiz-result-container" id="quiz-result" style="display: none;">
+          <div class="quiz-analyzing" id="quiz-analyzing">
+            <div class="analyzing-spinner"></div>
+            <p class="analyzing-text">Analyzing your bill...</p>
+          </div>
+          
+          <div class="quiz-final-result" id="quiz-final" style="display: none;">
+            <div class="result-badge">Estimated Recovery</div>
+            <div class="result-amount" id="result-amount">$0</div>
+            <p class="result-description">Based on your answers, you may be entitled to recover this amount from billing errors and overcharges.</p>
+            <button class="result-cta-btn" id="quiz-cta-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+              Start My Dispute Now
+            </button>
+            <button class="result-reset-btn" id="quiz-reset-btn">Start Over</button>
+          </div>
+        </div>
+
+        <div class="auditor-trust">
+          <div class="trust-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
+            </svg>
+            <span>100% Private</span>
+          </div>
+          <div class="trust-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
+              <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <span>98% AI Accuracy</span>
+          </div>
+          <div class="trust-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
               <path d="M12 6v6l4 2" stroke-width="1.5" stroke-linecap="round"></path>
             </svg>
-            <span>Takes 30 seconds</span>
-          </div>
-          <div class="auditor-feature">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="1.5"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-width="1.5" stroke-linecap="round"></path>
-            </svg>
-            <span>100% Private</span>
-          </div>
-          <div class="auditor-feature">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
-            </svg>
-            <span>No Email Required</span>
+            <span>Takes 30 Seconds</span>
           </div>
         </div>
       </div>
@@ -439,10 +467,60 @@ function renderQuickAuditor() {
 
 function renderToolsSection(cards) {
   return `
-    <section id="tools" class="section">
+    <section id="situational-tools" class="situational-tools-section">
+      <div class="situational-header">
+        <h2 class="h2">Start with Your Situation</h2>
+        <p class="situational-subtitle">Choose the dispute tool that matches your medical bill issue</p>
+      </div>
+      <div class="situational-cards">
+        <a href="/urgent-care-bill-dispute" class="situation-card-large" data-route="/urgent-care-bill-dispute">
+          <div class="card-icon-large">🏥</div>
+          <div class="card-content-large">
+            <h3 class="card-title-large">ER Bill Review</h3>
+            <p class="card-desc-large">Challenge emergency room overcharges and facility fees</p>
+            <div class="card-stat">Avg Recovery: <strong>$850</strong></div>
+          </div>
+          <svg class="card-arrow-large" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </a>
+        <a href="/out-of-network-billing-dispute" class="situation-card-large" data-route="/out-of-network-billing-dispute">
+          <div class="card-icon-large">🚑</div>
+          <div class="card-content-large">
+            <h3 class="card-title-large">Ambulance Bill Dispute</h3>
+            <p class="card-desc-large">Fight surprise ambulance charges under No Surprises Act</p>
+            <div class="card-stat">Avg Recovery: <strong>$650</strong></div>
+          </div>
+          <svg class="card-arrow-large" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </a>
+        <a href="/medical-bill-dispute-letter" class="situation-card-large" data-route="/medical-bill-dispute-letter">
+          <div class="card-icon-large">📋</div>
+          <div class="card-content-large">
+            <h3 class="card-title-large">Hospital Bill Audit</h3>
+            <p class="card-desc-large">Request itemized bill review and code verification</p>
+            <div class="card-stat">Avg Recovery: <strong>$720</strong></div>
+          </div>
+          <svg class="card-arrow-large" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </a>
+      </div>
+      <div class="browse-all-container">
+        <button class="browse-all-btn" onclick="document.getElementById('all-tools').scrollIntoView({behavior: 'smooth', block: 'start'})">
+          Explore All 8+ Medical Audit Tools
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <section id="all-tools" class="section tools-grid-section">
       <div class="tools-header">
-        <h2 class="h2">Explore 8+ Specialized Dispute Tools</h2>
-        <p class="tools-subtitle">Choose the tool that matches your billing situation</p>
+        <h2 class="h2">All Medical Dispute Tools</h2>
+        <p class="tools-subtitle">Complete toolkit for fighting medical billing errors</p>
       </div>
       <div class="grid">
         ${cards}
@@ -2344,6 +2422,7 @@ function router() {
       }
     }, 100);
     bindNavigation();
+    setupQuizLogic(); // Initialize quiz
     return;
   }
   
@@ -2356,6 +2435,11 @@ function router() {
   }
 
   bindNavigation();
+  
+  // Initialize quiz if on home page
+  if (normalizedPath === "/") {
+    setupQuizLogic();
+  }
 
   // 기존 setupTool 호출부 유지
   setupTool({
@@ -2423,6 +2507,170 @@ function router() {
     generate: generatePriorAuthContent,
   });
 }
+
+// ========== INTERACTIVE QUIZ LOGIC ==========
+
+function setupQuizLogic() {
+  const quizContainer = document.getElementById('quiz-container');
+  const quizResult = document.getElementById('quiz-result');
+  const quizProgress = document.getElementById('quiz-progress');
+  const quizProgressText = document.getElementById('quiz-progress-text');
+  const quizAnalyzing = document.getElementById('quiz-analyzing');
+  const quizFinal = document.getElementById('quiz-final');
+  const resultAmount = document.getElementById('result-amount');
+  const quizCtaBtn = document.getElementById('quiz-cta-btn');
+  const quizResetBtn = document.getElementById('quiz-reset-btn');
+
+  if (!quizContainer) return; // Exit if not on home page
+
+  let currentQuestion = 0;
+  let totalAmount = 0;
+  let selectedServiceRoute = '/medical-bill-dispute-letter';
+
+  const questions = [
+    {
+      id: 'service-type',
+      question: 'What type of medical service did you receive?',
+      options: [
+        { label: 'Emergency Room Visit', value: 'ER', amount: 250, route: '/urgent-care-bill-dispute' },
+        { label: 'Ambulance Transport', value: 'Ambulance', amount: 150, route: '/out-of-network-billing-dispute' },
+        { label: 'Surgery or Procedure', value: 'Surgery', amount: 400, route: '/medical-bill-dispute-letter' },
+        { label: 'General Doctor Visit', value: 'General', amount: 100, route: '/medical-bill-dispute-letter' }
+      ]
+    },
+    {
+      id: 'overnight-stay',
+      question: 'Did you have an overnight hospital stay?',
+      options: [
+        { label: 'Yes', value: 'Yes', amount: 300 },
+        { label: 'No', value: 'No', amount: 0 }
+      ]
+    },
+    {
+      id: 'itemized-bill',
+      question: 'Have you received an itemized bill?',
+      options: [
+        { label: 'No / Not Sure', value: 'No', amount: 200 },
+        { label: 'Yes', value: 'Yes', amount: 0 }
+      ]
+    },
+    {
+      id: 'out-of-network',
+      question: 'Was any provider out-of-network?',
+      options: [
+        { label: 'Yes', value: 'Yes', amount: 350 },
+        { label: 'No', value: 'No', amount: 0 }
+      ]
+    }
+  ];
+
+  function renderQuestion(index) {
+    const q = questions[index];
+    const progressPercent = ((index + 1) / questions.length) * 100;
+    
+    quizProgress.style.width = `${progressPercent}%`;
+    quizProgressText.textContent = `Question ${index + 1} of ${questions.length}`;
+
+    quizContainer.innerHTML = `
+      <div class=\"quiz-question\">
+        <h3 class=\"question-title\">${q.question}</h3>
+        <div class=\"quiz-options\">
+          ${q.options.map((opt, i) => `
+            <button class=\"quiz-option-btn\" data-index=\"${i}\" data-amount=\"${opt.amount}\" data-route=\"${opt.route || ''}\">
+              <span class=\"option-label\">${opt.label}</span>
+              <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\">
+                <path d=\"M9 18l6-6-6-6\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path>
+              </svg>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    // Attach event listeners to option buttons
+    const optionButtons = quizContainer.querySelectorAll('.quiz-option-btn');
+    optionButtons.forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        const amount = parseInt(btn.getAttribute('data-amount'));
+        const route = btn.getAttribute('data-route');
+        
+        // Add amount to total
+        totalAmount += amount;
+        
+        // Store route from first question
+        if (index === 0 && route) {
+          selectedServiceRoute = route;
+        }
+
+        // Add selected state animation
+        btn.classList.add('selected');
+        
+        // Move to next question after brief delay
+        setTimeout(() => {
+          currentQuestion++;
+          if (currentQuestion < questions.length) {
+            renderQuestion(currentQuestion);
+          } else {
+            showResults();
+          }
+        }, 300);
+      });
+    });
+  }
+
+  function showResults() {
+    quizContainer.style.display = 'none';
+    quizResult.style.display = 'block';
+    quizAnalyzing.style.display = 'flex';
+    quizFinal.style.display = 'none';
+
+    // Show analyzing animation for 2 seconds
+    setTimeout(() => {
+      quizAnalyzing.style.display = 'none';
+      quizFinal.style.display = 'flex';
+      
+      // Animate the amount
+      animateAmount(totalAmount);
+      
+      // Set CTA button route
+      quizCtaBtn.onclick = () => {
+        navigate(selectedServiceRoute);
+      };
+    }, 2000);
+  }
+
+  function animateAmount(target) {
+    let current = 0;
+    const increment = Math.ceil(target / 30);
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        current = target;
+        clearInterval(timer);
+      }
+      resultAmount.textContent = `$${current.toLocaleString()}`;
+    }, 30);
+  }
+
+  function resetQuiz() {
+    currentQuestion = 0;
+    totalAmount = 0;
+    selectedServiceRoute = '/medical-bill-dispute-letter';
+    quizContainer.style.display = 'block';
+    quizResult.style.display = 'none';
+    renderQuestion(0);
+  }
+
+  // Reset button handler
+  if (quizResetBtn) {
+    quizResetBtn.addEventListener('click', resetQuiz);
+  }
+
+  // Initialize quiz
+  renderQuestion(0);
+}
+
+// ========== END QUIZ LOGIC ==========
 
 window.addEventListener("popstate", router);
 router();
