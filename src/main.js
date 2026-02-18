@@ -291,43 +291,6 @@ function renderHero() {
           </div>
         </div>
 
-        <!-- Situation-based CTA -->
-        <div class="hero-situation">
-          <h2 class="situation-title">Start with Your Situation</h2>
-          <div class="situation-cards">
-            <a href="/urgent-care-bill-dispute" class="situation-card" data-route="/urgent-care-bill-dispute">
-              <div class="card-icon">🏥</div>
-              <div class="card-content">
-                <h3 class="card-title">ER Bill Review</h3>
-                <p class="card-desc">Challenge emergency room overcharges</p>
-              </div>
-              <svg class="card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-              </svg>
-            </a>
-            <a href="/out-of-network-billing-dispute" class="situation-card" data-route="/out-of-network-billing-dispute">
-              <div class="card-icon">🚑</div>
-              <div class="card-content">
-                <h3 class="card-title">Ambulance Bill Dispute</h3>
-                <p class="card-desc">Fight surprise ambulance charges</p>
-              </div>
-              <svg class="card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-              </svg>
-            </a>
-            <a href="/medical-bill-dispute-letter" class="situation-card" data-route="/medical-bill-dispute-letter">
-              <div class="card-icon">📋</div>
-              <div class="card-content">
-                <h3 class="card-title">Hospital Bill Audit</h3>
-                <p class="card-desc">Request itemized bill review</p>
-              </div>
-              <svg class="card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-              </svg>
-            </a>
-          </div>
-        </div>
-
         <!-- Trust Indicators -->
         <div class="hero-trust">
           <div class="trust-badge">
@@ -399,21 +362,16 @@ function renderQuickAuditor() {
   return `
     <section id="quick-auditor" class="quick-auditor-section">
       <div class="auditor-container">
-        <!-- CTA Box (Always Visible) -->
-        <div class="auditor-cta-box" id="auditor-cta-box">
-          <div class="cta-box-icon">💰</div>
-          <h3 class="cta-box-title">Not sure if you were overcharged?</h3>
-          <p class="cta-box-subtitle">Answer 4 quick questions to find out how much you could recover</p>
-          <button class="cta-box-btn" id="start-quiz-btn">
-            Check My Bill for Errors
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-            </svg>
-          </button>
-          <div class="cta-box-trust">
-            <span>✓ 100% Free</span>
-            <span>✓ No Signup Required</span>
-            <span>✓ Takes 30 Seconds</span>
+        <!-- Slim Auditor Bar (Always Visible) -->
+        <div class="slim-auditor-bar" id="auditor-cta-box">
+          <div class="slim-bar-content">
+            <span class="slim-bar-text">Not sure if you were overcharged?</span>
+            <button class="slim-bar-btn" id="start-quiz-btn">
+              Check My Bill
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -489,10 +447,6 @@ function renderQuickAuditor() {
 function renderSituationalCards() {
   return `
     <section id="situational-tools" class="situational-tools-section">
-      <div class="situational-header">
-        <h2 class="h2">Start with Your Situation</h2>
-        <p class="situational-subtitle">Choose the dispute tool that matches your medical bill issue</p>
-      </div>
       <div class="situational-cards">
         <a href="/urgent-care-bill-dispute" class="situation-card-large" data-route="/urgent-care-bill-dispute">
           <div class="card-icon-large">🏥</div>
@@ -1674,6 +1628,8 @@ function renderHomePage() {
       <main class="main">
         ${renderHero()}
         ${renderQuickAuditor()}
+        ${renderSituationalCards()}
+        ${renderBrowseButton()}
         ${renderFullToolsGrid(cards)}
         ${renderSuccessStories()}
         ${renderResourcesSection()}
