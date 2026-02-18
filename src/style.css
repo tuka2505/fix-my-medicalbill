@@ -1341,6 +1341,28 @@ a{ color:inherit; }
   font-weight: 500;
 }
 
+/* AI Auditor's Note */
+.auditor-note{
+  width: 100%;
+  max-width: 550px;
+  padding: 24px 28px;
+  margin: 8px auto 20px;
+  background: rgba(0,113,227,0.04);
+  border: 1px solid rgba(0,113,227,0.12);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.auditor-note p{
+  font-size: 15px;
+  line-height: 1.7;
+  color: #6e6e73;
+  margin: 0;
+  text-align: center;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
 /* Auditor Trust Row */
 .auditor-trust{
   display: flex;
@@ -2727,6 +2749,16 @@ a{ color:inherit; }
     font-size: 13px;
   }
 
+  .auditor-note{
+    padding: 18px 20px;
+    margin: 6px auto 16px;
+  }
+
+  .auditor-note p{
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
   .situation-card-large{
     flex-direction: column;
     align-items: flex-start;
@@ -2958,6 +2990,16 @@ a{ color:inherit; }
   .audit-summary,
   .audit-verdict{
     font-size: 14px;
+  }
+
+  .auditor-note{
+    padding: 20px 24px;
+    margin: 8px auto 18px;
+  }
+
+  .auditor-note p{
+    font-size: 14px;
+    line-height: 1.65;
   }
 
   .result-amount{

@@ -3071,6 +3071,78 @@ function buildDynamicQuiz(category, extractedText) {
   }));
 }
 
+// ========== GEMINI AI INTEGRATION ==========
+
+// Generate AI-powered audit verdict using Gemini 1.5 Flash
+async function generateAIVerdict(extractedText, auditFindings, detectedAmount) {
+  try {
+    console.log('[Gemini API] Calling AI with audit findings:', auditFindings);
+    
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error('[Gemini API] API key not found in environment variables');
+      throw new Error('API key missing');
+    }
+    
+    const prompt = `You are an expert US Medical Billing Auditor. Analyze this OCR text from a medical bill: '${extractedText.substring(0, 500)}'. The user answered 'Yes' to these audit questions, flagging these potential errors: ${JSON.stringify(auditFindings)}. Based on a total bill of $${detectedAmount}, provide a JSON response with exactly these keys (NO Markdown, strictly valid JSON):\n{ "refundProbability": "High (85%)", "estimatedRefund": 450, "auditorNote": "3-sentence professional explanation of violations like Upcoding/Unbundling.", "recommendedTool": "ER Bill Disputer" }`;
+    
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }]
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log('[Gemini API] Raw response:', data);
+    
+    // Extract text from Gemini response
+    let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    if (!aiText) {
+      throw new Error('No text in API response');
+    }
+    
+    // Clean markdown code blocks (```json ... ```)
+    aiText = aiText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    
+    console.log('[Gemini API] Cleaned response:', aiText);
+    
+    // Parse JSON
+    const aiVerdict = JSON.parse(aiText);
+    
+    console.log('[Gemini API] Parsed verdict:', aiVerdict);
+    return aiVerdict;
+    
+  } catch (error) {
+    console.error('[Gemini API] Error:', error);
+    
+    // Fallback: Calculate refund from auditFindings weights
+    const fallbackRefund = auditFindings.reduce((sum, finding) => sum + finding.weight, 0);
+    const probabilityPercent = Math.min(Math.round((auditFindings.length / 7) * 100), 95);
+    
+    console.log('[Gemini API] Using fallback calculation: $', fallbackRefund);
+    
+    return {
+      refundProbability: probabilityPercent >= 70 ? `High (${probabilityPercent}%)` : `Moderate (${probabilityPercent}%)`,
+      estimatedRefund: fallbackRefund,
+      auditorNote: `Based on your responses, we identified ${auditFindings.length} potential billing violation${auditFindings.length > 1 ? 's' : ''} worth investigating. Common issues include incorrect coding, unbundled charges, and facility fee errors. These findings suggest significant overcharges that warrant a formal dispute.`,
+      recommendedTool: currentBillCategory?.category || 'Medical Bill Dispute Letter'
+    };
+  }
+}
+
 // Initialize targeted quiz based on bill category
 function initializeTargetedQuiz(category) {
   // Build dynamic quiz using expert question bank with trigger matching
@@ -3180,157 +3252,203 @@ function initializeTargetedQuiz(category) {
     quizAnalyzing.style.display = 'flex';
     quizFinal.style.display = 'none';
 
-    setTimeout(() => {
-      // ========== COMBINED AUDIT ENGINE ==========
-      
-      // Run AI flag detection
-      const upcodingFlag = detectUpcoding(currentBillCategory.category, currentBillText, quizResponses);
-      const unbundlingFlag = detectUnbundling(currentBillCategory.category, currentBillText, quizResponses);
-      const mathErrorFlag = detectMathErrors(currentBillText);
-      const timeErrorFlag = detectTimeErrors(currentBillCategory.category, currentBillText, quizResponses);
-      
-      // Collect detected flags
-      const detectedFlags = [];
-      let aiImpact = 0;
-      
-      if (upcodingFlag.detected) {
-        detectedFlags.push(upcodingFlag);
-        aiImpact += upcodingFlag.impact;
-      }
-      if (unbundlingFlag.detected) {
-        detectedFlags.push(unbundlingFlag);
-        aiImpact += unbundlingFlag.impact;
-      }
-      if (mathErrorFlag.detected) {
-        detectedFlags.push(mathErrorFlag);
-        aiImpact += mathErrorFlag.impact;
-      }
-      if (timeErrorFlag.detected) {
-        detectedFlags.push(timeErrorFlag);
-        aiImpact += timeErrorFlag.impact;
-      }
-      
-      // Calculate adjustment multiplier
-      const adjustmentMultiplier = detectedFlags.length > 0 ? 1.2 : 1.0;
-      
-      // Calculate initial savings from quiz responses
-      const initialSavings = totalPotentialSavings + aiImpact;
-      
-      // Calculate final refund with 40% cap
-      const billTotal = detectedAmount ? parseFloat(detectedAmount.replace(/,/g, '')) : 0;
-      const maxRefund = billTotal * 0.4;
-      const calculatedRefund = initialSavings * adjustmentMultiplier;
-      const finalRefund = Math.min(Math.round(calculatedRefund), Math.round(maxRefund));
-      
-      // Calculate error probability (0-100%)
-      const violationCount = detectedFlags.length + quizResponses.filter(r => r.answer === 'yes').length;
-      const errorProbability = Math.min(Math.round((violationCount / (questions.length + 4)) * 100), 95);
-      
-      // Generate final verdict
-      let verdict = '';
-      if (detectedFlags.length > 0) {
-        const flagDescriptions = detectedFlags.map(f => f.description.split('(')[0].trim()).join(', ');
-        verdict = `Our audit detected ${detectedFlags.length} billing violation${detectedFlags.length > 1 ? 's' : ''}: ${flagDescriptions}. `;
-      }
-      
-      if (errorProbability >= 70) {
-        verdict += `With ${errorProbability}% likelihood of billing errors based on your responses, you have a strong case for disputing these charges.`;
-      } else if (errorProbability >= 40) {
-        verdict += `Based on your bill analysis, there is a ${errorProbability}% probability of recoverable overcharges that warrant further investigation.`;
-      } else {
-        verdict += `While some potential issues were identified, additional documentation may strengthen your dispute case.`;
-      }
-      
-      // Store audit results globally
-      auditResults = {
-        detectedFlags: detectedFlags,
-        errorProbability: errorProbability,
-        estimatedRefund: finalRefund,
-        initialSavings: initialSavings,
-        adjustmentMultiplier: adjustmentMultiplier,
-        violationCount: violationCount,
-        finalVerdict: verdict,
-        billTotal: billTotal,
-        category: currentBillCategory.category,
-        auditFindings: auditFindings // Store error types and questions from quiz
-      };
-      
-      console.log('[Audit Results] Stored globally:', auditResults);
-      
-      // Display results
-      quizAnalyzing.style.display = 'none';
-      quizFinal.style.display = 'flex';
-      
-      // Update result UI with detailed breakdown
-      const resultBadge = document.querySelector('.result-badge');
-      const resultDescription = document.querySelector('.result-description');
-      
-      if (resultBadge) {
-        const probabilityClass = errorProbability >= 70 ? 'high-probability' : 'moderate-probability';
-        resultBadge.innerHTML = `
-          <span class="probability-badge ${probabilityClass}">${errorProbability}% Likelihood of Refund</span>
-        `;
-      }
-      
-      if (resultDescription) {
-        let breakdownHtml = '<div class="audit-breakdown">';
+    // Call Gemini AI and wait for response
+    (async () => {
+      try {
+        // ========== COMBINED AUDIT ENGINE ==========
         
-        // Document Audit Section
-        if (detectedFlags.length > 0) {
-          breakdownHtml += '<div class="audit-section"><h4 class="audit-section-title">Document Audit</h4>';
-          detectedFlags.forEach(flag => {
-            const severityClass = flag.severity === 'high' ? 'flag-high' : 'flag-moderate';
-            breakdownHtml += `
-              <div class="audit-flag ${severityClass}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                  <line x1="12" y1="9" x2="12" y2="13" stroke-width="2" stroke-linecap="round"></line>
-                  <line x1="12" y1="17" x2="12.01" y2="17" stroke-width="2" stroke-linecap="round"></line>
-                </svg>
-                <span>${flag.description}</span>
-              </div>
-            `;
-          });
-          breakdownHtml += '</div>';
+        // Run AI flag detection
+        const upcodingFlag = detectUpcoding(currentBillCategory.category, currentBillText, quizResponses);
+        const unbundlingFlag = detectUnbundling(currentBillCategory.category, currentBillText, quizResponses);
+        const mathErrorFlag = detectMathErrors(currentBillText);
+        const timeErrorFlag = detectTimeErrors(currentBillCategory.category, currentBillText, quizResponses);
+        
+        // Collect detected flags
+        const detectedFlags = [];
+        let aiImpact = 0;
+        
+        if (upcodingFlag.detected) {
+          detectedFlags.push(upcodingFlag);
+          aiImpact += upcodingFlag.impact;
+        }
+        if (unbundlingFlag.detected) {
+          detectedFlags.push(unbundlingFlag);
+          aiImpact += unbundlingFlag.impact;
+        }
+        if (mathErrorFlag.detected) {
+          detectedFlags.push(mathErrorFlag);
+          aiImpact += mathErrorFlag.impact;
+        }
+        if (timeErrorFlag.detected) {
+          detectedFlags.push(timeErrorFlag);
+          aiImpact += timeErrorFlag.impact;
         }
         
-        // Experience Audit Section
-        const yesCount = quizResponses.filter(r => r.answer === 'yes').length;
-        if (yesCount > 0) {
-          breakdownHtml += `
-            <div class="audit-section">
-              <h4 class="audit-section-title">Experience Audit</h4>
-              <p class="audit-summary">Based on your responses, we found <strong>${yesCount} violation${yesCount > 1 ? 's' : ''}</strong> of standard billing practices that support your dispute.</p>
-            </div>
+        // Calculate adjustment multiplier
+        const adjustmentMultiplier = detectedFlags.length > 0 ? 1.2 : 1.0;
+        
+        // Calculate initial savings from quiz responses
+        const initialSavings = totalPotentialSavings + aiImpact;
+        
+        // Calculate final refund with 40% cap
+        const billTotal = detectedAmount ? parseFloat(detectedAmount.replace(/,/g, '')) : 0;
+        const maxRefund = billTotal * 0.4;
+        const calculatedRefund = initialSavings * adjustmentMultiplier;
+        let finalRefund = Math.min(Math.round(calculatedRefund), Math.round(maxRefund));
+        
+        // ========== GEMINI AI VERDICT ==========
+        
+        // Call Gemini API for AI-generated verdict
+        const aiVerdict = await generateAIVerdict(
+          currentBillText || 'No text extracted',
+          auditFindings,
+          detectedAmount || '0'
+        );
+        
+        console.log('[AI Verdict] Received:', aiVerdict);
+        
+        // Override finalRefund with AI estimate if available
+        if (aiVerdict.estimatedRefund && aiVerdict.estimatedRefund > 0) {
+          finalRefund = Math.min(aiVerdict.estimatedRefund, Math.round(maxRefund));
+        }
+        
+        // Calculate error probability (0-100%)
+        const violationCount = detectedFlags.length + quizResponses.filter(r => r.answer === 'yes').length;
+        const errorProbability = Math.min(Math.round((violationCount / (questions.length + 4)) * 100), 95);
+        
+        // Generate final verdict (use AI note if available)
+        let verdict = aiVerdict.auditorNote || '';
+        
+        if (!verdict) {
+          if (detectedFlags.length > 0) {
+            const flagDescriptions = detectedFlags.map(f => f.description.split('(')[0].trim()).join(', ');
+            verdict = `Our audit detected ${detectedFlags.length} billing violation${detectedFlags.length > 1 ? 's' : ''}: ${flagDescriptions}. `;
+          }
+          
+          if (errorProbability >= 70) {
+            verdict += `With ${errorProbability}% likelihood of billing errors based on your responses, you have a strong case for disputing these charges.`;
+          } else if (errorProbability >= 40) {
+            verdict += `Based on your bill analysis, there is a ${errorProbability}% probability of recoverable overcharges that warrant further investigation.`;
+          } else {
+            verdict += `While some potential issues were identified, additional documentation may strengthen your dispute case.`;
+          }
+        }
+        
+        // Store audit results globally
+        auditResults = {
+          detectedFlags: detectedFlags,
+          errorProbability: errorProbability,
+          estimatedRefund: finalRefund,
+          initialSavings: initialSavings,
+          adjustmentMultiplier: adjustmentMultiplier,
+          violationCount: violationCount,
+          finalVerdict: verdict,
+          billTotal: billTotal,
+          category: currentBillCategory.category,
+          auditFindings: auditFindings, // Store error types and questions from quiz
+          aiVerdict: aiVerdict // Store full AI response
+        };
+        
+        console.log('[Audit Results] Stored globally:', auditResults);
+        
+        // Display results
+        quizAnalyzing.style.display = 'none';
+        quizFinal.style.display = 'flex';
+        
+        // Update result UI with AI-powered breakdown
+        const resultBadge = document.querySelector('.result-badge');
+        const resultDescription = document.querySelector('.result-description');
+        
+        if (resultBadge) {
+          // Use AI refundProbability if available
+          const probabilityText = aiVerdict.refundProbability || `${errorProbability}% Likelihood of Refund`;
+          const probabilityClass = (aiVerdict.refundProbability && aiVerdict.refundProbability.includes('High')) || errorProbability >= 70 ? 'high-probability' : 'moderate-probability';
+          resultBadge.innerHTML = `
+            <span class="probability-badge ${probabilityClass}">Auditor's Verdict: ${probabilityText}</span>
           `;
         }
         
-        // Final Verdict Section
-        breakdownHtml += `
-          <div class="audit-section">
-            <h4 class="audit-section-title">Final Verdict</h4>
-            <p class="audit-verdict">${verdict}</p>
-          </div>
-        `;
+        if (resultDescription) {
+          let breakdownHtml = '<div class="audit-breakdown">';
+          
+          // AI Auditor's Note (NEW)
+          if (aiVerdict.auditorNote) {
+            breakdownHtml += `
+              <div class="auditor-note">
+                <p>${aiVerdict.auditorNote}</p>
+              </div>
+            `;
+          }
+          
+          // Document Audit Section
+          if (detectedFlags.length > 0) {
+            breakdownHtml += '<div class="audit-section"><h4 class="audit-section-title">Document Audit</h4>';
+            detectedFlags.forEach(flag => {
+              const severityClass = flag.severity === 'high' ? 'flag-high' : 'flag-moderate';
+              breakdownHtml += `
+                <div class="audit-flag ${severityClass}">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <line x1="12" y1="9" x2="12" y2="13" stroke-width="2" stroke-linecap="round"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17" stroke-width="2" stroke-linecap="round"></line>
+                  </svg>
+                  <span>${flag.description}</span>
+                </div>
+              `;
+            });
+            breakdownHtml += '</div>';
+          }
+          
+          // Experience Audit Section
+          const yesCount = quizResponses.filter(r => r.answer === 'yes').length;
+          if (yesCount > 0) {
+            breakdownHtml += `
+              <div class="audit-section">
+                <h4 class="audit-section-title">Experience Audit</h4>
+                <p class="audit-summary">Based on your responses, we found <strong>${yesCount} violation${yesCount > 1 ? 's' : ''}</strong> of standard billing practices that support your dispute.</p>
+              </div>
+            `;
+          }
+          
+          breakdownHtml += '</div>';
+          resultDescription.innerHTML = breakdownHtml;
+        }
         
-        breakdownHtml += '</div>';
-        resultDescription.innerHTML = breakdownHtml;
-      }
-      
-      animateAmount(finalRefund);
+        animateAmount(finalRefund);
 
-      if (quizCtaBtn) {
-        quizCtaBtn.onclick = () => {
-          navigate(currentBillCategory.route);
-        };
-      }
+        if (quizCtaBtn) {
+          // Update button text if AI recommended a specific tool
+          if (aiVerdict.recommendedTool) {
+            const btnText = quizCtaBtn.querySelector('span') || quizCtaBtn;
+            const originalText = btnText.textContent || 'Start My Dispute Now';
+            if (!originalText.includes(aiVerdict.recommendedTool)) {
+              quizCtaBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Start ${aiVerdict.recommendedTool}
+              `;
+            }
+          }
+          
+          quizCtaBtn.onclick = () => {
+            navigate(currentBillCategory.route);
+          };
+        }
 
-      if (quizResetBtn) {
-        quizResetBtn.onclick = () => {
-          location.reload();
-        };
+        if (quizResetBtn) {
+          quizResetBtn.onclick = () => {
+            location.reload();
+          };
+        }
+        
+      } catch (error) {
+        console.error('[showResults] Error:', error);
+        // If there's a critical error, still show results with fallback data
+        quizAnalyzing.style.display = 'none';
+        quizFinal.style.display = 'flex';
       }
-    }, 2000);
+    })();
   }
 
   function animateAmount(target) {
