@@ -3402,72 +3402,101 @@ a{ color:inherit; }
   }
 }
 
-/* === MOBILE OVERRIDES (APPLE-STYLE MINIMALIST) === */
-/* Placed at the end to ensure priority over previous media queries */
-@media (max-width: 640px){
-  /* 1. Hero Section & Typography */
+/* === MOBILE OVERRIDES (APPLE-STYLE MINIMALIST - FINAL FIX) === */
+/* 1. Global Mobile Fix to prevent right-side clipping */
+html, body {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  position: relative;
+}
+
+@media (max-width: 640px) {
+  /* 2. Hero Section: Center everything and fix font sizes */
   .hero {
     text-align: center !important;
-    padding: 16px !important;
+    padding: 24px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
   }
-
   .hero-title {
-    font-size: 26px !important;
-    line-height: 1.2;
-    margin-bottom: 8px !important;
+    font-size: 28px !important;
+    line-height: 1.2 !important;
+    margin-bottom: 12px !important;
+    word-break: keep-all;
   }
-
-  .hero-sub, 
   .hero-subtitle {
-    font-size: 14px !important;
-    margin: 0 auto 16px !important;
-    max-width: 100%;
+    font-size: 15px !important;
+    margin: 0 auto 20px !important;
   }
 
-  /* 2. Fix the "Stuck-to-the-Left" Stats Box */
+  /* 3. Stats Box: Center $450 and other items */
   .hero-value-prop {
     width: 100% !important;
-    margin: 12px 0 !important;
     display: flex !important;
-    flex-direction: row !important; /* Ensure horizontal layout */
-    justify-content: center !important;
+    flex-direction: column !important;
     align-items: center !important;
-    padding: 12px !important;
-    gap: 16px !important;
+    gap: 12px !important;
+    padding: 20px !important;
+    margin: 16px 0 !important;
   }
-
   .stat-item {
-    flex: 1;
-    text-align: center;
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+    padding: 8px 0 !important;
+    text-align: center !important;
+  }
+  .stat-item:last-child { border-bottom: none !important; }
+
+  /* 4. Tool Pages: Center Input Fields inside White Cards */
+  .tool-shell {
+    padding: 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .tool-panel {
+    width: 100% !important;
+    padding: 20px !important; /* Balanced padding */
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+  }
+  .field {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin-bottom: 20px !important;
+  }
+  .field label {
+    align-self: flex-start !important; /* Label stays left for readability */
+    margin-left: 4px;
+    width: 100%;
+  }
+  input, select, textarea {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important; /* Essential for alignment */
   }
 
-  .value-divider {
-    display: block !important;
-    height: 30px !important;
-    width: 1px !important;
-    margin: 0 !important;
+  /* 5. Button & Spacing Fixes */
+  .form-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
   }
-
-  /* 3. Hero Trust & Badges */
-  .hero-trust {
-    flex-direction: row !important; /* Force row layout */
+  .btn {
+    width: 100% !important;
     justify-content: center !important;
-    font-size: 11px !important;
-    gap: 8px !important;
-    flex-wrap: wrap;
-    margin-top: 12px !important;
-    padding-top: 12px !important;
   }
-
-  .alert-banner {
-    font-size: 11px !important;
-    padding: 8px !important;
-    display: inline-block;
-    margin: 0 auto 12px;
-  }
-
-  /* 4. Pull Up the Blue Banner */
   .quick-auditor-section {
-    margin-top: 8px !important;
+    margin-top: 16px !important;
+    padding: 24px 16px !important;
+  }
+  
+  /* Additional Centering for Hero Trust */
+  .hero-trust {
+     justify-content: center !important;
+     flex-wrap: wrap !important;
   }
 }
