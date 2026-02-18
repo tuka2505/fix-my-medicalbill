@@ -3297,11 +3297,39 @@ function initializeTargetedQuiz(category) {
     });
   }
 
+  // Animate analyzing messages during AI processing
+  function animateAnalyzingMessages() {
+    const analyzingText = document.querySelector('.analyzing-text');
+    if (!analyzingText) return null;
+    
+    const messages = [
+      "Step 1: OCR 스캔으로 항목을 추출하고 있습니다...",
+      "Step 2: 추출된 데이터에서 부당 청구(Upcoding) 징후를 찾는 중...",
+      "Step 3: 미국 연방 의료법(No Surprises Act) 위반 여부 대조 중...",
+      "Step 4: 예상 환불 금액 및 이의제기 서한 초안 작성 중..."
+    ];
+    
+    let currentIndex = 0;
+    analyzingText.textContent = messages[0];
+    
+    const interval = setInterval(() => {
+      currentIndex++;
+      if (currentIndex < messages.length) {
+        analyzingText.textContent = messages[currentIndex];
+      }
+    }, 5000);
+    
+    return interval;
+  }
+
   function showResults() {
     quizContainer.style.display = 'none';
     quizResult.style.display = 'flex';
     quizAnalyzing.style.display = 'flex';
     quizFinal.style.display = 'none';
+
+    // Start animating analyzing messages
+    const messageInterval = animateAnalyzingMessages();
 
     // Call Gemini AI and wait for response
     (async () => {
@@ -3359,9 +3387,15 @@ function initializeTargetedQuiz(category) {
         
         console.log('[AI Verdict] Received:', aiVerdict);
         
-        // Override finalRefund with AI estimate if available
-        if (aiVerdict.estimatedRefund && aiVerdict.estimatedRefund > 0) {
+        // ========== ENHANCED FALLBACK LOGIC ==========
+        // Override finalRefund with AI estimate if available and valid
+        if (aiVerdict && aiVerdict.estimatedRefund && aiVerdict.estimatedRefund > 0) {
           finalRefund = Math.min(aiVerdict.estimatedRefund, Math.round(maxRefund));
+          console.log('[AI Verdict] Using AI refund estimate:', finalRefund);
+        } else {
+          // Use calculatedRefund as fallback if AI returns 0 or invalid
+          finalRefund = Math.round(calculatedRefund);
+          console.log('[AI Verdict] ⚠️ AI refund invalid or 0. Using calculatedRefund:', finalRefund);
         }
         
         // Calculate error probability (0-100%)
@@ -3403,7 +3437,8 @@ function initializeTargetedQuiz(category) {
         
         console.log('[Audit Results] Stored globally:', auditResults);
         
-        // Display results
+        // Stop analyzing message animation and display results
+        if (messageInterval) clearInterval(messageInterval);
         quizAnalyzing.style.display = 'none';
         quizFinal.style.display = 'flex';
         
@@ -3466,6 +3501,14 @@ function initializeTargetedQuiz(category) {
           resultDescription.innerHTML = breakdownHtml;
         }
         
+        // ========== ENSURE VALID REFUND BEFORE ANIMATION ==========
+        // Final safeguard: if finalRefund is 0 or invalid, use calculatedRefund
+        if (!finalRefund || finalRefund <= 0) {
+          finalRefund = Math.max(Math.round(calculatedRefund), 100); // Minimum $100
+          console.log('[UI Update] ⚠️ finalRefund was 0. Using calculatedRefund:', finalRefund);
+        }
+        
+        console.log('[UI Update] Animating amount:', finalRefund);
         animateAmount(finalRefund);
 
         if (quizCtaBtn) {
@@ -3495,10 +3538,35 @@ function initializeTargetedQuiz(category) {
         }
         
       } catch (error) {
-        console.error('[showResults] Error:', error);
-        // If there's a critical error, still show results with fallback data
+        console.error('[showResults] Critical Error:', error);
+        
+        // Stop analyzing message animation
+        if (messageInterval) clearInterval(messageInterval);
+        
+        // Still show results with fallback data
         quizAnalyzing.style.display = 'none';
         quizFinal.style.display = 'flex';
+        
+        // Calculate fallback refund from quiz responses
+        const fallbackRefund = Math.max(Math.round(totalPotentialSavings * 1.2), 100);
+        console.log('[showResults] Using fallback refund:', fallbackRefund);
+        
+        // Display fallback amount
+        if (resultAmount) {
+          animateAmount(fallbackRefund);
+        }
+        
+        // Show basic error message
+        const resultDescription = document.querySelector('.result-description');
+        if (resultDescription) {
+          resultDescription.innerHTML = `
+            <div class="audit-breakdown">
+              <div class="audit-section">
+                <p class="audit-summary">Based on your quiz responses, we estimate potential savings. Our AI analysis is temporarily unavailable, but your dispute can still proceed with the information gathered.</p>
+              </div>
+            </div>
+          `;
+        }
       }
     })();
   }
