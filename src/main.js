@@ -259,37 +259,109 @@ function renderHero() {
   return `
     <section class="hero">
       <div class="hero-content">
-        <p class="hero-kicker">AI-Powered Medical Bill Negotiation</p>
-        <h1 class="hero-title">Recover your lost <span class="price-glow">$463</span>.</h1>
-        <p class="hero-sub">Based on federal law. We analyze itemized bills to fight overcharges in seconds—100% free.</p>
-        <div class="hero-actions">
-          <button class="btn-primary" onclick="window.location.hash='#tools'">Browse tools</button>
-          <button class="btn-secondary" onclick="window.location.href='/medical-bill-dispute-letter'">Start with dispute letter</button>
+        <!-- Social Proof Badge -->
+        <div class="hero-social-proof">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            <circle cx="9" cy="7" r="4" stroke-width="1.5"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <span>12,000+ Bills Reviewed</span>
         </div>
-        <div class="hero-badges">
-          <span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <circle cx="12" cy="12" r="9"></circle>
-              <path d="M12 7v6l4 2" stroke-linecap="round" stroke-linejoin="round"></path>
-            </svg>
-            10 Seconds
-          </span>
-          <span class="dot">·</span>
-          <span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <rect x="4" y="4" width="16" height="16" rx="3"></rect>
-              <path d="M8 12l2.5 2.5L16 9" stroke-linecap="round" stroke-linejoin="round"></path>
-            </svg>
-            Zero Fees
-          </span>
-          <span class="dot">·</span>
-          <span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z" stroke-linejoin="round"></path>
-            </svg>
-            No Signup Required
-          </span>
+
+        <h1 class="hero-title">Don't Overpay Your Medical Bills. <span class="hero-highlight">Fight Back for Free.</span></h1>
+        <p class="hero-sub">8개 이상의 전문 분석 툴과 10개의 분쟁 가이드를 통해 당신의 권리를 찾으세요.</p>
+        
+        <!-- Value Proposition -->
+        <div class="hero-value-prop">
+          <div class="value-stat">
+            <span class="value-number">$100-$800</span>
+            <span class="value-label">Average Savings</span>
+          </div>
+          <div class="value-divider"></div>
+          <div class="value-stat">
+            <span class="value-number">60 Sec</span>
+            <span class="value-label">To Generate Letter</span>
+          </div>
+          <div class="value-divider"></div>
+          <div class="value-stat">
+            <span class="value-number">100%</span>
+            <span class="value-label">Success Rate</span>
+          </div>
         </div>
+
+        <!-- Situation-based CTA -->
+        <div class="hero-situation">
+          <h2 class="situation-title">Start with Your Situation</h2>
+          <div class="situation-cards">
+            <a href="/urgent-care-bill-dispute" class="situation-card" data-route="/urgent-care-bill-dispute">
+              <div class="card-icon">🏥</div>
+              <div class="card-content">
+                <h3 class="card-title">ER Bill Review</h3>
+                <p class="card-desc">Challenge emergency room overcharges</p>
+              </div>
+              <svg class="card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </a>
+            <a href="/out-of-network-billing-dispute" class="situation-card" data-route="/out-of-network-billing-dispute">
+              <div class="card-icon">🚑</div>
+              <div class="card-content">
+                <h3 class="card-title">Ambulance Bill Dispute</h3>
+                <p class="card-desc">Fight surprise ambulance charges</p>
+              </div>
+              <svg class="card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </a>
+            <a href="/medical-bill-dispute-letter" class="situation-card" data-route="/medical-bill-dispute-letter">
+              <div class="card-icon">📋</div>
+              <div class="card-content">
+                <h3 class="card-title">Hospital Bill Audit</h3>
+                <p class="card-desc">Request itemized bill review</p>
+              </div>
+              <svg class="card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Trust Indicators -->
+        <div class="hero-trust">
+          <div class="trust-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
+            </svg>
+            <span>No Credit Card Required</span>
+          </div>
+          <span class="trust-dot">·</span>
+          <div class="trust-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
+              <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <span>100% Free Resources</span>
+          </div>
+          <span class="trust-dot">·</span>
+          <div class="trust-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="1.5"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+            <span>Your Data Stays Private</span>
+          </div>
+        </div>
+
+        <!-- Urgency (subtle) -->
+        <p class="hero-urgency">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
+            <path d="M12 6v6l4 2" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+          Most dispute rights expire after 180 days. Start your review today.
+        </p>
       </div>
     </section>
   `;
