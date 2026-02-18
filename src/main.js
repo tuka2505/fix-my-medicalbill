@@ -1981,6 +1981,7 @@ function navigate(path) {
     history.pushState({}, "", path);
   }
   router();
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 }
 
 function bindNavigation() {
