@@ -3435,10 +3435,10 @@ function initializeTargetedQuiz(category) {
     if (!analyzingText) return null;
     
     const messages = [
-      "Step 1: OCR 스캔으로 항목을 추출하고 있습니다...",
-      "Step 2: 추출된 데이터에서 부당 청구(Upcoding) 징후를 찾는 중...",
-      "Step 3: 미국 연방 의료법(No Surprises Act) 위반 여부 대조 중...",
-      "Step 4: 예상 환불 금액 및 이의제기 서한 초안 작성 중..."
+      "Step 1: AI is scanning hospital billing items...",
+      "Step 2: Analyzing extracted data for Upcoding patterns...",
+      "Step 3: Checking federal violations (No Surprises Act)...",
+      "Step 4: Finalizing refund estimation and audit report..."
     ];
     
     let currentIndex = 0;
@@ -3449,7 +3449,7 @@ function initializeTargetedQuiz(category) {
       if (currentIndex < messages.length) {
         analyzingText.textContent = messages[currentIndex];
       }
-    }, 5000);
+    }, 4000);
     
     return interval;
   }
