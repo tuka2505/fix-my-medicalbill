@@ -30,7 +30,7 @@
   --success: #34c759;
 
   --max: 1100px;              /* Desktop container max-width */
-  --header-offset: 88px;
+  --header-offset: 72px;
 
   /* 리듬(여백) 통일용 */
   --section-gap: 120px;
@@ -223,7 +223,7 @@ a{ color:inherit; }
 .main{
   max-width: var(--max);
   margin: 0 auto;
-  padding: calc(var(--header-offset) + 10px) 22px 120px;
+  padding: calc(var(--header-offset) + 0px) 22px 120px;
   position: relative;
   z-index: 1;
 }
@@ -235,8 +235,8 @@ a{ color:inherit; }
 
 /* Hero */
 .hero{
-  margin-top: 18px;
-  padding: 24px 40px;
+  margin-top: 0;
+  padding: 20px 32px;
   border-radius: calc(var(--radius) + 6px);
 
   /* 통일된 glass */
@@ -439,7 +439,7 @@ a{ color:inherit; }
   line-height: 1.1;
   letter-spacing: -0.03em;
   color: var(--textStrong);
-  margin: 0 0 20px;
+  margin: 0 0 12px;
   max-width: 900px;
 }
 
@@ -456,8 +456,8 @@ a{ color:inherit; }
   display: flex;
   align-items: center;
   gap: 32px;
-  margin: 32px 0;
-  padding: 24px 32px;
+  margin: 20px 0;
+  padding: 16px 24px;
   background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.75));
   border: 1px solid rgba(0,0,0,0.08);
   border-radius: 18px;
@@ -597,8 +597,8 @@ a{ color:inherit; }
   align-items: center;
   justify-content: center;
   gap: 16px;
-  margin-top: 32px;
-  padding-top: 32px;
+  margin-top: 20px;
+  padding-top: 20px;
   border-top: 1px solid rgba(0,0,0,0.06);
 }
 
@@ -649,7 +649,7 @@ a{ color:inherit; }
 /* ========== QUICK AUDITOR SECTION ========== */
 
 .quick-auditor-section{
-  margin-top: 28px;
+  margin-top: -12px;
   padding: 0;
   background: transparent;
   border: none;
@@ -2772,9 +2772,9 @@ a{ color:inherit; }
 
 @media (max-width: 768px){
   :root{
-    --header-offset: 72px;
-    --section-gap: 78px;
-    --section-gap-sm: 62px;
+    --header-offset: 60px;
+    --section-gap: 60px;
+    --section-gap-sm: 40px;
   }
 
   /* Hide desktop navigation */
@@ -2789,26 +2789,29 @@ a{ color:inherit; }
 
   /* Reduce spacing below header */
   .main{
-    padding-top: calc(var(--header-offset) + 16px);
+    padding-top: calc(var(--header-offset) + 12px);
   }
 
   .hero{
-    padding: 20px 20px;
+    padding: 16px 20px;
     margin-top: 0;
   }
 
   /* Adjust hero title for mobile */
   .hero-title{
     font-size: 32px !important;
+    margin-bottom: 8px !important;
   }
 
   .hero-sub{
     font-size: 15px !important;
+    margin: 8px 0 16px !important;
   }
 
   .hero-actions{
     flex-direction: column;
     width: 100%;
+    margin-top: 16px !important;
   }
 
   .hero-actions .btn-primary,
@@ -2819,9 +2822,10 @@ a{ color:inherit; }
   /* CRO Hero Elements - Mobile */
   .hero-value-prop{
     flex-direction: column;
-    gap: 16px;
-    padding: 20px;
+    gap: 12px;
+    padding: 16px;
     width: 100%;
+    margin: 16px 0 !important;
   }
 
   .value-divider{
@@ -2844,7 +2848,9 @@ a{ color:inherit; }
 
   .hero-trust{
     flex-direction: column;
-    gap: 12px;
+    gap: 8px !important;
+    margin-top: 16px !important;
+    padding-top: 16px !important;
   }
 
   .trust-dot{
@@ -2855,11 +2861,17 @@ a{ color:inherit; }
     font-size: 12px;
     padding: 10px 16px;
     text-align: center;
+    margin: 16px auto 0 !important;
   }
 
   /* Quick Auditor - Mobile */
+  .quick-auditor-section{
+    margin-top: -8px !important;
+    padding: 0 20px 32px;
+  }
+
   .auditor-container{
-    padding: 32px 24px;
+    padding: 24px 20px;
   }
 
   .auditor-title{
@@ -2874,7 +2886,7 @@ a{ color:inherit; }
 
   /* CTA Box - Mobile */
   .auditor-cta-box{
-    padding: 36px 24px;
+    padding: 24px 20px;
   }
 
   .cta-box-icon{

@@ -542,7 +542,7 @@ function renderBrowseButton() {
   return `
     <div class="browse-all-container">
       <button class="browse-all-btn" onclick="document.getElementById('all-tools').scrollIntoView({behavior: 'smooth', block: 'start'})">
-        Explore All 8+ Medical Audit Tools
+        See All Dispute Tools
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
         </svg>
