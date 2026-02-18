@@ -2532,27 +2532,30 @@ function setupBillScanning() {
     privacyNotice.style.display = 'none';
     scanProgress.style.display = 'flex';
     scanProgressFill.style.width = '0%';
-    scanProgressText.textContent = 'Scanning... 0%';
+    scanProgressText.textContent = 'Initializing scanner...';
+
+    // Simulate progress (since we can't use logger with DOM references)
+    let progressValue = 0;
+    const progressInterval = setInterval(() => {
+      if (progressValue < 90) {
+        progressValue += Math.random() * 15;
+        if (progressValue > 90) progressValue = 90;
+        scanProgressFill.style.width = `${Math.round(progressValue)}%`;
+        scanProgressText.textContent = `Scanning... ${Math.round(progressValue)}%`;
+      }
+    }, 300);
 
     try {
       console.log('Starting OCR for file:', file.name);
       
-      // Initialize Tesseract worker
-      const worker = await Tesseract.createWorker({
-        logger: (m) => {
-          // Update progress based on Tesseract status
-          if (m.status === 'recognizing text') {
-            const progress = Math.round(m.progress * 100);
-            scanProgressFill.style.width = `${progress}%`;
-            scanProgressText.textContent = `Scanning... ${progress}%`;
-          }
-        }
-      });
+      // Initialize Tesseract worker WITHOUT logger to avoid DataCloneError
+      const worker = await Tesseract.createWorker('eng');
 
       // Perform OCR
       const { data: { text } } = await worker.recognize(file);
       
-      // Complete progress
+      // Stop progress simulation and complete
+      clearInterval(progressInterval);
       scanProgressFill.style.width = '100%';
       scanProgressText.textContent = 'Scanning... 100%';
 
@@ -2576,6 +2579,7 @@ function setupBillScanning() {
 
     } catch (error) {
       console.error('OCR Error:', error);
+      clearInterval(progressInterval);
       scanProgressText.textContent = 'Scan failed. Please try again.';
       scanProgressFill.style.width = '0%';
       setTimeout(() => {
