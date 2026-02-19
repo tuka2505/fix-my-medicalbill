@@ -357,7 +357,7 @@ function renderHero() {
           </div>
 
           <!-- Secondary Tools Link -->
-          <a href="#tools-section" class="secondary-tools-link">Looking for a specific dispute letter? Browse 8 free templates &rarr;</a>
+          <a href="#tools-section" class="secondary-tools-link">Looking for a specific tool? Browse 8 templates ›</a>
 
           <!-- Trust Indicators -->
           <div class="hero-trust">
@@ -547,7 +547,7 @@ function renderSituationalCards() {
 function renderBrowseButton() {
   return `
     <div class="browse-all-container">
-      <button class="browse-all-btn" onclick="document.getElementById('all-tools').scrollIntoView({behavior: 'smooth', block: 'start'})">
+      <button class="browse-all-btn" onclick="document.getElementById('tools-section').scrollIntoView({behavior: 'smooth', block: 'start'})">
         See All Dispute Tools
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -559,7 +559,7 @@ function renderBrowseButton() {
 
 function renderFullToolsGrid(cards) {
   return `
-    <section id="all-tools" class="section tools-grid-section">
+    <section id="tools-section" class="section tools-grid-section">
       <div class="tools-header">
         <h2 class="h2">All Medical Dispute Tools</h2>
         <p class="tools-subtitle">Complete toolkit for fighting medical billing errors</p>
