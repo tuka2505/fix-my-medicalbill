@@ -2317,35 +2317,75 @@ function setupTool(options) {
   if (downloadButton) {
     downloadButton.addEventListener("click", () => {
       const content = letterOutput.textContent;
-      if (!content) return;
+      if (!content || content.includes("No output yet")) return;
 
       const doc = new jsPDF({ unit: "pt", format: "letter" });
       const margin = 54;
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
       const dateText = new Date().toLocaleDateString();
+      const auditId = "AUDIT-" + Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
 
+      // --- LETTERHEAD DESIGN ---
+      // Official Header
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
-      doc.text(options.pdfHeader, margin, 48);
+      doc.setFontSize(22);
+      doc.setTextColor(0, 113, 227); // Apple Blue
+      doc.text("FixMyMedicalBill", margin, 60);
 
+      // Subheader / Tagline
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text("Official Medical Bill Dispute & Audit Request", margin, 75);
+
+      // Document Meta Info (Right aligned)
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(50, 50, 50);
+      doc.text(`Date: ${dateText}`, pageWidth - margin, 60, { align: "right" });
+      doc.text(`Reference ID: ${auditId}`, pageWidth - margin, 75, { align: "right" });
+
+      // Divider Line
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(1);
+      doc.line(margin, 90, pageWidth - margin, 90);
+
+      // --- CONTENT RENDERING ---
       doc.setFont("helvetica", "normal");
       doc.setFontSize(11);
-      const dateWidth = doc.getTextWidth(dateText);
-      doc.text(dateText, pageWidth - margin - dateWidth, 48);
-
-      doc.setFontSize(11);
+      doc.setTextColor(20, 20, 20); // Dark gray for better readability
+      
+      // Split content into lines based on page width
       const wrapped = doc.splitTextToSize(content, pageWidth - margin * 2);
-      let cursorY = 80;
+      let cursorY = 120;
 
       wrapped.forEach((line) => {
+        // Check if line contains specific keywords to make bold (optional enhancement)
+        if (line.startsWith("To:") || line.startsWith("Re:") || line.startsWith("Account:") || line.startsWith("Amount:")) {
+          doc.setFont("helvetica", "bold");
+        } else {
+          doc.setFont("helvetica", "normal");
+        }
+
         if (cursorY > pageHeight - margin) {
           doc.addPage();
-          cursorY = margin;
+          cursorY = margin; // Reset for new page
         }
         doc.text(line, margin, cursorY);
-        cursorY += 18;
+        cursorY += 16; // Line spacing
       });
+
+      // Footer (Page numbers)
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 30, { align: "center" });
+        doc.text("Generated securely via FixMyMedicalBill.com", margin, pageHeight - 30);
+      }
 
       doc.save(options.pdfFileName);
     });
@@ -4400,21 +4440,37 @@ async function initializeTargetedQuiz(category) {
     if (!analyzingText) return null;
     
     const messages = [
-      "Step 1: AI is scanning hospital billing items...",
-      "Step 2: Analyzing extracted data for Upcoding patterns...",
-      "Step 3: Checking federal violations (No Surprises Act)...",
-      "Step 4: Finalizing refund estimation and audit report..."
+      "Establishing secure HIPAA-compliant connection...",
+      "Extracting OCR data and Provider NPI numbers...",
+      "Cross-referencing National Correct Coding Initiative (NCCI) edits...",
+      "Checking for unbundled charges and Modifier 25/59 abuse...",
+      "Comparing line items against FAIR Health UCR benchmarks...",
+      "Finalizing refund estimation and generating official audit report..."
     ];
     
     let currentIndex = 0;
-    analyzingText.textContent = messages[0];
+    
+    // Apple-style smooth fade transition
+    analyzingText.style.transition = "opacity 0.4s ease";
+    analyzingText.style.opacity = 0;
+    
+    setTimeout(() => {
+      analyzingText.textContent = messages[0];
+      analyzingText.style.opacity = 1;
+    }, 400);
     
     const interval = setInterval(() => {
       currentIndex++;
       if (currentIndex < messages.length) {
-        analyzingText.textContent = messages[currentIndex];
+        analyzingText.style.opacity = 0; // fade out
+        setTimeout(() => {
+          analyzingText.textContent = messages[currentIndex];
+          analyzingText.style.opacity = 1; // fade in
+        }, 400);
+      } else {
+        clearInterval(interval);
       }
-    }, 4000);
+    }, 3500); // Change message every 3.5 seconds
     
     return interval;
   }
