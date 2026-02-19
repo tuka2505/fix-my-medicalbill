@@ -356,6 +356,9 @@ function renderHero() {
             </label>
           </div>
 
+          <!-- Secondary Tools Link -->
+          <a href="#tools-section" class="secondary-tools-link">Looking for a specific dispute letter? Browse 8 free templates &rarr;</a>
+
           <!-- Trust Indicators -->
           <div class="hero-trust">
             <div class="trust-badge">

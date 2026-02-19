@@ -377,6 +377,23 @@ a{ color:inherit; }
   width: 100%;
 }
 
+/* Secondary Tools Link */
+.secondary-tools-link{
+  display: block;
+  text-align: center;
+  font-size: 13.5px;
+  color: #6B7280;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  margin: 16px 0 24px 0;
+  transition: color 0.2s ease;
+  font-weight: 500;
+}
+
+.secondary-tools-link:hover{
+  color: #007AFF;
+}
+
 .h1{
   margin:0;
   font-size: 4.5rem;
@@ -3544,8 +3561,8 @@ a{ color:inherit; }
   
   .hero-content {
     display: flex;
-    gap: 60px;
-    justify-content: space-between;
+    gap: 80px !important;
+    justify-content: center !important;
     align-items: flex-start;
   }
   
@@ -3558,6 +3575,8 @@ a{ color:inherit; }
   .hero-right {
     width: 45%;
     flex: none;
+    max-width: 480px !important;
+    align-items: center !important;
   }
   
   /* Hero Title: Refined Typography */
