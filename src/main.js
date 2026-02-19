@@ -4067,92 +4067,105 @@ function setupBillScanning() {
     }, 400);
 
     try {
-      console.log('[Gemini Vision] Starting analysis for:', file.name);
+      console.log('[DEBUG] Starting analysis for:', file.name, 'Type:', file.type, 'Size:', file.size);
       
       // Convert PDF to image if necessary
       let fileToProcess = file;
       if (file.type === 'application/pdf') {
-        console.log('[Gemini Vision] PDF detected, converting to image...');
+        console.log('[DEBUG] PDF detected, converting to image...');
         if (scanProgressText) {
           scanProgressText.textContent = 'Converting PDF...';
         }
         const imageBlob = await convertPDFToImage(file);
         fileToProcess = new File([imageBlob], file.name.replace('.pdf', '.png'), { type: 'image/png' });
-        console.log('[Gemini Vision] PDF converted successfully');
+        console.log('[DEBUG] PDF converted successfully');
       }
       
       // Convert to Base64
+      console.log('[DEBUG] Converting to Base64...');
       const base64Image = await fileToBase64(fileToProcess);
+      console.log('[DEBUG] Base64 length:', base64Image.length);
       const mimeType = fileToProcess.type;
 
       // Get API key
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       if (!apiKey) {
-        throw new Error('API key missing');
+        console.error('[DEBUG] Missing VITE_GEMINI_API_KEY in environment variables');
+        throw new Error('Missing VITE_GEMINI_API_KEY in environment variables');
       }
+      console.log('[DEBUG] API key found:', apiKey.substring(0, 10) + '...');
 
-      // Call Gemini API
+      // Call Gemini API with BULLETPROOF CONFIG
       if (scanProgressText) {
         scanProgressText.textContent = 'Analyzing document with AI...';
       }
+      
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
       
-      const prompt = `Analyze this image. Is it a US medical bill?
-If NO, return: {"isValid": false, "reason": "unreadable"}.
-If YES, extract the following (return null if not found):
-- facilityName (String, e.g., 'City Hospital')
-- totalAmount (String, formatted as '$1,250.00')
-- dateOfService (String, formatted 'MM/DD/YYYY')
-- accountNumber (String, account or guarantor #)
-- patientName (String, full name)
-- issueCategory (String, best guess: 'Emergency Room', 'Lab', 'Surgery', 'General')
-- extractedText (String, all text from bill)
+      // CRITICAL: Use generationConfig to force JSON output
+      const requestBody = {
+        contents: [{
+          parts: [
+            { 
+              text: `Analyze this image. Is it a US medical bill or receipt?
+If NO: return strictly {"isValid": false, "reason": "not a medical document"}
+If YES: extract these fields (use null if not found):
+- facilityName (String, e.g., "City Hospital")
+- totalAmount (String, e.g., "$1,250.00")
+- dateOfService (String, e.g., "01/15/2024")
+- accountNumber (String)
+- patientName (String)
+- issueCategory (String, choose ONE: "Emergency Room", "Lab & Imaging", "Surgery & Inpatient", "General Doctor Visit")
+- extractedText (String, all visible text)
 
-Return STRICT valid JSON only. No markdown.`;
+Return ONLY a flat JSON object. No markdown, no explanations.`
+            },
+            {
+              inlineData: {
+                mimeType: mimeType,
+                data: base64Image
+              }
+            }
+          ]
+        }],
+        generationConfig: {
+          response_mime_type: "application/json"
+        }
+      };
 
+      console.log('[DEBUG] Sending request to Gemini API...');
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              {
-                inline_data: {
-                  mime_type: mimeType,
-                  data: base64Image
-                }
-              }
-            ]
-          }]
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
         const errorBody = await response.text();
-        console.error('[Gemini Vision] API error:', errorBody);
-        throw new Error(`API request failed: ${response.status}`);
+        console.error('[DEBUG] API HTTP Error:', response.status, errorBody);
+        throw new Error(`API Error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('[Gemini Vision] Raw API response:', data);
+      console.log('[DEBUG] Raw API Response:', JSON.stringify(data, null, 2));
 
-      // Extract and parse AI response - FIX: More robust markdown stripping
-      let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      
-      // Strip all possible markdown variations
-      aiText = aiText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
-      // Also strip any remaining backticks
-      aiText = aiText.replace(/`/g, '');
-      
-      console.log('[Gemini Vision] Cleaned response:', aiText);
-      
+      // Safely access the response to prevent TypeError crashes
+      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+        console.error('[DEBUG] Safety block or empty content:', data);
+        throw new Error('Gemini returned empty content or was blocked by safety filters');
+      }
+
+      let responseText = data.candidates[0].content.parts[0].text;
+      console.log('[DEBUG] Extracted Text from Gemini:', responseText);
+
+      // Parse JSON (should be clean JSON thanks to generationConfig)
       let aiResult;
       try {
-        aiResult = JSON.parse(aiText);
+        aiResult = JSON.parse(responseText.trim());
+        console.log('[DEBUG] Parsed aiResult:', aiResult);
       } catch (parseError) {
-        console.error('[Gemini Vision] JSON parse error:', parseError);
-        console.error('[Gemini Vision] Failed to parse:', aiText);
+        console.error('[DEBUG] JSON parse error:', parseError);
+        console.error('[DEBUG] Failed to parse:', responseText);
         throw new Error('Failed to parse AI response as JSON');
       }
 
@@ -4162,65 +4175,29 @@ Return STRICT valid JSON only. No markdown.`;
       }
 
       // Handle AI validation result
-      if (!aiResult.isValid) {
-        console.warn('[Gemini Vision] Document invalid:', aiResult.reason);
-        showManualFallback(aiResult.reason);
-        return;
-      }
-
-      // Valid document - extract data
-      const extractedText = aiResult.extractedText || '';
-      console.log('===== GEMINI EXTRACTED TEXT =====');
-      console.log(extractedText);
-      console.log('=================================');
-
-      // Extract amount (try AI result first, then fallback to regex)
-      detectedAmount = aiResult.totalAmount || extractAmount(extractedText);
-      
-      // Classify the bill
-      const classification = classifyBill(extractedText);
-      
-      if (!classification) {
-        console.warn('[Gemini Vision] Classification failed, showing manual fallback');
-        showManualFallback('not-medical');
-        return;
-      }
-      
-      currentBillCategory = classification;
-      currentBillText = extractedText;
-      
-      console.log('[Gemini Vision] ✓ Classification passed:', classification.category);
-
-      // Save extracted metadata to localStorage for auto-fill
-      try {
-        const metadataForAutoFill = {
-          facilityName: aiResult.facilityName || null,
-          totalAmount: aiResult.totalAmount || detectedAmount || null,
-          dateOfService: aiResult.dateOfService || null,
-          accountNumber: aiResult.accountNumber || null,
-          patientName: aiResult.patientName || null,
-          issueCategory: aiResult.issueCategory || classification.category || null,
-          extractedText: extractedText
-        };
-        localStorage.setItem('medicalAuditData', JSON.stringify(metadataForAutoFill));
-        console.log('[Gemini Vision] ✓ Saved metadata to localStorage:', metadataForAutoFill);
-      } catch (err) {
-        console.error('[Gemini Vision] Failed to save metadata:', err);
-      }
-
-      // Update UI with success
-      setTimeout(() => {
-        const categoryMessage = classification.category === 'General Doctor Visit' 
-          ? 'General Consultation detected'
-          : `${classification.category} detected`;
+      if (aiResult.isValid === true) {
+        console.log('[DEBUG] Document validated successfully');
         
+        // Save to localStorage
+        localStorage.setItem('medicalAuditData', JSON.stringify(aiResult));
+        console.log('[DEBUG] Saved to localStorage');
+        
+        // Set global variables
+        const category = aiResult.issueCategory || 'General Doctor Visit';
+        currentBillCategory = { category: category, route: '/medical-bill-dispute-letter' };
+        currentBillText = aiResult.extractedText || JSON.stringify(aiResult);
+        detectedAmount = aiResult.totalAmount || '0';
+        
+        console.log('[DEBUG] Category:', category, 'Amount:', detectedAmount);
+
+        // Update UI with success
         if (scanProgressText) {
-          scanProgressText.textContent = `✓ ${categoryMessage} ${detectedAmount ? '($' + detectedAmount + ')' : ''}`;
+          scanProgressText.textContent = `✓ ${category} detected ${detectedAmount ? '(' + detectedAmount + ')' : ''}`;
           scanProgressText.style.color = 'rgba(52, 199, 89, 1)';
           scanProgressText.style.fontWeight = '700';
         }
         
-        // Start quiz
+        // Start quiz after delay
         setTimeout(() => {
           const auditorQuizWrapper = document.getElementById('auditor-quiz-wrapper');
           
@@ -4234,17 +4211,22 @@ Return STRICT valid JSON only. No markdown.`;
             auditorQuizWrapper.style.display = 'block';
             billUpload.value = '';
             
-            initializeTargetedQuiz(classification.category);
+            console.log('[DEBUG] Starting quiz for:', category);
+            initializeTargetedQuiz(category);
           }
         }, 1500);
-      }, 500);
+      } else {
+        console.warn('[DEBUG] AI rejected document:', aiResult.reason);
+        throw new Error('Document rejected: ' + (aiResult.reason || 'unknown'));
+      }
 
     } catch (error) {
-      console.error('[Gemini Vision] Error:', error);
+      console.error('[DEBUG] CRITICAL CATCH ERROR:', error);
+      console.error('[DEBUG] Error stack:', error.stack);
       clearInterval(progressInterval);
       
       // Show manual fallback on any error
-      console.log('[Gemini Vision] Falling back to manual input');
+      console.log('[DEBUG] Falling back to manual input');
       showManualFallback('error');
     }
   }
