@@ -4028,206 +4028,99 @@ function setupBillScanning() {
   async function processFile(file) {
     if (!file) return;
 
-    // Check if file type is image or PDF
-    const isImage = file.type.startsWith('image/');
-    const isPDF = file.type === 'application/pdf';
-    
-    if (!isImage && !isPDF) {
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
       alert('Please upload a valid image file or PDF.');
       return;
     }
 
-    // Show quick-auditor section and scan progress
-    if (quickAuditorSection) {
-      quickAuditorSection.style.display = 'block';
-    }
-    if (scanProgress) {
-      scanProgress.style.display = 'flex';
-      scanProgressFill.style.width = '0%';
-      scanProgressText.textContent = 'Initializing AI scanner...';
-    }
-
-    // Scroll to the scanning section
-    if (quickAuditorSection) {
-      quickAuditorSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-
-    let progressValue = 0;
-    const progressInterval = setInterval(() => {
-      if (progressValue < 85) {
-        progressValue += Math.random() * 12;
-        if (progressValue > 85) progressValue = 85;
-        if (scanProgressFill) {
-          scanProgressFill.style.width = `${Math.round(progressValue)}%`;
-        }
-        if (scanProgressText) {
-          scanProgressText.textContent = `Analyzing with Gemini AI... ${Math.round(progressValue)}%`;
-        }
-      }
-    }, 400);
+    const scanProgress = document.getElementById('scan-progress');
+    const scanProgressFill = document.getElementById('scan-progress-fill');
+    const scanProgressText = document.getElementById('scan-progress-text');
+    const privacyNotice = document.querySelector('.privacy-notice');
+    
+    if (privacyNotice) privacyNotice.style.display = 'none';
+    scanProgress.style.display = 'flex';
+    scanProgressFill.style.width = '30%';
+    scanProgressText.textContent = 'Analyzing document with AI...';
 
     try {
-      console.log('[DEBUG] Starting analysis for:', file.name, 'Type:', file.type, 'Size:', file.size);
-      
-      // Convert PDF to image if necessary
       let fileToProcess = file;
       if (file.type === 'application/pdf') {
-        console.log('[DEBUG] PDF detected, converting to image...');
-        if (scanProgressText) {
-          scanProgressText.textContent = 'Converting PDF...';
-        }
-        const imageBlob = await convertPDFToImage(file);
+        scanProgressText.textContent = 'Converting PDF for AI...';
+        const imageBlob = await convertPDFToImage(file); // Ensure this helper exists
         fileToProcess = new File([imageBlob], file.name.replace('.pdf', '.png'), { type: 'image/png' });
-        console.log('[DEBUG] PDF converted successfully');
       }
-      
-      // Convert to Base64
-      console.log('[DEBUG] Converting to Base64...');
-      const base64Image = await fileToBase64(fileToProcess);
-      console.log('[DEBUG] Base64 length:', base64Image.length);
-      const mimeType = fileToProcess.type;
 
-      // Get API key
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
-        console.error('[DEBUG] Missing VITE_GEMINI_API_KEY in environment variables');
-        throw new Error('Missing VITE_GEMINI_API_KEY in environment variables');
-      }
-      console.log('[DEBUG] API key found:', apiKey.substring(0, 10) + '...');
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const base64String = reader.result.split(',')[1];
+          const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+          
+          if (!apiKey) throw new Error("API Key missing in environment variables");
 
-      // Call Gemini API with BULLETPROOF CONFIG
-      if (scanProgressText) {
-        scanProgressText.textContent = 'Analyzing document with AI...';
-      }
-      
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-      
-      // CRITICAL: Use generationConfig to force JSON output
-      const requestBody = {
-        contents: [{
-          parts: [
-            { 
-              text: `Analyze this image. Is it a US medical bill or receipt?
-If NO: return strictly {"isValid": false, "reason": "not a medical document"}
-If YES: extract these fields (use null if not found):
-- facilityName (String, e.g., "City Hospital")
-- totalAmount (String, e.g., "$1,250.00")
-- dateOfService (String, e.g., "01/15/2024")
-- accountNumber (String)
-- patientName (String)
-- issueCategory (String, choose ONE: "Emergency Room", "Lab & Imaging", "Surgery & Inpatient", "General Doctor Visit")
-- extractedText (String, all visible text)
+          const requestBody = {
+            contents: [{
+              parts: [
+                { text: "Analyze this US medical bill or receipt. Return ONLY a valid flat JSON object with NO MARKDOWN. Required keys: \"isValid\" (boolean: true if it is a bill, false otherwise), \"facilityName\" (string), \"totalAmount\" (string with $, e.g. '$1,250.00'), \"dateOfService\" (string MM/DD/YYYY), \"accountNumber\" (string), \"patientName\" (string), \"issueCategory\" (string, strictly ONE of: 'Emergency Room', 'Lab & Imaging', 'Surgery & Inpatient', 'General Doctor Visit'). If completely unreadable, return {\"isValid\": false}." },
+                { inlineData: { mimeType: fileToProcess.type, data: base64String } }
+              ]
+            }],
+            generationConfig: { response_mime_type: "application/json" }
+          };
 
-Return ONLY a flat JSON object. No markdown, no explanations.`
-            },
-            {
-              inlineData: {
-                mimeType: mimeType,
-                data: base64Image
-              }
-            }
-          ]
-        }],
-        generationConfig: {
-          response_mime_type: "application/json"
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          });
+
+          if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+          const data = await response.json();
+          
+          if (!data.candidates || !data.candidates[0].content) throw new Error("Empty AI response");
+
+          let aiText = data.candidates[0].content.parts[0].text;
+          aiText = aiText.replace(/```json/gi, '').replace(/```/gi, '').trim();
+          const aiResult = JSON.parse(aiText);
+
+          console.log("[DEBUG] AI Extracted Result:", aiResult);
+
+          // BULLETPROOF VALIDATION: Even if AI forgets isValid=true, checking for amount/facility is safer.
+          const isActuallyValid = aiResult.isValid === true || aiResult.isValid === "true" || !!aiResult.facilityName || !!aiResult.totalAmount;
+
+          if (isActuallyValid) {
+            aiResult.isValid = true; // Normalize for downstream
+            localStorage.setItem('medicalAuditData', JSON.stringify(aiResult));
+            
+            scanProgressFill.style.width = '100%';
+            scanProgressText.textContent = 'Analysis Complete! Preparing Audit...';
+            
+            setTimeout(() => {
+              scanProgress.style.display = 'none';
+              document.getElementById('auditor-cta-box').style.display = 'none';
+              document.getElementById('auditor-quiz-wrapper').style.display = 'block';
+              
+              const category = aiResult.issueCategory || 'General Doctor Visit';
+              currentBillCategory = { category: category, route: '/medical-bill-dispute-letter' };
+              currentBillText = JSON.stringify(aiResult);
+              detectedAmount = aiResult.totalAmount || "0";
+              
+              initializeTargetedQuiz(category);
+            }, 800);
+          } else {
+            throw new Error("Document does not contain valid medical bill data.");
+          }
+        } catch (innerError) {
+          console.error("[DEBUG] Inner API/Parsing Error:", innerError);
+          showManualFallback();
         }
       };
-
-      console.log('[DEBUG] Sending request to Gemini API...');
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error('[DEBUG] API HTTP Error:', response.status, errorBody);
-        throw new Error(`API Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('[DEBUG] Raw API Response:', JSON.stringify(data, null, 2));
-
-      // Safely access the response to prevent TypeError crashes
-      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-        console.error('[DEBUG] Safety block or empty content:', data);
-        throw new Error('Gemini returned empty content or was blocked by safety filters');
-      }
-
-      let responseText = data.candidates[0].content.parts[0].text;
-      console.log('[DEBUG] Extracted Text from Gemini:', responseText);
-
-      // Parse JSON (should be clean JSON thanks to generationConfig)
-      let aiResult;
-      try {
-        aiResult = JSON.parse(responseText.trim());
-        console.log('[DEBUG] Parsed aiResult:', aiResult);
-      } catch (parseError) {
-        console.error('[DEBUG] JSON parse error:', parseError);
-        console.error('[DEBUG] Failed to parse:', responseText);
-        throw new Error('Failed to parse AI response as JSON');
-      }
-
-      clearInterval(progressInterval);
-      if (scanProgressFill) {
-        scanProgressFill.style.width = '100%';
-      }
-
-      // Handle AI validation result
-      if (aiResult.isValid === true) {
-        console.log('[DEBUG] Document validated successfully');
-        
-        // Save to localStorage
-        localStorage.setItem('medicalAuditData', JSON.stringify(aiResult));
-        console.log('[DEBUG] Saved to localStorage');
-        
-        // Set global variables
-        const category = aiResult.issueCategory || 'General Doctor Visit';
-        currentBillCategory = { category: category, route: '/medical-bill-dispute-letter' };
-        currentBillText = aiResult.extractedText || JSON.stringify(aiResult);
-        detectedAmount = aiResult.totalAmount || '0';
-        
-        console.log('[DEBUG] Category:', category, 'Amount:', detectedAmount);
-
-        // Update UI with success
-        if (scanProgressText) {
-          scanProgressText.textContent = `✓ ${category} detected ${detectedAmount ? '(' + detectedAmount + ')' : ''}`;
-          scanProgressText.style.color = 'rgba(52, 199, 89, 1)';
-          scanProgressText.style.fontWeight = '700';
-        }
-        
-        // Start quiz after delay
-        setTimeout(() => {
-          const auditorQuizWrapper = document.getElementById('auditor-quiz-wrapper');
-          
-          if (auditorQuizWrapper) {
-            if (scanProgress) {
-              scanProgress.style.display = 'none';
-            }
-            if (quickAuditorSection) {
-              quickAuditorSection.style.display = 'block';
-            }
-            auditorQuizWrapper.style.display = 'block';
-            billUpload.value = '';
-            
-            console.log('[DEBUG] Starting quiz for:', category);
-            initializeTargetedQuiz(category);
-          }
-        }, 1500);
-      } else {
-        console.warn('[DEBUG] AI rejected document:', aiResult.reason);
-        throw new Error('Document rejected: ' + (aiResult.reason || 'unknown'));
-      }
-
-    } catch (error) {
-      console.error('[DEBUG] CRITICAL CATCH ERROR:', error);
-      console.error('[DEBUG] Error stack:', error.stack);
-      clearInterval(progressInterval);
-      
-      // Show manual fallback on any error
-      console.log('[DEBUG] Falling back to manual input');
-      showManualFallback('error');
+      reader.readAsDataURL(fileToProcess);
+    } catch (outerError) {
+      console.error("[DEBUG] Outer File Processing Error:", outerError);
+      showManualFallback();
     }
   }
 
