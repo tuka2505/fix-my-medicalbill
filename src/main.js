@@ -302,75 +302,86 @@ function renderHero() {
   return `
     <section class="hero">
       <div class="hero-content">
-        <!-- Social Proof Badge -->
-        <div class="hero-social-proof">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-            <circle cx="9" cy="7" r="4" stroke-width="1.5"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-          </svg>
-          <span>15,000+ Bills Analyzed</span>
+        <!-- Left Column: Text Content -->
+        <div class="hero-left">
+          <!-- Social Proof Badge -->
+          <div class="hero-social-proof">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+              <circle cx="9" cy="7" r="4" stroke-width="1.5"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <span>15,000+ Bills Analyzed</span>
+          </div>
+
+          <h1 class="hero-title">Stop Overpaying.<br>Find Your Hidden&nbsp;Refund in&nbsp;10&nbsp;Seconds.</h1>
+          <p class="hero-sub">80% of US medical bills contain errors. Use our AI Audit to find your missing <strong><span style="white-space: nowrap;">$300 to $1,500</span></strong> in 60 seconds.</p>
+          
+          <!-- Mechanism Stepper -->
+          <div class="mechanism-stepper">🔍 1. AI Bill Scan<span style="margin: 0 8px;">➔</span>📝 2. Auto Dispute Letter</div>
         </div>
 
-        <h1 class="hero-title">Stop Overpaying.<br>Find Your Hidden&nbsp;Refund in&nbsp;10&nbsp;Seconds.</h1>
-        <p class="hero-sub">80% of US medical bills contain errors. Use our AI Audit to find your missing <strong><span style="white-space: nowrap;">$300 to $1,500</span></strong> in 60 seconds.</p>
-        
-        <!-- Mechanism Stepper -->
-        <div class="mechanism-stepper">🔍 1. AI Bill Scan<span style="margin: 0 8px;">➔</span>📝 2. Auto Dispute Letter</div>
-        
-        <!-- Value Proposition -->
-        <div class="hero-value-prop">
-          <div class="value-stat">
-            <span class="value-number">$450</span>
-            <span class="value-label">Avg Recovered</span>
+        <!-- Right Column: Visual Content -->
+        <div class="hero-right">
+          <!-- Value Proposition Stats -->
+          <div class="hero-value-prop">
+            <div class="value-stat">
+              <span class="value-number">$450</span>
+              <span class="value-label">Avg Recovered</span>
+            </div>
+            <div class="value-divider"></div>
+            <div class="value-stat">
+              <span class="value-number">60s</span>
+              <span class="value-label">To Audit</span>
+            </div>
+            <div class="value-divider"></div>
+            <div class="value-stat">
+              <span class="value-number">98%</span>
+              <span class="value-label">AI Accuracy</span>
+            </div>
           </div>
-          <div class="value-divider"></div>
-          <div class="value-stat">
-            <span class="value-number">60s</span>
-            <span class="value-label">To Audit</span>
+
+          <!-- CTA Section -->
+          <div class="hero-cta-section">
+            <p class="hero-cta-text">Find Your Hidden Refund&nbsp;in <span style="white-space: nowrap;">10 Seconds.</span></p>
+            <input type="file" id="bill-upload" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,application/pdf" style="display:none;">
+            <label for="bill-upload" class="hero-cta-btn" id="upload-label">
+              Scan Bill & Get Refund
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                <polyline points="17 8 12 3 7 8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></line>
+              </svg>
+            </label>
           </div>
-          <div class="value-divider"></div>
-          <div class="value-stat">
-            <span class="value-number">98%</span>
-            <span class="value-label">AI Accuracy</span>
+
+          <!-- Trust Indicators -->
+          <div class="hero-trust">
+            <div class="trust-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
+              </svg>
+              <span>No Credit Card Required</span>
+            </div>
+            <span class="trust-dot">·</span>
+            <div class="trust-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
+                <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+              <span>100% Free Resources</span>
+            </div>
+            <span class="trust-dot">·</span>
+            <div class="trust-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="1.5"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-width="1.5" stroke-linecap="round"></path>
+              </svg>
+              <span>Your Data Stays Private</span>
+            </div>
           </div>
         </div>
-
-        <!-- Trust Indicators -->
-        <div class="hero-trust">
-          <div class="trust-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
-            </svg>
-            <span>No Credit Card Required</span>
-          </div>
-          <span class="trust-dot">·</span>
-          <div class="trust-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
-              <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-            </svg>
-            <span>100% Free Resources</span>
-          </div>
-          <span class="trust-dot">·</span>
-          <div class="trust-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="1.5"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-width="1.5" stroke-linecap="round"></path>
-            </svg>
-            <span>Your Data Stays Private</span>
-          </div>
-        </div>
-
-        <!-- Urgency (subtle) -->
-        <p class="hero-urgency">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
-            <path d="M12 6v6l4 2" stroke-width="1.5" stroke-linecap="round"></path>
-          </svg>
-          Most dispute rights expire after 180 days. Start your review today.
-        </p>
       </div>
     </section>
   `;
@@ -406,32 +417,14 @@ function renderSuccessStories() {
 
 function renderQuickAuditor() {
   return `
-    <section id="quick-auditor" class="quick-auditor-section">
+    <section id="quick-auditor" class="quick-auditor-section" style="display:none;">
       <div class="auditor-container">
-        <!-- Slim Auditor Bar (Always Visible) -->
-        <div class="slim-auditor-bar" id="auditor-cta-box">
-          <div class="slim-bar-content">
-            <span class="slim-bar-text">Find Your Hidden Refund&nbsp;in <span style="white-space: nowrap;">10 Seconds.</span></span>
-            <input type="file" id="bill-upload" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,application/pdf" style="display:none;">
-            <label for="bill-upload" class="slim-bar-btn" id="upload-label">
-              Scan Bill & Get Refund
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                <polyline points="17 8 12 3 7 8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></line>
-              </svg>
-            </label>
+        <!-- Scan Progress (Hidden by default, shown during upload) -->
+        <div class="scan-progress" id="scan-progress" style="display:none;">
+          <div class="scan-progress-bar">
+            <div class="scan-progress-fill" id="scan-progress-fill"></div>
           </div>
-          <div class="privacy-notice" id="privacy-notice">
-            <span class="privacy-desktop">Your documents are processed locally in your browser for 100% privacy. • Drag & drop supported.</span>
-            <span class="privacy-mobile">🔒 100% Private. Processed locally on your device.</span>
-          </div>
-          <div class="scan-progress" id="scan-progress" style="display:none;">
-            <div class="scan-progress-bar">
-              <div class="scan-progress-fill" id="scan-progress-fill"></div>
-            </div>
-            <div class="scan-progress-text" id="scan-progress-text">Scanning... 0%</div>
-          </div>
+          <div class="scan-progress-text" id="scan-progress-text">Scanning... 0%</div>
         </div>
 
         <!-- Quiz Interface (Hidden by Default) -->
