@@ -586,6 +586,14 @@ a{ color:inherit; }
   color: var(--accent);
 }
 
+/* Count-up Animation (Apple-style stable layout) */
+.count-up{
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  min-width: 2ch;
+  text-align: center;
+}
+
 .value-label{
   font-size: 12px;
   font-weight: 600;

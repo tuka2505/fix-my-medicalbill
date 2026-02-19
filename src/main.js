@@ -327,17 +327,17 @@ function renderHero() {
           <!-- Value Proposition Stats -->
           <div class="hero-value-prop">
             <div class="value-stat">
-              <span class="value-number">$450</span>
+              <span class="value-number">$<span class="count-up" data-target="450">0</span></span>
               <span class="value-label">Avg Recovered</span>
             </div>
             <div class="value-divider"></div>
             <div class="value-stat">
-              <span class="value-number">60s</span>
+              <span class="value-number"><span class="count-up" data-target="60">0</span>s</span>
               <span class="value-label">To Audit</span>
             </div>
             <div class="value-divider"></div>
             <div class="value-stat">
-              <span class="value-number">98%</span>
+              <span class="value-number"><span class="count-up" data-target="98">0</span>%</span>
               <span class="value-label">AI Accuracy</span>
             </div>
           </div>
@@ -3083,6 +3083,8 @@ function router() {
       if (faqSection) {
         faqSection.scrollIntoView({ behavior: "smooth", block: "start" });
       }
+      // Initialize count-up animation
+      initCountUpAnimation();
     }, 100);
     bindNavigation();
     setupBillScanning(); // Initialize OCR
@@ -3096,6 +3098,8 @@ function router() {
     renderToolPage(normalizedPath);
   } else {
     renderHomePage();
+    // Initialize count-up animation after home page renders
+    setTimeout(initCountUpAnimation, 100);
   }
 
   bindNavigation();
@@ -4756,6 +4760,89 @@ function setupQuizLogic() {
 }
 
 // ========== END QUIZ LOGIC ==========
+
+// ========== COUNT-UP ANIMATION (Apple-style) ==========
+function initCountUpAnimation() {
+  const countUpElements = document.querySelectorAll('.count-up');
+  if (countUpElements.length === 0) return;
+
+  // Check if already animated
+  const firstElement = countUpElements[0];
+  if (firstElement.hasAttribute('data-animated')) return;
+
+  // Apple-style easing function (ease-out cubic)
+  const easeOutCubic = (t) => {
+    return 1 - Math.pow(1 - t, 3);
+  };
+
+  // Count-up animation function
+  const animateCountUp = (element) => {
+    const target = parseInt(element.getAttribute('data-target'));
+    const duration = 2000; // 2 seconds
+    const startTime = performance.now();
+
+    const updateCount = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easedProgress = easeOutCubic(progress);
+      const currentValue = Math.floor(easedProgress * target);
+
+      element.textContent = currentValue;
+
+      if (progress < 1) {
+        requestAnimationFrame(updateCount);
+      } else {
+        element.textContent = target; // Ensure exact final value
+        element.setAttribute('data-animated', 'true');
+      }
+    };
+
+    requestAnimationFrame(updateCount);
+  };
+
+  // Intersection Observer to trigger animation when visible
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          // Check again if not already animated
+          if (!firstElement.hasAttribute('data-animated')) {
+            // Start all count-up animations
+            countUpElements.forEach((element) => {
+              animateCountUp(element);
+            });
+          }
+          
+          // Disconnect observer after animation starts
+          observer.disconnect();
+        }
+      });
+    },
+    {
+      threshold: 0.5, // Trigger when 50% visible
+      rootMargin: '0px'
+    }
+  );
+
+  // Observe the stats container
+  const statsContainer = document.querySelector('.hero-value-prop');
+  if (statsContainer) {
+    observer.observe(statsContainer);
+  }
+}
+
+// Initialize count-up animation after DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  // Small delay to ensure hero section is rendered
+  setTimeout(initCountUpAnimation, 100);
+});
+
+// Also re-initialize on route changes (for SPA)
+window.addEventListener('popstate', () => {
+  setTimeout(initCountUpAnimation, 100);
+});
+
+// ========== END COUNT-UP ANIMATION ==========
 
 window.addEventListener("popstate", router);
 router();
