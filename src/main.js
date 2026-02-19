@@ -108,8 +108,8 @@ const infoPages = {
     sections: [
       {
         heading: "Medical & Legal Disclaimer",
-        body:
-          "FixMyMedicalBill provides informational templates and resources based on federal laws including the No Surprises Act (45 CFR § 149.410), Fair Debt Collection Practices Act (FDCPA, 15 U.S.C. § 1692g), ERISA (29 U.S.C. § 1001 et seq.), and IRS Section 501(r) regulations. These tools are designed to help patients understand their rights and communicate effectively with healthcare providers and insurers. However, this service does NOT constitute professional legal advice, medical advice, or substitute for consultation with a licensed attorney or healthcare provider. Every patient's situation is unique, and outcomes depend on individual circumstances, applicable state laws, provider policies, and insurance plan details.",
+          body:
+            "FixMyMedicalBill is a technology platform, not a law firm. We provide informational templates and resources based on federal laws including the No Surprises Act (45 CFR § 149.410), Fair Debt Collection Practices Act (FDCPA, 15 U.S.C. § 1692g), ERISA (29 U.S.C. § 1001 et seq.), and IRS Section 501(r) regulations. These tools are designed to help patients understand their rights and communicate effectively with healthcare providers and insurers. However, this service does NOT constitute professional legal advice, medical advice, or substitute for consultation with a licensed attorney or healthcare provider. Every patient's situation is unique, and outcomes depend on individual circumstances, applicable state laws, provider policies, and insurance plan details. Users assume all risks associated with the use of the generated documents.",
       },
       {
         heading: "No Attorney-Client or Professional Relationship",
@@ -118,8 +118,8 @@ const infoPages = {
       },
       {
         heading: "Accuracy, Variability & Limitations",
-        body:
-          "While we strive to provide accurate and up-to-date information, billing practices, insurance policies, and healthcare regulations vary significantly by state, provider network, insurance carrier, and facility type. Hospital billing departments and insurance companies may interpret regulations differently, and each claim is subject to individual review based on specific plan language and clinical documentation. We cannot guarantee specific outcomes, reimbursement amounts, or successful dispute resolutions. Users must independently verify all CPT codes, medical necessity criteria, state-specific statutes of limitations for medical debt, and applicable consumer protection laws. Information provided on this site may not reflect the most recent regulatory updates or court decisions in your jurisdiction.",
+          body:
+            "AI-generated estimates are for informational purposes only and do not guarantee financial recovery. While we strive to provide accurate and up-to-date information, billing practices, insurance policies, and healthcare regulations vary significantly by state, provider network, insurance carrier, and facility type. Hospital billing departments and insurance companies may interpret regulations differently, and each claim is subject to individual review based on specific plan language and clinical documentation. We cannot guarantee specific outcomes, reimbursement amounts, or successful dispute resolutions. Users must independently verify all CPT codes, medical necessity criteria, state-specific statutes of limitations for medical debt, and applicable consumer protection laws. Information provided on this site may not reflect the most recent regulatory updates or court decisions in your jurisdiction.",
       },
       {
         heading: "Zero-Data Privacy Policy",
@@ -831,6 +831,18 @@ function renderResourcesSection() {
   ];
 
   const faqs = [
+        {
+          question: "Is the refund amount calculated by AI guaranteed?",
+          answer: "No. The refund amount is a <strong>calculated estimate</strong> based on common billing error patterns and federal guidelines. Actual results depend entirely on your specific insurance plan and the hospital's internal billing policies. Use this as a starting point for negotiation, not a guaranteed check."
+        },
+        {
+          question: "Does using this tool create a legal relationship?",
+          answer: "No. Using FixMyMedicalBill does not create an attorney-client relationship. Our AI provides <strong>educational templates and data analysis</strong> to help you advocate for yourself. We do not provide legal representation or specific legal advice."
+        },
+        {
+          question: "What if my hospital ignores the AI audit report?",
+          answer: "While our reports are based on federal billing standards like the No Surprises Act, hospitals may have their own review processes. If a provider ignores your dispute, we recommend using our <strong>'Request Itemized Bill'</strong> tool to force a line-by-line coding review, which they are legally required to provide under HIPAA."
+        },
     {
       question: "Is FixMyMedicalBill really free to use?",
       answer: "Yes, <strong>FixMyMedicalBill</strong> is 100% free and requires no account or credit card. Our mission is to democratize access to <strong>medical bill dispute tools</strong> so every American can fight unfair charges without hiring expensive advocates. We believe healthcare billing transparency is a fundamental right. All tools, templates, and expert guides are completely free forever, with no hidden fees or premium tiers."
