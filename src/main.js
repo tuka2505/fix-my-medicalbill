@@ -313,11 +313,11 @@ function renderHero() {
           <span>15,000+ Bills Analyzed</span>
         </div>
 
-        <h1 class="hero-title">Stop Overpaying Hospitals. <span class="hero-highlight">Recover Your Hidden Medical Refund.</span></h1>
-        <p class="hero-sub">80% of US medical bills contain errors. Use our AI Audit to find your missing <strong>$300 to $1,500</strong> in 60 seconds.</p>
+        <h1 class="hero-title">Stop Overpaying.<br>Find Your Hidden&nbsp;Refund in&nbsp;10&nbsp;Seconds.</h1>
+        <p class="hero-sub">80% of US medical bills contain errors. Use our AI Audit to find your missing <strong><span style="white-space: nowrap;">$300 to $1,500</span></strong> in 60 seconds.</p>
         
         <!-- Mechanism Stepper -->
-        <div class="mechanism-stepper">🔍 1. AI Bill Scan &nbsp;➔&nbsp; 📝 2. Auto Dispute Letter</div>
+        <div class="mechanism-stepper">🔍 1. AI Bill Scan<span style="margin: 0 8px;">➔</span>📝 2. Auto Dispute Letter</div>
         
         <!-- Value Proposition -->
         <div class="hero-value-prop">
@@ -411,7 +411,7 @@ function renderQuickAuditor() {
         <!-- Slim Auditor Bar (Always Visible) -->
         <div class="slim-auditor-bar" id="auditor-cta-box">
           <div class="slim-bar-content">
-            <span class="slim-bar-text">Find Your Hidden Refund in 10 Seconds.</span>
+            <span class="slim-bar-text">Find Your Hidden Refund&nbsp;in <span style="white-space: nowrap;">10 Seconds.</span></span>
             <input type="file" id="bill-upload" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,application/pdf" style="display:none;">
             <label for="bill-upload" class="slim-bar-btn" id="upload-label">
               Scan Bill & Get Refund
@@ -422,7 +422,10 @@ function renderQuickAuditor() {
               </svg>
             </label>
           </div>
-          <div class="privacy-notice" id="privacy-notice">Your documents are processed locally in your browser for 100% privacy. • Drag & drop supported.</div>
+          <div class="privacy-notice" id="privacy-notice">
+            <span class="privacy-desktop">Your documents are processed locally in your browser for 100% privacy. • Drag & drop supported.</span>
+            <span class="privacy-mobile">🔒 100% Private. Processed locally on your device.</span>
+          </div>
           <div class="scan-progress" id="scan-progress" style="display:none;">
             <div class="scan-progress-bar">
               <div class="scan-progress-fill" id="scan-progress-fill"></div>

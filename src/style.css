@@ -30,7 +30,7 @@
   --success: #34c759;
 
   --max: 1100px;              /* Desktop container max-width */
-  --header-offset: 72px;
+  --header-offset: 64px;
 
   /* 리듬(여백) 통일용 */
   --section-gap: 120px;
@@ -139,7 +139,7 @@ a{ color:inherit; }
   align-items:center;
   gap:10px;
   font-family: -apple-system, "SF Pro Display", sans-serif;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.1;
   font-size: 20px;
@@ -441,7 +441,9 @@ a{ color:inherit; }
   letter-spacing: -0.03em;
   color: var(--textStrong);
   margin: 0 0 12px;
-  max-width: 900px;
+  max-width: 720px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .hero-highlight{
@@ -459,10 +461,9 @@ a{ color:inherit; }
   gap: 32px;
   margin: 16px 0;
   padding: 16px 24px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.75));
-  border: 1px solid rgba(0,0,0,0.08);
+  background: #F5F7FA;
+  border: 1px solid rgba(0,0,0,0.06);
   border-radius: 18px;
-  box-shadow: 0 14px 32px rgba(0,0,0,0.08);
   backdrop-filter: blur(10px);
   max-width: fit-content;
 }
@@ -650,7 +651,7 @@ a{ color:inherit; }
 /* ========== QUICK AUDITOR SECTION ========== */
 
 .quick-auditor-section{
-  margin-top: 24px;
+  margin-top: 16px;
   padding: 0;
   background: transparent;
   border: none;
@@ -709,6 +710,8 @@ a{ color:inherit; }
   letter-spacing: -0.01em;
   flex: 1;
   min-width: 200px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .slim-bar-btn{
@@ -721,20 +724,21 @@ a{ color:inherit; }
   background: rgba(255,255,255,0.95);
   color: #0071e3;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 800 !important;
+  letter-spacing: -0.01em;
   border: none;
   border-radius: 999px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   text-decoration: none;
   font-family: -apple-system, "SF Pro Display", sans-serif;
 }
 
 .slim-bar-btn:hover{
   background: #ffffff;
-  transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
 }
 
 .slim-bar-btn svg{
@@ -751,6 +755,19 @@ a{ color:inherit; }
   margin-top: 12px;
   line-height: 1.4;
   font-weight: 500;
+}
+
+.privacy-mobile{
+  display: none;
+}
+
+@media (max-width: 640px){
+  .privacy-desktop{
+    display: none;
+  }
+  .privacy-mobile{
+    display: inline;
+  }
 }
 
 /* Scan Progress */
@@ -3242,6 +3259,8 @@ a{ color:inherit; }
   line-height: 1.6 !important;
   color: var(--muted) !important;
   max-width: 700px !important;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 .hero-actions {
   display: flex !important;
@@ -3580,7 +3599,7 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
 
   /* 7. Blue Banner (CTA) - Premium Apple-style Button */
   .quick-auditor-section { 
-    margin-top: 12px !important; 
+    margin-top: 8px !important; 
     padding: 18px 16px !important;
     border-radius: 18px !important;
   }
@@ -3604,12 +3623,16 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
     font-weight: 600 !important;
     border-radius: 14px !important;
   }
+  
+  .slim-auditor-bar{
+    margin-top: 8px !important;
+  }
 }
 
 /* === MECHANISM STEPPER & TEXT WRAPPING FIXES === */
 .mechanism-stepper {
   display: inline-block;
-  background: rgba(0, 122, 255, 0.08);
+  background: #F2F2F7;
   color: #007aff;
   font-weight: 600;
   font-size: 14px;
@@ -3617,6 +3640,7 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
   border-radius: 20px;
   margin: 16px 0 24px;
   letter-spacing: -0.3px;
+  cursor: default;
 }
 
 .stat-item .h2,
