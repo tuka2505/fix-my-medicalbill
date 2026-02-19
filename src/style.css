@@ -309,6 +309,7 @@ a{ color:inherit; }
   background: linear-gradient(135deg, #0071e3, #0056b3);
   border-radius: 18px;
   box-shadow: 0 8px 24px rgba(0,113,227,0.25);
+  width: 100%;
 }
 
 .hero-cta-text{
@@ -359,7 +360,7 @@ a{ color:inherit; }
 .hero-right .hero-value-prop{
   margin: 0;
   width: 100%;
-  max-width: 100%;
+  max-width: none;
   justify-content: space-around;
 }
 
@@ -369,6 +370,7 @@ a{ color:inherit; }
   justify-content: flex-start;
   margin-top: 0;
   padding-top: 20px;
+  width: 100%;
 }
 
 .h1{
@@ -3570,6 +3572,16 @@ a{ color:inherit; }
     background: rgba(0,0,0,0.02) !important;
     border: 1px solid rgba(0,0,0,0.05) !important;
     box-shadow: none !important;
+  }
+  
+  /* Ensure stats box and CTA take full width in hero-right */
+  .hero-right .hero-value-prop {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  
+  .hero-right .hero-cta-section {
+    width: 100% !important;
   }
   
   /* Hero CTA Button: Full Width Premium */
