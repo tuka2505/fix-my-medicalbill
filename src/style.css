@@ -3406,53 +3406,59 @@ a{ color:inherit; }
 html, body { overflow-x: hidden !important; width: 100% !important; }
 @media (max-width: 640px) {
   .header { height: 56px !important; }
-  .main { padding: 16px 16px 80px !important; } /* Minimal gap to header */
+  .main { padding: 8px 16px 80px !important; } /* Ultra-tight Apple-style spacing */
 
-  /* 2. Hero Section - Force Absolute Centering */
+  /* 2. Hero Section - Apple-style Premium Design */
   .hero {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     text-align: center !important;
-    padding: 16px !important;
+    padding: 8px 12px !important;
     margin-top: 0 !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
   .hero-title { 
-    font-size: 24px !important; 
-    line-height: 1.2 !important; 
-    margin-bottom: 12px !important;
+    font-size: 22px !important; 
+    line-height: 1.15 !important; 
+    margin-bottom: 6px !important;
     word-break: keep-all;
+    font-weight: 700 !important;
+    letter-spacing: -0.3px !important;
   }
   .hero-sub { 
-    font-size: 14px !important; 
-    margin: 0 auto 16px !important; 
+    font-size: 13px !important; 
+    margin: 0 auto 8px !important; 
     max-width: 100% !important;
-    line-height: 1.4 !important;
+    line-height: 1.35 !important;
+    opacity: 0.8 !important;
   }
 
-  /* Mechanism Stepper - Mobile */
+  /* Mechanism Stepper - Compact & Elegant */
   .mechanism-stepper {
-    font-size: 11px !important;
-    padding: 6px 12px !important;
-    margin: 12px auto 16px !important;
+    font-size: 10px !important;
+    padding: 5px 10px !important;
+    margin: 6px auto 8px !important;
     width: fit-content !important;
     max-width: 95% !important;
+    border-radius: 12px !important;
   }
 
-  /* 3. The Stats Bar - Perfect Centering */
+  /* 3. Stats Bar - Premium Card Design */
   .hero-value-prop {
     display: flex !important;
     flex-direction: row !important;
     justify-content: center !important;
     align-items: stretch !important;
-    width: 100% !important;
-    padding: 16px 8px !important;
-    margin: 16px 0 !important;
-    background: rgba(255, 255, 255, 0.5) !important;
-    border-radius: 14px !important;
+    width: calc(100% - 24px) !important;
+    max-width: 340px !important;
+    padding: 12px 6px !important;
+    margin: 8px auto !important;
+    background: rgba(255, 255, 255, 0.6) !important;
+    border-radius: 16px !important;
     box-sizing: border-box !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
   }
   
   .value-stat,
@@ -3463,8 +3469,8 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
     align-items: center !important;
     justify-content: center !important;
     text-align: center !important;
-    padding: 4px !important;
-    border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+    padding: 2px !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.06) !important;
   }
   
   .value-stat:last-child,
@@ -3475,81 +3481,83 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
   .value-number,
   .stat-item .h2,
   .value-stat .h2 { 
-    font-size: 22px !important; 
-    margin-bottom: 4px !important; 
+    font-size: 20px !important; 
+    margin-bottom: 3px !important; 
     letter-spacing: -0.5px !important;
     white-space: nowrap !important;
-    font-weight: 800 !important;
+    font-weight: 700 !important;
   }
   
   .value-label,
   .stat-item p,
   .value-stat p { 
-    font-size: 9px !important; 
+    font-size: 8.5px !important; 
     text-transform: uppercase !important; 
-    letter-spacing: 0.3px !important; 
-    opacity: 0.65 !important;
-    line-height: 1.2 !important;
+    letter-spacing: 0.4px !important; 
+    opacity: 0.6 !important;
+    line-height: 1.1 !important;
     max-width: 100% !important;
     word-wrap: break-word !important;
+    font-weight: 500 !important;
   }
   
   .value-divider {
     display: none !important;
   }
 
-  /* 4. Trust Badges - Restore within Hero */
+  /* 4. Trust Badges - Minimal & Clean */
   .hero-trust {
     display: flex !important;
     flex-direction: row !important;
     justify-content: center !important;
     align-items: center !important;
     flex-wrap: wrap !important;
-    gap: 8px !important;
-    margin-top: 20px !important;
-    padding-top: 20px !important;
-    border-top: 1px solid rgba(0,0,0,0.06) !important;
+    gap: 6px !important;
+    margin-top: 10px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid rgba(0,0,0,0.05) !important;
     width: 100% !important;
   }
   
   .hero-trust .trust-badge {
     display: flex !important;
     align-items: center !important;
-    gap: 4px !important;
+    gap: 3px !important;
   }
   
   .hero-trust svg {
-    width: 12px !important;
-    height: 12px !important;
+    width: 11px !important;
+    height: 11px !important;
   }
   
   .hero-trust span { 
-    font-size: 10px !important;
+    font-size: 9px !important;
     white-space: nowrap !important;
+    font-weight: 500 !important;
   }
   
   .trust-dot {
-    font-size: 10px !important;
-    opacity: 0.4 !important;
+    font-size: 8px !important;
+    opacity: 0.35 !important;
   }
 
-  /* 5. Urgency Message - Restore within Hero */
+  /* 5. Urgency Message - Subtle & Refined */
   .hero-urgency {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 6px !important;
-    margin: 16px auto 0 !important;
-    font-size: 10px !important;
-    line-height: 1.3 !important;
+    gap: 5px !important;
+    margin: 8px auto 0 !important;
+    font-size: 9px !important;
+    line-height: 1.25 !important;
     text-align: center !important;
-    opacity: 0.8 !important;
+    opacity: 0.75 !important;
     max-width: 95% !important;
   }
   
   .hero-urgency svg {
-    width: 12px !important;
-    height: 12px !important;
+    width: 11px !important;
+    height: 11px !important;
     flex-shrink: 0 !important;
   }
 
@@ -3570,11 +3578,32 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
     box-sizing: border-box !important;
   }
 
-  /* 7. Blue Banner & Buttons */
-  .quick-auditor-section { margin-top: 24px !important; padding: 20px 16px !important; }
-  #quick-auditor h2 { font-size: 18px !important; margin-bottom: 12px !important; }
-  .form-actions { display: flex !important; flex-direction: column !important; gap: 12px !important; width: 100% !important; }
-  .form-actions .btn { width: 100% !important; justify-content: center !important; min-height: 52px !important; }
+  /* 7. Blue Banner (CTA) - Premium Apple-style Button */
+  .quick-auditor-section { 
+    margin-top: 12px !important; 
+    padding: 18px 16px !important;
+    border-radius: 18px !important;
+  }
+  #quick-auditor h2 { 
+    font-size: 17px !important; 
+    margin-bottom: 10px !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.2px !important;
+  }
+  .form-actions { 
+    display: flex !important; 
+    flex-direction: column !important; 
+    gap: 10px !important; 
+    width: 100% !important; 
+  }
+  .form-actions .btn { 
+    width: 100% !important; 
+    justify-content: center !important; 
+    min-height: 50px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    border-radius: 14px !important;
+  }
 }
 
 /* === MECHANISM STEPPER & TEXT WRAPPING FIXES === */
