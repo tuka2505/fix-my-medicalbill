@@ -741,12 +741,13 @@ a{ color:inherit; }
 
 /* Alert Text (180-day warning) */
 .alert-text-small{
-  font-size: 11px;
-  color: rgba(0,0,0,0.4);
+  font-size: 13px;
+  color: #D97706;
   margin-top: 12px;
   text-align: center;
   width: 100%;
   line-height: 1.4;
+  font-weight: 600;
 }
 
 /* Urgency Element */
@@ -3541,6 +3542,8 @@ a{ color:inherit; }
   .hero-content {
     display: flex;
     gap: 60px;
+    justify-content: space-between;
+    align-items: flex-start;
   }
   
   .hero-left {
@@ -3574,6 +3577,14 @@ a{ color:inherit; }
     box-shadow: none !important;
   }
   
+  /* Center Stats Box Content */
+  .value-stat {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+  }
+  
   /* Ensure stats box and CTA take full width in hero-right */
   .hero-right .hero-value-prop {
     width: 100% !important;
@@ -3593,6 +3604,12 @@ a{ color:inherit; }
   
   .hero-cta-btn:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.12), 0 12px 32px rgba(0,113,227,0.18);
+  }
+  
+  /* Alert Text: More Prominent on Desktop */
+  .alert-text-small {
+    font-size: 14px !important;
+    font-weight: 600 !important;
   }
 }
 

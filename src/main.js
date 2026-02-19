@@ -383,7 +383,7 @@ function renderHero() {
           </div>
           
           <!-- Alert Text -->
-          <p class="alert-text-small">🕒 Most dispute rights expire after 180 days. Start your review today.</p>
+          <p class="alert-text-small">⚠️ Most dispute rights expire after 180 days. Start your review today.</p>
         </div>
       </div>
     </section>
