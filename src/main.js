@@ -345,7 +345,7 @@ function renderHero() {
           <!-- CTA Section -->
           <div class="hero-cta-section">
             <p class="hero-cta-text">Find Your Hidden Refund&nbsp;in <span style="white-space: nowrap;">10 Seconds.</span></p>
-            <input type="file" id="bill-upload" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,application/pdf" style="display:none;">
+            <input type="file" id="bill-upload" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" style="display:none;">
             <label for="bill-upload" class="hero-cta-btn" id="upload-label">
               Scan Bill & Get Refund
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
