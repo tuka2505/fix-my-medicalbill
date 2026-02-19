@@ -315,6 +315,8 @@ a{ color:inherit; }
   border-radius: 18px;
   box-shadow: 0 8px 24px rgba(0,113,227,0.25);
   width: 100%;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .hero-cta-text{
@@ -353,6 +355,15 @@ a{ color:inherit; }
   background: #ffffff;
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+}
+
+/* Drag and drop state */
+.hero-cta-section.drag-over{
+  transform: translateY(-2px) scale(1.02);
+  background: linear-gradient(135deg, #0088ff, #006bd6);
+  box-shadow: 0 16px 48px rgba(0,113,227,0.45);
+  border: 2px dashed rgba(255,255,255,0.8);
+  transition: all 0.2s ease;
 }
 
 .hero-cta-btn svg{

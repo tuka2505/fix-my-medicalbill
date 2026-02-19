@@ -345,7 +345,7 @@ function renderHero() {
           <!-- CTA Section -->
           <div class="hero-cta-section">
             <p class="hero-cta-text">Find Your Hidden Refund&nbsp;in <span style="white-space: nowrap;">10 Seconds.</span></p>
-            <input type="file" id="bill-upload" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" style="display:none;">
+            <input type="file" id="bill-upload" accept="image/*,application/pdf" style="display:none;">
             <label for="bill-upload" class="hero-cta-btn" id="upload-label">
               Scan Bill & Get Refund
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -3843,7 +3843,7 @@ function classifyBill(text) {
 
 function setupBillScanning() {
   const billUpload = document.getElementById('bill-upload');
-  const dropZone = document.getElementById('auditor-cta-box');
+  const dropZone = document.querySelector('.hero-cta-section');
   const scanProgress = document.getElementById('scan-progress');
   const scanProgressFill = document.getElementById('scan-progress-fill');
   const scanProgressText = document.getElementById('scan-progress-text');
@@ -3897,7 +3897,7 @@ function setupBillScanning() {
 
   // Helper: Show manual input fallback UI
   function showManualFallback(reason = 'unreadable') {
-    const auditorCtaBox = document.getElementById('auditor-cta-box');
+    const auditorCtaBox = document.querySelector('.hero-cta-section');
     const auditorQuizWrapper = document.getElementById('auditor-quiz-wrapper');
     
     if (!auditorQuizWrapper) return;
@@ -3964,9 +3964,12 @@ function setupBillScanning() {
   async function processFile(file) {
     if (!file) return;
 
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp', 'application/pdf'];
-    if (!validTypes.includes(file.type)) {
-      alert('Please upload a valid image file (JPEG, PNG, GIF, BMP, WEBP) or PDF.');
+    // Check if file type is image or PDF
+    const isImage = file.type.startsWith('image/');
+    const isPDF = file.type === 'application/pdf';
+    
+    if (!isImage && !isPDF) {
+      alert('Please upload a valid image file or PDF.');
       return;
     }
 
@@ -4122,7 +4125,7 @@ Return STRICT valid JSON only. No markdown.`;
         
         // Start quiz
         setTimeout(() => {
-          const auditorCtaBox = document.getElementById('auditor-cta-box');
+          const auditorCtaBox = document.querySelector('.hero-cta-section');
           const auditorQuizWrapper = document.getElementById('auditor-quiz-wrapper');
           
           if (auditorCtaBox && auditorQuizWrapper) {
@@ -4150,6 +4153,15 @@ Return STRICT valid JSON only. No markdown.`;
   billUpload.addEventListener('change', async (event) => {
     const file = event.target.files[0];
     await processFile(file);
+  });
+
+  // Click on dropZone to trigger file upload (except on button/label)
+  dropZone.addEventListener('click', (e) => {
+    // Don't trigger if clicking on the button or label
+    if (e.target.closest('.hero-cta-btn') || e.target.id === 'upload-label') {
+      return;
+    }
+    billUpload.click();
   });
 
   // Drag and drop events
@@ -5054,7 +5066,7 @@ async function initializeTargetedQuiz(category) {
 
 function setupQuizLogic() {
   const startQuizBtn = document.getElementById('start-quiz-btn');
-  const auditorCtaBox = document.getElementById('auditor-cta-box');
+  const auditorCtaBox = document.querySelector('.hero-cta-section');
   const auditorQuizWrapper = document.getElementById('auditor-quiz-wrapper');
   const quizContainer = document.getElementById('quiz-container');
   const quizResult = document.getElementById('quiz-result');
@@ -5069,7 +5081,7 @@ function setupQuizLogic() {
   if (!quizContainer) return; // Exit if not on home page
 
   // Show quiz when CTA button is clicked
-  if (startQuizBtn) {
+  if (startQuizBtn && auditorCtaBox) {
     startQuizBtn.addEventListener('click', () => {
       auditorCtaBox.style.display = 'none';
       auditorQuizWrapper.style.display = 'block';
