@@ -312,8 +312,11 @@ function renderHero() {
           <span>15,000+ Bills Analyzed</span>
         </div>
 
-        <h1 class="hero-title">Stop Overpaying Hospitals. <span class="hero-highlight">Recover Your Hidden Medical Refund.</span></h1>
+        <h1 class="hero-title">Stop Overpaying. <span class="hero-highlight">Find Your Hidden Refund in 10 Seconds.</span></h1>
         <p class="hero-sub">80% of US medical bills contain errors. Use our AI Audit to find your missing <strong>$300 to $1,500</strong> in 60 seconds.</p>
+        
+        <!-- Mechanism Stepper -->
+        <div class="mechanism-stepper">🔍 1. AI Bill Scan &nbsp;➔&nbsp; 📝 2. Auto Dispute Letter</div>
         
         <!-- Value Proposition -->
         <div class="hero-value-prop">
@@ -323,7 +326,7 @@ function renderHero() {
           </div>
           <div class="value-divider"></div>
           <div class="value-stat">
-            <span class="value-number">60 Sec</span>
+            <span class="value-number">60s</span>
             <span class="value-label">To Audit</span>
           </div>
           <div class="value-divider"></div>
@@ -332,41 +335,6 @@ function renderHero() {
             <span class="value-label">AI Accuracy</span>
           </div>
         </div>
-
-        <!-- Trust Indicators -->
-        <div class="hero-trust">
-          <div class="trust-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
-            </svg>
-            <span>No Credit Card Required</span>
-          </div>
-          <span class="trust-dot">·</span>
-          <div class="trust-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
-              <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-            </svg>
-            <span>100% Free Resources</span>
-          </div>
-          <span class="trust-dot">·</span>
-          <div class="trust-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="1.5"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-width="1.5" stroke-linecap="round"></path>
-            </svg>
-            <span>Your Data Stays Private</span>
-          </div>
-        </div>
-
-        <!-- Urgency (subtle) -->
-        <p class="hero-urgency">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
-            <path d="M12 6v6l4 2" stroke-width="1.5" stroke-linecap="round"></path>
-          </svg>
-          Most dispute rights expire after 180 days. Start your review today.
-        </p>
       </div>
     </section>
   `;
@@ -407,10 +375,10 @@ function renderQuickAuditor() {
         <!-- Slim Auditor Bar (Always Visible) -->
         <div class="slim-auditor-bar" id="auditor-cta-box">
           <div class="slim-bar-content">
-            <span class="slim-bar-text">Not sure if you were overcharged?</span>
+            <span class="slim-bar-text">Find Your Hidden Refund in 10 Seconds.</span>
             <input type="file" id="bill-upload" accept="image/*,.pdf" style="display:none;">
             <label for="bill-upload" class="slim-bar-btn" id="upload-label">
-              Upload Bill to Scan
+              Scan Bill & Get Refund
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                 <polyline points="17 8 12 3 7 8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
@@ -492,6 +460,41 @@ function renderQuickAuditor() {
           </div>
         </div>
       </div>
+
+      <!-- Trust Indicators (moved from hero) -->
+      <div class="hero-trust">
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
+          </svg>
+          <span>No Credit Card Required</span>
+        </div>
+        <span class="trust-dot">·</span>
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
+            <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <span>100% Free Resources</span>
+        </div>
+        <span class="trust-dot">·</span>
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="1.5"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+          <span>Your Data Stays Private</span>
+        </div>
+      </div>
+
+      <!-- Urgency (moved from hero) -->
+      <p class="hero-urgency">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
+          <path d="M12 6v6l4 2" stroke-width="1.5" stroke-linecap="round"></path>
+        </svg>
+        Most dispute rights expire after 180 days. Start your review today.
+      </p>
     </section>
   `;
 }
