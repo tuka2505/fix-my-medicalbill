@@ -471,6 +471,7 @@ function renderQuickAuditor() {
                 Start My Dispute Now
               </button>
               <button class="result-reset-btn" id="quiz-reset-btn">Start Over</button>
+              <p style="font-size: 11.5px; color: var(--muted2); text-align: center; max-width: 480px; margin: -8px auto 0; line-height: 1.4;">*Estimates are based on AI analysis of common billing errors and federal guidelines. Actual results depend on your provider and insurance plan. This tool provides educational templates, not medical or legal advice.</p>
             </div>
           </div>
 
@@ -1097,6 +1098,7 @@ function getToolSectionMarkup(sectionId) {
                     <button class="btn neutral" type="button" data-copy="script" disabled>Copy Phone Script</button>
                     <button class="btn neutral" type="button" data-download="pdf" disabled>Download PDF</button>
                   </div>
+                  <p style="font-size: 11px; color: var(--muted2); margin-top: 12px; margin-bottom: 0; line-height: 1.4;">By generating this document, you acknowledge that you are solely responsible for reviewing its accuracy before submission. FixMyMedicalBill provides informational templates, not legal counsel.</p>
                 </form>
               </div>
               <div class="tool-results">
@@ -1174,6 +1176,7 @@ function getToolSectionMarkup(sectionId) {
                     <button class="btn neutral" type="button" data-copy="script" disabled>Copy Phone Script</button>
                     <button class="btn neutral" type="button" data-download="pdf" disabled>Download PDF</button>
                   </div>
+                  <p style="font-size: 11px; color: var(--muted2); margin-top: 12px; margin-bottom: 0; line-height: 1.4;">By generating this document, you acknowledge that you are solely responsible for reviewing its accuracy before submission. FixMyMedicalBill provides informational templates, not legal counsel.</p>
                 </form>
               </div>
               <div class="tool-results">
@@ -1250,6 +1253,7 @@ function getToolSectionMarkup(sectionId) {
                     <button class="btn neutral" type="button" data-copy="script" disabled>Copy Phone Script</button>
                     <button class="btn neutral" type="button" data-download="pdf" disabled>Download PDF</button>
                   </div>
+                  <p style="font-size: 11px; color: var(--muted2); margin-top: 12px; margin-bottom: 0; line-height: 1.4;">By generating this document, you acknowledge that you are solely responsible for reviewing its accuracy before submission. FixMyMedicalBill provides informational templates, not legal counsel.</p>
                 </form>
               </div>
               <div class="tool-results">
@@ -1327,6 +1331,7 @@ function getToolSectionMarkup(sectionId) {
                     <button class="btn neutral" type="button" data-copy="script" disabled>Copy Phone Script</button>
                     <button class="btn neutral" type="button" data-download="pdf" disabled>Download PDF</button>
                   </div>
+                  <p style="font-size: 11px; color: var(--muted2); margin-top: 12px; margin-bottom: 0; line-height: 1.4;">By generating this document, you acknowledge that you are solely responsible for reviewing its accuracy before submission. FixMyMedicalBill provides informational templates, not legal counsel.</p>
                 </form>
               </div>
               <div class="tool-results">
@@ -1394,6 +1399,7 @@ function getToolSectionMarkup(sectionId) {
                     <button class="btn neutral" type="button" data-copy="script" disabled>Copy Phone Script</button>
                     <button class="btn neutral" type="button" data-download="pdf" disabled>Download PDF</button>
                   </div>
+                  <p style="font-size: 11px; color: var(--muted2); margin-top: 12px; margin-bottom: 0; line-height: 1.4;">By generating this document, you acknowledge that you are solely responsible for reviewing its accuracy before submission. FixMyMedicalBill provides informational templates, not legal counsel.</p>
                 </form>
               </div>
               <div class="tool-results">
@@ -1473,6 +1479,7 @@ function getToolSectionMarkup(sectionId) {
                     <button class="btn neutral" type="button" data-copy="script" disabled>Copy Phone Script</button>
                     <button class="btn neutral" type="button" data-download="pdf" disabled>Download PDF</button>
                   </div>
+                  <p style="font-size: 11px; color: var(--muted2); margin-top: 12px; margin-bottom: 0; line-height: 1.4;">By generating this document, you acknowledge that you are solely responsible for reviewing its accuracy before submission. FixMyMedicalBill provides informational templates, not legal counsel.</p>
                 </form>
               </div>
               <div class="tool-results">
@@ -1558,6 +1565,7 @@ function getToolSectionMarkup(sectionId) {
                     <button class="btn neutral" type="button" data-copy="script" disabled>Copy Phone Script</button>
                     <button class="btn neutral" type="button" data-download="pdf" disabled>Download PDF</button>
                   </div>
+                  <p style="font-size: 11px; color: var(--muted2); margin-top: 12px; margin-bottom: 0; line-height: 1.4;">By generating this document, you acknowledge that you are solely responsible for reviewing its accuracy before submission. FixMyMedicalBill provides informational templates, not legal counsel.</p>
                 </form>
               </div>
               <div class="tool-results">
@@ -1634,6 +1642,7 @@ function getToolSectionMarkup(sectionId) {
                     <button class="btn neutral" type="button" data-copy="script" disabled>Copy Phone Script</button>
                     <button class="btn neutral" type="button" data-download="pdf" disabled>Download PDF</button>
                   </div>
+                  <p style="font-size: 11px; color: var(--muted2); margin-top: 12px; margin-bottom: 0; line-height: 1.4;">By generating this document, you acknowledge that you are solely responsible for reviewing its accuracy before submission. FixMyMedicalBill provides informational templates, not legal counsel.</p>
                 </form>
               </div>
               <div class="tool-results">
@@ -1713,6 +1722,7 @@ function getToolSectionMarkup(sectionId) {
                     <button class="btn neutral" type="button" data-copy="script" disabled>Copy Phone Script</button>
                     <button class="btn neutral" type="button" data-download="pdf" disabled>Download PDF</button>
                   </div>
+                  <p style="font-size: 11px; color: var(--muted2); margin-top: 12px; margin-bottom: 0; line-height: 1.4;">By generating this document, you acknowledge that you are solely responsible for reviewing its accuracy before submission. FixMyMedicalBill provides informational templates, not legal counsel.</p>
                 </form>
               </div>
               <div class="tool-results">
@@ -1789,6 +1799,7 @@ function getToolSectionMarkup(sectionId) {
                     <button class="btn neutral" type="button" data-copy="script" disabled>Copy Phone Script</button>
                     <button class="btn neutral" type="button" data-download="pdf" disabled>Download PDF</button>
                   </div>
+                  <p style="font-size: 11px; color: var(--muted2); margin-top: 12px; margin-bottom: 0; line-height: 1.4;">By generating this document, you acknowledge that you are solely responsible for reviewing its accuracy before submission. FixMyMedicalBill provides informational templates, not legal counsel.</p>
                 </form>
               </div>
               <div class="tool-results">
@@ -2494,15 +2505,22 @@ function setupTool(options) {
         cursorY += 16; // Line spacing
       });
 
-      // Footer (Page numbers)
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFont("helvetica", "italic");
-        doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 30, { align: "center" });
-        doc.text("Generated securely via FixMyMedicalBill.com", margin, pageHeight - 30);
+// Footer (Page numbers + Liability Shield)
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 30, { align: "center" });
+      
+      // Liability Shield Disclaimer
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(180, 180, 180);
+      const disclaimerText = "This document was independently generated by the patient using an educational template. FixMyMedicalBill.com is not a law firm and does not provide legal representation or medical advice.";
+      const disclaimerLines = doc.splitTextToSize(disclaimerText, pageWidth - 2 * margin);
+      doc.text(disclaimerLines, pageWidth / 2, pageHeight - 18, { align: "center" });
       }
 
       doc.save(options.pdfFileName);
