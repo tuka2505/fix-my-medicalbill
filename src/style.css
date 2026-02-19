@@ -531,7 +531,7 @@ a{ color:inherit; }
   font-size: 56px;
   font-weight: 900;
   line-height: 1.1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   color: var(--textStrong);
   margin: 0 0 12px;
   max-width: 720px;
@@ -547,6 +547,16 @@ a{ color:inherit; }
   position: relative;
 }
 
+/* Glowing Blue Highlight */
+.highlight-blue{
+  background: linear-gradient(135deg, #007AFF, #00C7FF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+  display: inline-block;
+}
+
 /* Value Proposition Stats */
 .hero-value-prop{
   display: flex;
@@ -554,11 +564,12 @@ a{ color:inherit; }
   gap: 32px;
   margin: 16px 0;
   padding: 16px 24px;
-  background: #F5F7FA;
-  border: 1px solid rgba(0,0,0,0.06);
+  background: rgba(0,0,0,0.02);
+  border: 1px solid rgba(0,0,0,0.05);
   border-radius: 18px;
   backdrop-filter: blur(10px);
   max-width: fit-content;
+  box-shadow: none;
 }
 
 .value-stat{
@@ -716,6 +727,16 @@ a{ color:inherit; }
 .trust-dot{
   color: var(--muted2);
   font-size: 12px;
+}
+
+/* Alert Text (180-day warning) */
+.alert-text-small{
+  font-size: 11px;
+  color: rgba(0,0,0,0.4);
+  margin-top: 12px;
+  text-align: center;
+  width: 100%;
+  line-height: 1.4;
 }
 
 /* Urgency Element */
@@ -3526,6 +3547,7 @@ a{ color:inherit; }
   /* Hero Title: Refined Typography */
   .hero-title {
     line-height: 1.1 !important;
+    letter-spacing: -0.02em !important;
   }
   
   /* Mechanism Stepper: Clean Informational Text */
@@ -3537,7 +3559,7 @@ a{ color:inherit; }
   
   /* Stats Box: Embedded Look */
   .hero-value-prop {
-    background: rgba(0,0,0,0.03) !important;
+    background: rgba(0,0,0,0.02) !important;
     border: 1px solid rgba(0,0,0,0.05) !important;
     box-shadow: none !important;
   }

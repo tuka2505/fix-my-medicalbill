@@ -315,7 +315,7 @@ function renderHero() {
             <span>15,000+ Bills Analyzed</span>
           </div>
 
-          <h1 class="hero-title">Stop Overpaying.<br>Find Your Hidden&nbsp;Refund in&nbsp;10&nbsp;Seconds.</h1>
+          <h1 class="hero-title">Stop Overpaying.<br><span class="highlight-blue">Find Your Hidden&nbsp;Refund in&nbsp;10&nbsp;Seconds.</span></h1>
           <p class="hero-sub">80% of US medical bills contain errors. Use our AI Audit to find your missing <strong><span style="white-space: nowrap;">$300 to $1,500</span></strong> in 60 seconds.</p>
           
           <!-- Mechanism Stepper -->
@@ -381,6 +381,9 @@ function renderHero() {
               <span>Your Data Stays Private</span>
             </div>
           </div>
+          
+          <!-- Alert Text -->
+          <p class="alert-text-small">🕒 Most dispute rights expire after 180 days. Start your review today.</p>
         </div>
       </div>
     </section>
