@@ -300,6 +300,11 @@ a{ color:inherit; }
   align-items: stretch;
 }
 
+/* Force all direct children of hero-right to take full width */
+.hero-right > *{
+  width: 100%;
+}
+
 /* Hero CTA Section */
 .hero-cta-section{
   display: flex;
@@ -360,7 +365,6 @@ a{ color:inherit; }
 .hero-right .hero-value-prop{
   margin: 0;
   width: 100%;
-  max-width: none;
   justify-content: space-around;
 }
 
@@ -570,7 +574,6 @@ a{ color:inherit; }
   border: 1px solid rgba(0,0,0,0.05);
   border-radius: 18px;
   backdrop-filter: blur(10px);
-  max-width: fit-content;
   box-shadow: none;
 }
 
@@ -3575,6 +3578,7 @@ a{ color:inherit; }
     background: rgba(0,0,0,0.02) !important;
     border: 1px solid rgba(0,0,0,0.05) !important;
     box-shadow: none !important;
+    width: 100% !important;
   }
   
   /* Center Stats Box Content */
@@ -3588,7 +3592,6 @@ a{ color:inherit; }
   /* Ensure stats box and CTA take full width in hero-right */
   .hero-right .hero-value-prop {
     width: 100% !important;
-    max-width: none !important;
   }
   
   .hero-right .hero-cta-section {
