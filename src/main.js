@@ -3843,196 +3843,91 @@ function classifyBill(text) {
 
 function setupBillScanning() {
   const billUpload = document.getElementById('bill-upload');
-  const dropZone = document.querySelector('.hero-cta-section');
+  // Correctly target the class from renderHero
+  const dropZone = document.querySelector('.hero-cta-section'); 
   const quickAuditorSection = document.getElementById('quick-auditor');
   const scanProgress = document.getElementById('scan-progress');
   const scanProgressFill = document.getElementById('scan-progress-fill');
   const scanProgressText = document.getElementById('scan-progress-text');
 
-  if (!billUpload || !dropZone) return; // Exit if not on home page
+  if (!billUpload || !dropZone) return; 
 
-  // Helper: Convert PDF to image using pdf.js
   async function convertPDFToImage(file) {
     try {
       pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       const page = await pdf.getPage(1);
-
       const viewport = page.getViewport({ scale: 2.0 });
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
-
-      await page.render({
-        canvasContext: context,
-        viewport: viewport
-      }).promise;
-
-      return new Promise((resolve) => {
-        canvas.toBlob((blob) => {
-          resolve(blob);
-        }, 'image/png');
-      });
+      await page.render({ canvasContext: context, viewport: viewport }).promise;
+      return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
     } catch (error) {
       console.error('PDF conversion error:', error);
       throw new Error('Failed to convert PDF to image');
     }
   }
 
-  // Helper: Show manual input fallback UI
   function showManualFallback(reason = 'unreadable') {
     const auditorQuizWrapper = document.getElementById('auditor-quiz-wrapper');
-    
     if (!auditorQuizWrapper) return;
 
-    if (scanProgress) {
-      scanProgress.style.display = 'none';
-    }
-    if (quickAuditorSection) {
-      quickAuditorSection.style.display = 'block';
-    }
+    if (scanProgress) scanProgress.style.display = 'none';
+    if (quickAuditorSection) quickAuditorSection.style.display = 'block';
     auditorQuizWrapper.style.display = 'block';
-
-    const reasonText = reason === 'unreadable' 
-      ? "We couldn't clearly read your document." 
-      : "This doesn't appear to be a medical bill.";
 
     auditorQuizWrapper.innerHTML = `
       <div class="tool-panel manual-fallback" style="animation: fadeInUp 0.4s ease; width: 100%; max-width: 600px; margin: 0 auto; text-align: left;">
-        <h3 class="question-title" style="text-align: center;">${reasonText}</h3>
+        <h3 class="question-title" style="text-align: center;">${reason === 'unreadable' ? "We couldn't clearly read your document." : "This doesn't appear to be a medical bill."}</h3>
         <p class="question-context" style="text-align: center; margin-bottom: 24px;">Please enter the basic details below so our AI can begin the audit.</p>
         <div class="form-grid">
-          <div class="field">
-            <label>Facility / Provider Name</label>
-            <input type="text" id="manual-facility" class="accent-focus" placeholder="e.g. City General Hospital">
-          </div>
-          <div class="field">
-            <label>Total Billed Amount</label>
-            <input type="text" id="manual-amount" class="accent-focus" placeholder="$0.00">
-          </div>
+          <div class="field"><label>Facility / Provider Name</label><input type="text" id="manual-facility" class="accent-focus" placeholder="e.g. City General Hospital"></div>
+          <div class="field"><label>Total Billed Amount</label><input type="text" id="manual-amount" class="accent-focus" placeholder="$0.00"></div>
         </div>
         <button class="btn" id="manual-submit" style="margin-top: 24px; width: 100%; justify-content: center;">Start AI Audit</button>
       </div>
     `;
 
-    // WIRE THE BUTTON
     document.getElementById('manual-submit').addEventListener('click', () => {
       const facility = document.getElementById('manual-facility').value.trim() || "Unknown Facility";
       const amount = document.getElementById('manual-amount').value.trim().replace(/[$,]/g, '') || "0";
-
-      // Create dummy data to keep flow working
-      const dummyResult = {
-        isValid: true,
-        facilityName: facility,
-        totalAmount: amount,
-        issueCategory: "General Doctor Visit"
-      };
       
-      localStorage.setItem('medicalAuditData', JSON.stringify(dummyResult));
+      localStorage.setItem('medicalAuditData', JSON.stringify({ isValid: true, facilityName: facility, totalAmount: amount, issueCategory: "General Doctor Visit" }));
       detectedAmount = amount;
       currentBillCategory = { category: "General Doctor Visit", route: '/medical-bill-dispute-letter' };
-      currentBillText = "Manual Entry: " + facility; // Give Gemini some context
+      currentBillText = "Manual Entry: " + facility;
       
-      console.log('[Manual Input] Starting quiz with:', { facility, amount, category: currentBillCategory.category });
-
-      // Reconstruct necessary HTML structure for initializeTargetedQuiz
+      // Restore quiz structure
       auditorQuizWrapper.innerHTML = `
-        <div class="auditor-header">
-          <h2 class="auditor-title">Find Your Hidden Medical Refund</h2>
-          <p class="auditor-subtitle">Answer AI-personalized questions to estimate your potential recovery amount</p>
-        </div>
-        
-        <!-- Progress Bar -->
-        <div class="quiz-progress-container">
-          <div class="quiz-progress-bar">
-            <div class="quiz-progress-fill" id="quiz-progress"></div>
-          </div>
-          <div class="quiz-progress-text" id="quiz-progress-text">Question 1 of 4</div>
-        </div>
-
-        <!-- Quiz Container -->
-        <div class="quiz-container" id="quiz-container">
-          <!-- Questions will be injected here by JavaScript -->
-        </div>
-
-        <!-- Result Container (hidden initially) -->
+        <div class="auditor-header"><h2 class="auditor-title">Find Your Hidden Medical Refund</h2><p class="auditor-subtitle">Answer AI-personalized questions</p></div>
+        <div class="quiz-progress-container"><div class="quiz-progress-bar"><div class="quiz-progress-fill" id="quiz-progress"></div></div><div class="quiz-progress-text" id="quiz-progress-text">Question 1 of 4</div></div>
+        <div class="quiz-container" id="quiz-container"></div>
         <div class="quiz-result-container" id="quiz-result" style="display: none;">
-          <div class="quiz-analyzing" id="quiz-analyzing">
-            <div class="analyzing-spinner"></div>
-            <p class="analyzing-text">Analyzing your bill...</p>
-          </div>
-          
-          <div class="quiz-final-result" id="quiz-final" style="display: none;">
-            <div class="result-badge">Estimated Recovery</div>
-            <div class="result-amount" id="result-amount">$0</div>
-            <p class="result-description">Based on your answers, you may be entitled to recover this amount from billing errors and overcharges.</p>
-            <button class="result-cta-btn" id="quiz-cta-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-              </svg>
-              Start My Dispute Now
-            </button>
-            <button class="result-reset-btn" id="quiz-reset-btn">Start Over</button>
-            <p style="font-size: 11.5px; color: var(--muted2); text-align: center; max-width: 480px; margin: -8px auto 0; line-height: 1.4;">*Estimates are based on AI analysis of common billing errors and federal guidelines. Actual results depend on your provider and insurance plan. This tool provides educational templates, not medical or legal advice.</p>
-          </div>
-        </div>
-
-        <div class="auditor-trust">
-          <div class="trust-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
-            </svg>
-            <span>100% Private</span>
-          </div>
-          <div class="trust-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
-              <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-            </svg>
-            <span>98% AI Accuracy</span>
-          </div>
-          <div class="trust-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
-              <path d="M12 6v6l4 2" stroke-width="1.5" stroke-linecap="round"></path>
-            </svg>
-            <span>Takes 30 Seconds</span>
-          </div>
+          <div class="quiz-analyzing" id="quiz-analyzing"><div class="analyzing-spinner"></div><p class="analyzing-text">Analyzing your bill...</p></div>
+          <div class="quiz-final-result" id="quiz-final" style="display: none;"><div class="result-badge">Estimated Recovery</div><div class="result-amount" id="result-amount">$0</div><p class="result-description"></p><button class="result-cta-btn" id="quiz-cta-btn"></button><button class="result-reset-btn" id="quiz-reset-btn">Start Over</button></div>
         </div>
       `;
-      
-      // Now start the quiz with proper HTML structure
       initializeTargetedQuiz("General Doctor Visit");
     });
-
-    billUpload.value = '';
   }
 
-  // Main file processing function
   async function processFile(file) {
     if (!file) return;
-
     const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp', 'application/pdf'];
-    if (!validTypes.includes(file.type)) {
-      alert('Please upload a valid image file or PDF.');
-      return;
-    }
+    if (!validTypes.includes(file.type)) { alert('Please upload a valid image file or PDF.'); return; }
 
-    // --- CRITICAL FIX: Make Parent Visible and Scroll ---
     if (quickAuditorSection) {
       quickAuditorSection.style.display = 'block';
       quickAuditorSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-
     if (scanProgress) {
       scanProgress.style.display = 'flex';
       scanProgressFill.style.width = '30%';
       scanProgressText.textContent = 'Analyzing document with AI...';
     }
-
     const privacyNotice = document.querySelector('.privacy-notice');
     if (privacyNotice) privacyNotice.style.display = 'none';
 
@@ -4040,7 +3935,7 @@ function setupBillScanning() {
       let fileToProcess = file;
       if (file.type === 'application/pdf') {
         scanProgressText.textContent = 'Converting PDF for AI...';
-        const imageBlob = await convertPDFToImage(file); 
+        const imageBlob = await convertPDFToImage(file);
         fileToProcess = new File([imageBlob], file.name.replace('.pdf', '.png'), { type: 'image/png' });
       }
 
@@ -4049,112 +3944,70 @@ function setupBillScanning() {
         try {
           const base64String = reader.result.split(',')[1];
           const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-          
-          if (!apiKey) throw new Error("API Key missing in environment variables");
-
-          const requestBody = {
-            contents: [{
-              parts: [
-                { text: "Analyze this US medical bill or receipt. Return ONLY a valid flat JSON object with NO MARKDOWN. Required keys: \"isValid\" (boolean: true if it is a bill, false otherwise), \"facilityName\" (string), \"totalAmount\" (string with $, e.g. '$1,250.00'), \"dateOfService\" (string MM/DD/YYYY), \"accountNumber\" (string), \"patientName\" (string), \"issueCategory\" (string, strictly ONE of: 'Emergency Room', 'Lab & Imaging', 'Surgery & Inpatient', 'General Doctor Visit'). If completely unreadable, return {\"isValid\": false}." },
-                { inlineData: { mimeType: fileToProcess.type, data: base64String } }
-              ]
-            }],
-            generationConfig: { response_mime_type: "application/json" }
-          };
+          if (!apiKey) throw new Error("API Key missing");
 
           const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: "Analyze this US medical bill. Return ONLY flat JSON. Required keys: \"isValid\"(bool), \"facilityName\", \"totalAmount\", \"dateOfService\", \"issueCategory\" (ONE OF: 'Emergency Room', 'Lab & Imaging', 'Surgery & Inpatient', 'General Doctor Visit')." }, { inlineData: { mimeType: fileToProcess.type, data: base64String } }] }],
+              generationConfig: { response_mime_type: "application/json" }
+            })
           });
 
-          // --- 429 RATE LIMIT SAFEGUARD ---
           if (!response.ok) {
-            if (response.status === 429) {
-              alert("Our AI servers are experiencing high traffic. Please wait 1 minute and try scanning again.");
-              if (scanProgress) scanProgress.style.display = 'none';
-              if (privacyNotice) privacyNotice.style.display = 'block';
-              return; 
-            }
-            throw new Error(`HTTP Error: ${response.status}`);
+            if (response.status === 429) { alert("Server busy (429). Please wait 1 minute."); if (scanProgress) scanProgress.style.display = 'none'; return; }
+            throw new Error(`HTTP ${response.status}`);
           }
 
           const data = await response.json();
-          if (!data.candidates || !data.candidates[0].content) throw new Error("Empty AI response");
-
-          let aiText = data.candidates[0].content.parts[0].text;
-          aiText = aiText.replace(/```json/gi, '').replace(/```/gi, '').trim();
+          let aiText = data.candidates[0].content.parts[0].text.replace(/```json/gi, '').replace(/```/gi, '').trim();
           const aiResult = JSON.parse(aiText);
-
-          console.log("[DEBUG] AI Extracted Result:", aiResult);
-
-          // BULLETPROOF VALIDATION: Even if AI forgets isValid=true, checking for amount/facility is safer.
           const isActuallyValid = aiResult.isValid === true || aiResult.isValid === "true" || !!aiResult.facilityName || !!aiResult.totalAmount;
 
           if (isActuallyValid) {
-            aiResult.isValid = true; // Normalize for downstream
+            aiResult.isValid = true;
             localStorage.setItem('medicalAuditData', JSON.stringify(aiResult));
-            
             scanProgressFill.style.width = '100%';
             scanProgressText.textContent = 'Analysis Complete! Preparing Audit...';
-            
+
             setTimeout(() => {
-              scanProgress.style.display = 'none';
-              document.getElementById('auditor-cta-box').style.display = 'none';
-              document.getElementById('auditor-quiz-wrapper').style.display = 'block';
+              if (scanProgress) scanProgress.style.display = 'none';
               
+              // FIX: Use dropZone variable to hide the hero CTA instead of getting by missing ID
+              if (dropZone) dropZone.style.display = 'none'; 
+              
+              const quizWrapper = document.getElementById('auditor-quiz-wrapper');
+              if (quizWrapper) quizWrapper.style.display = 'block';
+
               const category = aiResult.issueCategory || 'General Doctor Visit';
               currentBillCategory = { category: category, route: '/medical-bill-dispute-letter' };
               currentBillText = JSON.stringify(aiResult);
               detectedAmount = aiResult.totalAmount || "0";
-              
+
               initializeTargetedQuiz(category);
             }, 800);
-          } else {
-            throw new Error("Document does not contain valid medical bill data.");
-          }
-        } catch (innerError) {
-          console.error("[DEBUG] Inner Error:", innerError);
-          showManualFallback();
-        }
+          } else { throw new Error("Invalid Data"); }
+        } catch (inner) { console.error(inner); showManualFallback(); }
       };
       reader.readAsDataURL(fileToProcess);
-    } catch (outerError) {
-      console.error("[DEBUG] Outer Error:", outerError);
-      showManualFallback();
-    }
+    } catch (outer) { console.error(outer); showManualFallback(); }
   }
 
-  // --- EVENT LISTENERS WITH CRITICAL DRAGENTER FIX ---
-  billUpload.addEventListener('change', async (event) => {
-    if(event.target.files.length > 0) await processFile(event.target.files[0]);
-  });
-
+  billUpload.addEventListener('change', async (e) => { if(e.target.files.length > 0) await processFile(e.target.files[0]); });
+  
+  // Updated click handler to avoid self-triggering
   dropZone.addEventListener('click', (e) => {
-    if (e.target.closest('.hero-cta-btn') || e.target.id === 'upload-label') return;
-    billUpload.click();
+    // Only trigger if clicking the container background, not the button/label directly (they handle themselves)
+    if (!e.target.closest('.hero-cta-btn') && e.target.id !== 'upload-label' && e.target !== billUpload) {
+      billUpload.click();
+    }
   });
 
-  // Must preventDefault on dragenter for drop to work in all browsers
-  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-  });
-
-  ['dragenter', 'dragover'].forEach(eventName => {
-    dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'));
-  });
-
-  ['dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'));
-  });
-
-  dropZone.addEventListener('drop', async (e) => {
-    const files = e.dataTransfer.files;
-    if (files.length > 0) await processFile(files[0]);
-  });
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(n => dropZone.addEventListener(n, (e) => { e.preventDefault(); e.stopPropagation(); }));
+  ['dragenter', 'dragover'].forEach(n => dropZone.addEventListener(n, () => dropZone.classList.add('drag-over')));
+  ['dragleave', 'drop'].forEach(n => dropZone.addEventListener(n, () => dropZone.classList.remove('drag-over')));
+  dropZone.addEventListener('drop', async (e) => { if (e.dataTransfer.files.length > 0) await processFile(e.dataTransfer.files[0]); });
 }
 
 // ========== SMART QUESTION ENGINE - EXPERT QUESTION BANK ==========
