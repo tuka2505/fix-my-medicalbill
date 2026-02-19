@@ -3914,9 +3914,9 @@ function setupBillScanning() {
       : "This doesn't appear to be a medical bill.";
 
     auditorQuizWrapper.innerHTML = `
-      <div class="tool-panel manual-fallback" style="animation: fadeInUp 0.4s ease;">
-        <h3 class="question-title">${reasonText}</h3>
-        <p class="question-context">Please enter the basic details below so our AI can begin the audit.</p>
+      <div class="tool-panel manual-fallback" style="animation: fadeInUp 0.4s ease; width: 100%; max-width: 600px; margin: 0 auto; text-align: left;">
+        <h3 class="question-title" style="text-align: center;">${reasonText}</h3>
+        <p class="question-context" style="text-align: center; margin-bottom: 24px;">Please enter the basic details below so our AI can begin the audit.</p>
         <div class="form-grid">
           <div class="field">
             <label>Facility / Provider Name</label>
@@ -3927,37 +3927,98 @@ function setupBillScanning() {
             <input type="text" id="manual-amount" class="accent-focus" placeholder="$0.00">
           </div>
         </div>
-        <button class="btn" id="manual-submit" style="margin-top: 20px; width: 100%;">Start AI Audit</button>
+        <button class="btn" id="manual-submit" style="margin-top: 24px; width: 100%; justify-content: center;">Start AI Audit</button>
       </div>
     `;
 
-    // Handle manual submit
-    const manualSubmitBtn = document.getElementById('manual-submit');
-    const manualFacility = document.getElementById('manual-facility');
-    const manualAmount = document.getElementById('manual-amount');
+    // WIRE THE BUTTON
+    document.getElementById('manual-submit').addEventListener('click', () => {
+      const facility = document.getElementById('manual-facility').value.trim() || "Unknown Facility";
+      const amount = document.getElementById('manual-amount').value.trim().replace(/[$,]/g, '') || "0";
 
-    manualSubmitBtn.addEventListener('click', () => {
-      const facility = manualFacility.value.trim();
-      const amount = manualAmount.value.trim().replace(/[$,]/g, '');
-
-      if (!facility || !amount) {
-        alert('Please fill in both fields.');
-        return;
-      }
-
-      // Create synthetic text for classification
-      const syntheticText = `${facility} HOSPITAL MEDICAL BILL PATIENT STATEMENT TOTAL AMOUNT DUE: $${amount}`;
+      // Create dummy data to keep flow working
+      const dummyResult = {
+        isValid: true,
+        facilityName: facility,
+        totalAmount: amount,
+        issueCategory: "General Doctor Visit"
+      };
       
+      localStorage.setItem('medicalAuditData', JSON.stringify(dummyResult));
       detectedAmount = amount;
-      currentBillText = syntheticText;
+      currentBillCategory = { category: "General Doctor Visit", route: '/medical-bill-dispute-letter' };
+      currentBillText = "Manual Entry: " + facility; // Give Gemini some context
       
-      const classification = classifyBill(syntheticText);
-      currentBillCategory = classification || { category: 'General Doctor Visit', route: '/medical-bill-dispute-letter' };
-
       console.log('[Manual Input] Starting quiz with:', { facility, amount, category: currentBillCategory.category });
 
-      // Start quiz
-      initializeTargetedQuiz(currentBillCategory.category);
+      // Reconstruct necessary HTML structure for initializeTargetedQuiz
+      auditorQuizWrapper.innerHTML = `
+        <div class="auditor-header">
+          <h2 class="auditor-title">Find Your Hidden Medical Refund</h2>
+          <p class="auditor-subtitle">Answer AI-personalized questions to estimate your potential recovery amount</p>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="quiz-progress-container">
+          <div class="quiz-progress-bar">
+            <div class="quiz-progress-fill" id="quiz-progress"></div>
+          </div>
+          <div class="quiz-progress-text" id="quiz-progress-text">Question 1 of 4</div>
+        </div>
+
+        <!-- Quiz Container -->
+        <div class="quiz-container" id="quiz-container">
+          <!-- Questions will be injected here by JavaScript -->
+        </div>
+
+        <!-- Result Container (hidden initially) -->
+        <div class="quiz-result-container" id="quiz-result" style="display: none;">
+          <div class="quiz-analyzing" id="quiz-analyzing">
+            <div class="analyzing-spinner"></div>
+            <p class="analyzing-text">Analyzing your bill...</p>
+          </div>
+          
+          <div class="quiz-final-result" id="quiz-final" style="display: none;">
+            <div class="result-badge">Estimated Recovery</div>
+            <div class="result-amount" id="result-amount">$0</div>
+            <p class="result-description">Based on your answers, you may be entitled to recover this amount from billing errors and overcharges.</p>
+            <button class="result-cta-btn" id="quiz-cta-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+              Start My Dispute Now
+            </button>
+            <button class="result-reset-btn" id="quiz-reset-btn">Start Over</button>
+            <p style="font-size: 11.5px; color: var(--muted2); text-align: center; max-width: 480px; margin: -8px auto 0; line-height: 1.4;">*Estimates are based on AI analysis of common billing errors and federal guidelines. Actual results depend on your provider and insurance plan. This tool provides educational templates, not medical or legal advice.</p>
+          </div>
+        </div>
+
+        <div class="auditor-trust">
+          <div class="trust-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
+            </svg>
+            <span>100% Private</span>
+          </div>
+          <div class="trust-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
+              <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <span>98% AI Accuracy</span>
+          </div>
+          <div class="trust-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
+              <path d="M12 6v6l4 2" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+            <span>Takes 30 Seconds</span>
+          </div>
+        </div>
+      `;
+      
+      // Now start the quiz with proper HTML structure
+      initializeTargetedQuiz("General Doctor Visit");
     });
 
     billUpload.value = '';
@@ -4076,13 +4137,24 @@ Return STRICT valid JSON only. No markdown.`;
       const data = await response.json();
       console.log('[Gemini Vision] Raw API response:', data);
 
-      // Extract and parse AI response
+      // Extract and parse AI response - FIX: More robust markdown stripping
       let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      aiText = aiText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+      
+      // Strip all possible markdown variations
+      aiText = aiText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+      // Also strip any remaining backticks
+      aiText = aiText.replace(/`/g, '');
       
       console.log('[Gemini Vision] Cleaned response:', aiText);
       
-      const aiResult = JSON.parse(aiText);
+      let aiResult;
+      try {
+        aiResult = JSON.parse(aiText);
+      } catch (parseError) {
+        console.error('[Gemini Vision] JSON parse error:', parseError);
+        console.error('[Gemini Vision] Failed to parse:', aiText);
+        throw new Error('Failed to parse AI response as JSON');
+      }
 
       clearInterval(progressInterval);
       if (scanProgressFill) {
