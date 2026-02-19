@@ -3406,7 +3406,7 @@ a{ color:inherit; }
 html, body { overflow-x: hidden !important; width: 100% !important; }
 @media (max-width: 640px) {
   .header { height: 56px !important; }
-  .main { padding: 56px 16px 80px !important; } /* Tightest possible gap to header */
+  .main { padding: 16px 16px 80px !important; } /* Minimal gap to header */
 
   /* 2. Hero Section - Force Absolute Centering */
   .hero {
@@ -3414,45 +3414,146 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
     flex-direction: column !important;
     align-items: center !important;
     text-align: center !important;
-    padding: 20px 16px !important;
+    padding: 16px !important;
     margin-top: 0 !important;
     width: 100% !important;
+    box-sizing: border-box !important;
   }
-  .hero-title { font-size: 26px !important; line-height: 1.2 !important; margin-bottom: 8px !important; }
-  .hero-subtitle { font-size: 14px !important; margin: 0 auto 16px !important; max-width: 280px !important; }
+  .hero-title { 
+    font-size: 24px !important; 
+    line-height: 1.2 !important; 
+    margin-bottom: 12px !important;
+    word-break: keep-all;
+  }
+  .hero-sub { 
+    font-size: 14px !important; 
+    margin: 0 auto 16px !important; 
+    max-width: 100% !important;
+    line-height: 1.4 !important;
+  }
 
   /* Mechanism Stepper - Mobile */
   .mechanism-stepper {
-    font-size: 12px !important;
+    font-size: 11px !important;
     padding: 6px 12px !important;
     margin: 12px auto 16px !important;
     width: fit-content !important;
+    max-width: 95% !important;
   }
 
-  /* 3. The Stats Bar - Horizontal Row with Elegant Dividers */
+  /* 3. The Stats Bar - Perfect Centering */
   .hero-value-prop {
     display: flex !important;
-    flex-direction: row !important; /* Force horizontal */
-    justify-content: center !important; /* Center the entire row */
-    align-items: center !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: stretch !important;
     width: 100% !important;
-    padding: 14px 0 !important;
-    margin: 12px 0 !important;
-    background: rgba(255, 255, 255, 0.4) !important;
-    border-radius: 12px !important;
+    padding: 16px 8px !important;
+    margin: 16px 0 !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+    border-radius: 14px !important;
+    box-sizing: border-box !important;
   }
+  
+  .value-stat,
   .stat-item {
     flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    border-right: 1px solid rgba(0, 0, 0, 0.08) !important; /* Restore delicate divider */
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 4px !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
   }
-  .stat-item:last-child { border-right: none !important; }
-  .stat-item .h2 { font-size: 20px !important; margin-bottom: 2px !important; letter-spacing: -0.5px; white-space: nowrap !important; }
-  .stat-item p { font-size: 10px !important; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.6; }
+  
+  .value-stat:last-child,
+  .stat-item:last-child { 
+    border-right: none !important; 
+  }
+  
+  .value-number,
+  .stat-item .h2,
+  .value-stat .h2 { 
+    font-size: 22px !important; 
+    margin-bottom: 4px !important; 
+    letter-spacing: -0.5px !important;
+    white-space: nowrap !important;
+    font-weight: 800 !important;
+  }
+  
+  .value-label,
+  .stat-item p,
+  .value-stat p { 
+    font-size: 9px !important; 
+    text-transform: uppercase !important; 
+    letter-spacing: 0.3px !important; 
+    opacity: 0.65 !important;
+    line-height: 1.2 !important;
+    max-width: 100% !important;
+    word-wrap: break-word !important;
+  }
+  
+  .value-divider {
+    display: none !important;
+  }
 
-  /* 4. Tool Pages - Fix Misaligned Inputs inside White Cards */
+  /* 4. Trust Badges - Restore within Hero */
+  .hero-trust {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    margin-top: 20px !important;
+    padding-top: 20px !important;
+    border-top: 1px solid rgba(0,0,0,0.06) !important;
+    width: 100% !important;
+  }
+  
+  .hero-trust .trust-badge {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+  
+  .hero-trust svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+  
+  .hero-trust span { 
+    font-size: 10px !important;
+    white-space: nowrap !important;
+  }
+  
+  .trust-dot {
+    font-size: 10px !important;
+    opacity: 0.4 !important;
+  }
+
+  /* 5. Urgency Message - Restore within Hero */
+  .hero-urgency {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    margin: 16px auto 0 !important;
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+    text-align: center !important;
+    opacity: 0.8 !important;
+    max-width: 95% !important;
+  }
+  
+  .hero-urgency svg {
+    width: 12px !important;
+    height: 12px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* 6. Tool Pages - Fix Misaligned Inputs inside White Cards */
   .tool-shell { padding: 0 !important; width: 100% !important; }
   .tool-panel {
     width: 100% !important;
@@ -3460,34 +3561,20 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
     margin: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    align-items: center !important; /* Ensure everything inside is centered */
+    align-items: center !important;
   }
   .field { width: 100% !important; display: flex !important; flex-direction: column !important; }
   .field label { text-align: left !important; width: 100% !important; margin-left: 4px; }
   input, select, textarea {
     width: 100% !important;
-    box-sizing: border-box !important; /* Fixes the 'shoved-right' overflow issue */
+    box-sizing: border-box !important;
   }
 
-  /* 5. Blue Banner & Buttons */
-  .quick-auditor-section { margin-top: 12px !important; padding: 20px 16px !important; }
+  /* 7. Blue Banner & Buttons */
+  .quick-auditor-section { margin-top: 24px !important; padding: 20px 16px !important; }
   #quick-auditor h2 { font-size: 18px !important; margin-bottom: 12px !important; }
   .form-actions { display: flex !important; flex-direction: column !important; gap: 12px !important; width: 100% !important; }
   .form-actions .btn { width: 100% !important; justify-content: center !important; min-height: 52px !important; }
-
-  /* 6. Trust Badges & Alert Banner (moved below quick-auditor) */
-  .hero-trust {
-    margin-top: 16px !important;
-    padding-top: 16px !important;
-    border-top: 1px solid rgba(0,0,0,0.05) !important;
-  }
-  .hero-trust span { font-size: 10px !important; }
-  
-  .hero-urgency,
-  .alert-banner {
-    margin: 12px 0 0 0 !important;
-    font-size: 10.5px !important;
-  }
 }
 
 /* === MECHANISM STEPPER & TEXT WRAPPING FIXES === */

@@ -1,5 +1,6 @@
 import "./style.css";
 import { jsPDF } from "jspdf";
+import * as pdfjsLib from 'pdfjs-dist';
 
 const tools = [
   {
@@ -312,7 +313,7 @@ function renderHero() {
           <span>15,000+ Bills Analyzed</span>
         </div>
 
-        <h1 class="hero-title">Stop Overpaying. <span class="hero-highlight">Find Your Hidden Refund in 10 Seconds.</span></h1>
+        <h1 class="hero-title">Stop Overpaying Hospitals. <span class="hero-highlight">Recover Your Hidden Medical Refund.</span></h1>
         <p class="hero-sub">80% of US medical bills contain errors. Use our AI Audit to find your missing <strong>$300 to $1,500</strong> in 60 seconds.</p>
         
         <!-- Mechanism Stepper -->
@@ -335,6 +336,41 @@ function renderHero() {
             <span class="value-label">AI Accuracy</span>
           </div>
         </div>
+
+        <!-- Trust Indicators -->
+        <div class="hero-trust">
+          <div class="trust-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
+            </svg>
+            <span>No Credit Card Required</span>
+          </div>
+          <span class="trust-dot">·</span>
+          <div class="trust-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
+              <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <span>100% Free Resources</span>
+          </div>
+          <span class="trust-dot">·</span>
+          <div class="trust-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="1.5"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+            <span>Your Data Stays Private</span>
+          </div>
+        </div>
+
+        <!-- Urgency (subtle) -->
+        <p class="hero-urgency">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
+            <path d="M12 6v6l4 2" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+          Most dispute rights expire after 180 days. Start your review today.
+        </p>
       </div>
     </section>
   `;
@@ -376,7 +412,7 @@ function renderQuickAuditor() {
         <div class="slim-auditor-bar" id="auditor-cta-box">
           <div class="slim-bar-content">
             <span class="slim-bar-text">Find Your Hidden Refund in 10 Seconds.</span>
-            <input type="file" id="bill-upload" accept="image/*,.pdf" style="display:none;">
+            <input type="file" id="bill-upload" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp,application/pdf" style="display:none;">
             <label for="bill-upload" class="slim-bar-btn" id="upload-label">
               Scan Bill & Get Refund
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -460,41 +496,6 @@ function renderQuickAuditor() {
           </div>
         </div>
       </div>
-
-      <!-- Trust Indicators (moved from hero) -->
-      <div class="hero-trust">
-        <div class="trust-badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
-          </svg>
-          <span>No Credit Card Required</span>
-        </div>
-        <span class="trust-dot">·</span>
-        <div class="trust-badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
-            <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-          </svg>
-          <span>100% Free Resources</span>
-        </div>
-        <span class="trust-dot">·</span>
-        <div class="trust-badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="1.5"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-width="1.5" stroke-linecap="round"></path>
-          </svg>
-          <span>Your Data Stays Private</span>
-        </div>
-      </div>
-
-      <!-- Urgency (moved from hero) -->
-      <p class="hero-urgency">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
-          <path d="M12 6v6l4 2" stroke-width="1.5" stroke-linecap="round"></path>
-        </svg>
-        Most dispute rights expire after 180 days. Start your review today.
-      </p>
     </section>
   `;
 }
@@ -3657,6 +3658,39 @@ function setupBillScanning() {
   if (!billUpload || !dropZone) return; // Exit if not on home page
 
   // Process file function (used by both file input and drag-drop)
+  // Helper function to convert PDF to image
+  async function convertPDFToImage(file) {
+    try {
+      // Set worker source
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const page = await pdf.getPage(1); // Get first page
+
+      const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better OCR
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      await page.render({
+        canvasContext: context,
+        viewport: viewport
+      }).promise;
+
+      // Convert canvas to blob
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          resolve(blob);
+        }, 'image/png');
+      });
+    } catch (error) {
+      console.error('PDF conversion error:', error);
+      throw new Error('Failed to convert PDF to image');
+    }
+  }
+
   async function processFile(file) {
     if (!file) return;
 
@@ -3687,11 +3721,21 @@ function setupBillScanning() {
     try {
       console.log('Starting OCR for file:', file.name);
       
+      // Convert PDF to image if necessary
+      let fileToProcess = file;
+      if (file.type === 'application/pdf') {
+        console.log('PDF detected, converting to image...');
+        scanProgressText.textContent = 'Converting PDF...';
+        const imageBlob = await convertPDFToImage(file);
+        fileToProcess = new File([imageBlob], file.name.replace('.pdf', '.png'), { type: 'image/png' });
+        console.log('PDF converted successfully');
+      }
+      
       // Initialize Tesseract worker WITHOUT logger to avoid DataCloneError
       const worker = await Tesseract.createWorker('eng');
 
       // Perform OCR
-      const { data: { text } } = await worker.recognize(file);
+      const { data: { text } } = await worker.recognize(fileToProcess);
       
       // Stop progress simulation and complete
       clearInterval(progressInterval);
