@@ -3882,19 +3882,6 @@ function setupBillScanning() {
     }
   }
 
-  // Helper: Convert file to Base64 string
-  async function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result.split(',')[1]; // Remove data:image/png;base64, prefix
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
   // Helper: Show manual input fallback UI
   function showManualFallback(reason = 'unreadable') {
     const auditorQuizWrapper = document.getElementById('auditor-quiz-wrapper');
@@ -4034,21 +4021,26 @@ function setupBillScanning() {
       return;
     }
 
-    const scanProgress = document.getElementById('scan-progress');
-    const scanProgressFill = document.getElementById('scan-progress-fill');
-    const scanProgressText = document.getElementById('scan-progress-text');
+    // --- CRITICAL FIX: Make Parent Visible and Scroll ---
+    if (quickAuditorSection) {
+      quickAuditorSection.style.display = 'block';
+      quickAuditorSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    if (scanProgress) {
+      scanProgress.style.display = 'flex';
+      scanProgressFill.style.width = '30%';
+      scanProgressText.textContent = 'Analyzing document with AI...';
+    }
+
     const privacyNotice = document.querySelector('.privacy-notice');
-    
     if (privacyNotice) privacyNotice.style.display = 'none';
-    scanProgress.style.display = 'flex';
-    scanProgressFill.style.width = '30%';
-    scanProgressText.textContent = 'Analyzing document with AI...';
 
     try {
       let fileToProcess = file;
       if (file.type === 'application/pdf') {
         scanProgressText.textContent = 'Converting PDF for AI...';
-        const imageBlob = await convertPDFToImage(file); // Ensure this helper exists
+        const imageBlob = await convertPDFToImage(file); 
         fileToProcess = new File([imageBlob], file.name.replace('.pdf', '.png'), { type: 'image/png' });
       }
 
@@ -4076,9 +4068,18 @@ function setupBillScanning() {
             body: JSON.stringify(requestBody)
           });
 
-          if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+          // --- 429 RATE LIMIT SAFEGUARD ---
+          if (!response.ok) {
+            if (response.status === 429) {
+              alert("Our AI servers are experiencing high traffic. Please wait 1 minute and try scanning again.");
+              if (scanProgress) scanProgress.style.display = 'none';
+              if (privacyNotice) privacyNotice.style.display = 'block';
+              return; 
+            }
+            throw new Error(`HTTP Error: ${response.status}`);
+          }
+
           const data = await response.json();
-          
           if (!data.candidates || !data.candidates[0].content) throw new Error("Empty AI response");
 
           let aiText = data.candidates[0].content.parts[0].text;
@@ -4113,54 +4114,46 @@ function setupBillScanning() {
             throw new Error("Document does not contain valid medical bill data.");
           }
         } catch (innerError) {
-          console.error("[DEBUG] Inner API/Parsing Error:", innerError);
+          console.error("[DEBUG] Inner Error:", innerError);
           showManualFallback();
         }
       };
       reader.readAsDataURL(fileToProcess);
     } catch (outerError) {
-      console.error("[DEBUG] Outer File Processing Error:", outerError);
+      console.error("[DEBUG] Outer Error:", outerError);
       showManualFallback();
     }
   }
 
-  // File input change event
+  // --- EVENT LISTENERS WITH CRITICAL DRAGENTER FIX ---
   billUpload.addEventListener('change', async (event) => {
-    const file = event.target.files[0];
-    await processFile(file);
+    if(event.target.files.length > 0) await processFile(event.target.files[0]);
   });
 
-  // Click on dropZone to trigger file upload (except on button/label)
   dropZone.addEventListener('click', (e) => {
-    // Don't trigger if clicking on the button or label
-    if (e.target.closest('.hero-cta-btn') || e.target.id === 'upload-label') {
-      return;
-    }
+    if (e.target.closest('.hero-cta-btn') || e.target.id === 'upload-label') return;
     billUpload.click();
   });
 
-  // Drag and drop events
-  dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dropZone.classList.add('drag-over');
+  // Must preventDefault on dragenter for drop to work in all browsers
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
   });
 
-  dropZone.addEventListener('dragleave', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dropZone.classList.remove('drag-over');
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'));
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'));
   });
 
   dropZone.addEventListener('drop', async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dropZone.classList.remove('drag-over');
-
     const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      await processFile(files[0]);
-    }
+    if (files.length > 0) await processFile(files[0]);
   });
 }
 
