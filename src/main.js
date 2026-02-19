@@ -3663,18 +3663,16 @@ function setupBillScanning() {
 
   if (!billUpload || !dropZone) return; // Exit if not on home page
 
-  // Process file function (used by both file input and drag-drop)
-  // Helper function to convert PDF to image
+  // Helper: Convert PDF to image using pdf.js
   async function convertPDFToImage(file) {
     try {
-      // Set worker source
       pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const page = await pdf.getPage(1); // Get first page
+      const page = await pdf.getPage(1);
 
-      const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better OCR
+      const viewport = page.getViewport({ scale: 2.0 });
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       canvas.width = viewport.width;
@@ -3685,7 +3683,6 @@ function setupBillScanning() {
         viewport: viewport
       }).promise;
 
-      // Convert canvas to blob
       return new Promise((resolve) => {
         canvas.toBlob((blob) => {
           resolve(blob);
@@ -3697,102 +3694,207 @@ function setupBillScanning() {
     }
   }
 
+  // Helper: Convert file to Base64 string
+  async function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1]; // Remove data:image/png;base64, prefix
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Helper: Show manual input fallback UI
+  function showManualFallback(reason = 'unreadable') {
+    const auditorCtaBox = document.getElementById('auditor-cta-box');
+    const auditorQuizWrapper = document.getElementById('auditor-quiz-wrapper');
+    
+    if (!auditorQuizWrapper) return;
+
+    scanProgress.style.display = 'none';
+    auditorCtaBox.style.display = 'none';
+    auditorQuizWrapper.style.display = 'block';
+
+    const reasonText = reason === 'unreadable' 
+      ? "We couldn't clearly read your document." 
+      : "This doesn't appear to be a medical bill.";
+
+    auditorQuizWrapper.innerHTML = `
+      <div class="tool-panel manual-fallback" style="animation: fadeInUp 0.4s ease;">
+        <h3 class="question-title">${reasonText}</h3>
+        <p class="question-context">Please enter the basic details below so our AI can begin the audit.</p>
+        <div class="form-grid">
+          <div class="field">
+            <label>Facility / Provider Name</label>
+            <input type="text" id="manual-facility" class="accent-focus" placeholder="e.g. City General Hospital">
+          </div>
+          <div class="field">
+            <label>Total Billed Amount</label>
+            <input type="text" id="manual-amount" class="accent-focus" placeholder="$0.00">
+          </div>
+        </div>
+        <button class="btn" id="manual-submit" style="margin-top: 20px; width: 100%;">Start AI Audit</button>
+      </div>
+    `;
+
+    // Handle manual submit
+    const manualSubmitBtn = document.getElementById('manual-submit');
+    const manualFacility = document.getElementById('manual-facility');
+    const manualAmount = document.getElementById('manual-amount');
+
+    manualSubmitBtn.addEventListener('click', () => {
+      const facility = manualFacility.value.trim();
+      const amount = manualAmount.value.trim().replace(/[$,]/g, '');
+
+      if (!facility || !amount) {
+        alert('Please fill in both fields.');
+        return;
+      }
+
+      // Create synthetic text for classification
+      const syntheticText = `${facility} HOSPITAL MEDICAL BILL PATIENT STATEMENT TOTAL AMOUNT DUE: $${amount}`;
+      
+      detectedAmount = amount;
+      currentBillText = syntheticText;
+      
+      const classification = classifyBill(syntheticText);
+      currentBillCategory = classification || { category: 'General Doctor Visit', route: '/medical-bill-dispute-letter' };
+
+      console.log('[Manual Input] Starting quiz with:', { facility, amount, category: currentBillCategory.category });
+
+      // Start quiz
+      initializeTargetedQuiz(currentBillCategory.category);
+    });
+
+    billUpload.value = '';
+  }
+
+  // Main file processing function
   async function processFile(file) {
     if (!file) return;
 
-    // Validate file type
     const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp', 'application/pdf'];
     if (!validTypes.includes(file.type)) {
       alert('Please upload a valid image file (JPEG, PNG, GIF, BMP, WEBP) or PDF.');
       return;
     }
 
-    // Show progress, hide privacy notice
     privacyNotice.style.display = 'none';
     scanProgress.style.display = 'flex';
     scanProgressFill.style.width = '0%';
-    scanProgressText.textContent = 'Initializing scanner...';
+    scanProgressText.textContent = 'Initializing AI scanner...';
 
-    // Simulate progress (since we can't use logger with DOM references)
     let progressValue = 0;
     const progressInterval = setInterval(() => {
-      if (progressValue < 90) {
-        progressValue += Math.random() * 15;
-        if (progressValue > 90) progressValue = 90;
+      if (progressValue < 85) {
+        progressValue += Math.random() * 12;
+        if (progressValue > 85) progressValue = 85;
         scanProgressFill.style.width = `${Math.round(progressValue)}%`;
-        scanProgressText.textContent = `Scanning... ${Math.round(progressValue)}%`;
+        scanProgressText.textContent = `Analyzing with Gemini AI... ${Math.round(progressValue)}%`;
       }
-    }, 300);
+    }, 400);
 
     try {
-      console.log('Starting OCR for file:', file.name);
+      console.log('[Gemini Vision] Starting analysis for:', file.name);
       
       // Convert PDF to image if necessary
       let fileToProcess = file;
       if (file.type === 'application/pdf') {
-        console.log('PDF detected, converting to image...');
+        console.log('[Gemini Vision] PDF detected, converting to image...');
         scanProgressText.textContent = 'Converting PDF...';
         const imageBlob = await convertPDFToImage(file);
         fileToProcess = new File([imageBlob], file.name.replace('.pdf', '.png'), { type: 'image/png' });
-        console.log('PDF converted successfully');
+        console.log('[Gemini Vision] PDF converted successfully');
       }
       
-      // Initialize Tesseract worker WITHOUT logger to avoid DataCloneError
-      const worker = await Tesseract.createWorker('eng');
+      // Convert to Base64
+      const base64Image = await fileToBase64(fileToProcess);
+      const mimeType = fileToProcess.type;
 
-      // Perform OCR
-      const { data: { text } } = await worker.recognize(fileToProcess);
+      // Get API key
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error('API key missing');
+      }
+
+      // Call Gemini API
+      scanProgressText.textContent = 'Analyzing document with AI...';
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
       
-      // Stop progress simulation and complete
+      const prompt = `Analyze this document. Is it a US medical bill, receipt, or Explanation of Benefits (EOB)? If NO (e.g., blurry, unreadable, non-medical), return exactly {"isValid": false, "reason": "unreadable"}. If YES, extract all text, identify the facility name, and find the total billed amount. Return exactly: {"isValid": true, "extractedText": "...", "totalAmount": "...", "facilityName": "..."}`;
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              {
+                inline_data: {
+                  mime_type: mimeType,
+                  data: base64Image
+                }
+              }
+            ]
+          }]
+        })
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        console.error('[Gemini Vision] API error:', errorBody);
+        throw new Error(`API request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('[Gemini Vision] Raw API response:', data);
+
+      // Extract and parse AI response
+      let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      aiText = aiText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+      
+      console.log('[Gemini Vision] Cleaned response:', aiText);
+      
+      const aiResult = JSON.parse(aiText);
+
       clearInterval(progressInterval);
       scanProgressFill.style.width = '100%';
-      scanProgressText.textContent = 'Scanning... 100%';
 
-      // Output extracted text to console
-      console.log('===== EXTRACTED TEXT FROM BILL =====');
-      console.log(text);
-      console.log('====================================');
+      // Handle AI validation result
+      if (!aiResult.isValid) {
+        console.warn('[Gemini Vision] Document invalid:', aiResult.reason);
+        showManualFallback(aiResult.reason);
+        return;
+      }
 
-      // Clean up
-      await worker.terminate();
+      // Valid document - extract data
+      const extractedText = aiResult.extractedText || '';
+      console.log('===== GEMINI EXTRACTED TEXT =====');
+      console.log(extractedText);
+      console.log('=================================');
 
-      // Extract amount from bill
-      detectedAmount = extractAmount(text);
-
-      // Classify the bill
-      const classification = classifyBill(text);
+      // Extract amount (try AI result first, then fallback to regex)
+      detectedAmount = aiResult.totalAmount || extractAmount(extractedText);
       
-      // ========== ACTION 3: HALT PROCESS IF INVALID ==========
-      // Check if classification returned null (invalid document)
+      // Classify the bill
+      const classification = classifyBill(extractedText);
+      
       if (!classification) {
-        console.error('[Validation] ❌ Invalid document detected by classifyBill. Halting process.');
-        clearInterval(progressInterval);
-        scanProgressFill.style.width = '100%';
-        scanProgressText.textContent = '❌ Error: No valid medical bill detected. Please upload a clear hospital bill or receipt.';
-        scanProgressText.style.color = '#ff3b30';
-        scanProgressText.style.fontWeight = '700';
-        
-        // Reset after 4 seconds
-        setTimeout(() => {
-          scanProgress.style.display = 'none';
-          privacyNotice.style.display = 'block';
-          billUpload.value = '';
-          // Reset progress bar
-          scanProgressFill.style.width = '0%';
-          scanProgressText.style.color = '';
-          scanProgressText.textContent = 'Initializing scanner...';
-        }, 4000);
-        
-        return; // Stop processing
+        console.warn('[Gemini Vision] Classification failed, showing manual fallback');
+        showManualFallback('not-medical');
+        return;
       }
       
       currentBillCategory = classification;
-      currentBillText = text;
+      currentBillText = extractedText;
       
-      console.log('[Validation] ✓ Classification passed:', classification.category);
-      // ========== END HALT PROCESS ==========
+      console.log('[Gemini Vision] ✓ Classification passed:', classification.category);
 
-      // Update UI with classification result
+      // Update UI with success
       setTimeout(() => {
         const categoryMessage = classification.category === 'General Doctor Visit' 
           ? 'General Consultation detected'
@@ -3802,7 +3904,7 @@ function setupBillScanning() {
         scanProgressText.style.color = 'rgba(52, 199, 89, 1)';
         scanProgressText.style.fontWeight = '700';
         
-        // Automatically start quiz after brief delay
+        // Start quiz
         setTimeout(() => {
           const auditorCtaBox = document.getElementById('auditor-cta-box');
           const auditorQuizWrapper = document.getElementById('auditor-quiz-wrapper');
@@ -3811,24 +3913,20 @@ function setupBillScanning() {
             scanProgress.style.display = 'none';
             auditorCtaBox.style.display = 'none';
             auditorQuizWrapper.style.display = 'block';
-            billUpload.value = ''; // Reset file input
+            billUpload.value = '';
             
-            // Initialize targeted quiz based on category
             initializeTargetedQuiz(classification.category);
           }
         }, 1500);
       }, 500);
 
     } catch (error) {
-      console.error('OCR Error:', error);
+      console.error('[Gemini Vision] Error:', error);
       clearInterval(progressInterval);
-      scanProgressText.textContent = 'Scan failed. Please try again.';
-      scanProgressFill.style.width = '0%';
-      setTimeout(() => {
-        scanProgress.style.display = 'none';
-        privacyNotice.style.display = 'block';
-        billUpload.value = '';
-      }, 3000);
+      
+      // Show manual fallback on any error
+      console.log('[Gemini Vision] Falling back to manual input');
+      showManualFallback('error');
     }
   }
 
@@ -3865,107 +3963,167 @@ function setupBillScanning() {
 
 // ========== SMART QUESTION ENGINE - EXPERT QUESTION BANK ==========
 
-const ExpertQuestionBank = {
+// ========== PHASE 2: REFERENCE AUDIT RULES (RAG KNOWLEDGE BASE) ==========
+const ReferenceAuditRules = {
   Universal: [
-    { id: 'u_itemized', q: "Did you receive a detailed 'Itemized Bill' with specific billing codes?", weight: 0, errorType: 'Audit Requirement', context: "Hospitals often hide massive errors in summary bills. You have a legal right to an itemized bill.", triggers: [] },
-    { id: 'u_charity', q: "Is your household income under $50,000/year? (Financial Assistance Check)", weight: 1000, errorType: 'Charity Care', context: "Non-profit hospitals are legally required to forgive or discount bills for low-to-middle income patients.", triggers: [] },
-    { id: 'u_lab', q: "Are there 3 or more separate 'Lab' or 'Pathology' charges on the same date?", weight: 150, errorType: 'Lab Unbundling', context: "Routine blood work should be billed as a single panel, not broken down into multiple expensive items.", triggers: ['lab', 'pathology', 'blood', 'panel', '80053'] }
+    { id: 'u_itemized', issue: "Summary Bill without CPT Codes", trigger: ["summary", "balance forward", "total due"], questionContext: "Hospitals hide errors in summary bills. Patients have a HIPAA right to an itemized bill with CPT/HCPCS codes.", weight: 0 },
+    { id: 'u_charity', issue: "IRS 501(r) Charity Care Eligibility", trigger: ["hospital", "medical center", "health system"], questionContext: "Non-profit hospitals must forgive/discount bills for households under 400% of the Federal Poverty Level. Ask about household income.", weight: 1000 }
   ],
-  ER: [
-    { id: 'er_time', q: "Did the doctor spend less than 10 minutes with you directly?", weight: 250, errorType: 'Upcoding', context: "High-level ER codes (Level 4/5) require comprehensive exams and complex medical decision making.", triggers: ['99284', '99285', 'level 4', 'level 5', 'critical'] },
-    { id: 'er_hallway', q: "Were you treated in a hallway or temporary chair instead of a private room?", weight: 300, errorType: 'Facility Fee Error', context: "Hospitals often illegally charge full 'Facility Fees' even if you didn't get a room.", triggers: ['0450', 'facility', 'room'] },
-    { id: 'er_triage', q: "Did you only see a triage nurse and leave without receiving actual treatment?", weight: 500, errorType: 'Phantom Charge', context: "Charging an ER visit fee just for taking your blood pressure is a common billing violation.", triggers: ['triage', 'emergency'] },
-    { id: 'er_supplies', q: "Are there separate charges for routine items like gloves, gowns, or IV tubing?", weight: 150, errorType: 'Unbundling', context: "Routine supplies are legally bundled into the Facility Fee and cannot be billed separately.", triggers: ['supplies', 'iv', 'kit', 'tray'] }
+  "Emergency Room": [
+    { id: 'er_upcoding', issue: "E/M Upcoding (Level 4/5)", trigger: ["99284", "99285", "level 4", "level 5", "extended", "comprehensive"], questionContext: "Level 4/5 ER visits require high complexity and direct physician time. If it was a minor issue (cut, cold) or brief visit, it's illegal upcoding.", weight: 350 },
+    { id: 'er_facility', issue: "Invalid Facility Fee", trigger: ["0450", "facility fee", "trauma response"], questionContext: "Freestanding urgent cares (POS 20) illegally charging hospital facility fees (POS 22). Or charging ER facility fees for sitting in a hallway.", weight: 400 },
+    { id: 'er_triage', issue: "Phantom Triage Charge", trigger: ["triage", "assessment", "observation"], questionContext: "Patients who left after triage without seeing a doctor cannot be billed a full ER visit fee.", weight: 500 },
+    { id: 'er_unbundling', issue: "Unbundled Supplies", trigger: ["gloves", "kit", "tray", "iv start", "pulse oximetry"], questionContext: "Routine supplies are legally bundled into the ER Facility Fee. Billing them separately is an NCCI unbundling violation.", weight: 150 }
   ],
-  Ambulance: [
-    { id: 'amb_als', q: "Did the paramedics use oxygen, a defibrillator, or IV medications during transport?", weight: 400, errorType: 'Upcoding (ALS vs BLS)', context: "If no advanced life-saving equipment was used, you should only be billed for basic transport (BLS).", triggers: ['als', 'a0427', 'advanced', 'life support'] },
-    { id: 'amb_mileage', q: "Was the actual driving distance to the hospital less than 10 miles?", weight: 150, errorType: 'Mileage Padding', context: "Ambulance companies frequently inflate the mileage driven to increase the bill.", triggers: ['mileage', 'miles', 'a0425'] },
-    { id: 'amb_choice', q: "Were you forced to use an out-of-network ambulance company without your consent?", weight: 800, errorType: 'Surprise Billing', context: "Under the No Surprises Act, you cannot be balance-billed for out-of-network emergency transport.", triggers: ['transport', 'ems', 'ambulance'] }
+  "Surgery & Inpatient": [
+    { id: 'surg_assistant', issue: "Phantom Assistant Surgeon", trigger: ["assistant", "asst", "surgeon", "80", "81", "82"], questionContext: "Surprise out-of-network assistant surgeons the patient never met. Disputable under No Surprises Act.", weight: 800 },
+    { id: 'surg_anesthesia', issue: "Anesthesia Time Padding", trigger: ["anesthesia", "minutes", "time", "01999"], questionContext: "Anesthesia is billed in 15-minute increments. Ask if the billed time heavily exceeds the actual surgery duration.", weight: 300 },
+    { id: 'surg_observation', issue: "Inpatient vs Observation", trigger: ["room and board", "inpatient", "admission", "0110", "0120"], questionContext: "If the patient stayed under 24 hours (two midnights rule), it should be billed as 'Observation' (much cheaper), not 'Inpatient Admission'.", weight: 600 }
   ],
-  Surgery: [
-    { id: 'surg_assistant', q: "Is there an 'Assistant Surgeon' listed on the bill whom you never met?", weight: 600, errorType: 'Ghost Provider', context: "Surprise assistant surgeons are a major source of illegal out-of-network overcharges.", triggers: ['assistant', 'asst', 'surgeon', 'surgery'] },
-    { id: 'surg_anesthesia', q: "Does the billed anesthesia time exceed the actual time you were in surgery?", weight: 300, errorType: 'Time Overcharge', context: "Anesthesia is billed in 15-minute increments. Even a small error can cost hundreds.", triggers: ['anesthesia', 'time', 'minutes'] },
-    { id: 'surg_observation', q: "Were you kept in the hospital for less than 24 hours?", weight: 450, errorType: 'Inpatient vs Observation', context: "If you stayed under 24 hours, it should be billed as 'Observation' (cheaper), not 'Inpatient Admission'.", triggers: ['admission', 'inpatient', 'room and board'] }
+  "Out-of-Network / Ambulance": [
+    { id: 'nsa_surprise', issue: "No Surprises Act Violation", trigger: ["out of network", "non-contracted", "balance forward"], questionContext: "If the patient went to an in-network hospital but got an out-of-network bill for ER or an anesthesiologist/radiologist, it violates federal law.", weight: 1000 },
+    { id: 'amb_als_bls', issue: "Ambulance Upcoding (ALS vs BLS)", trigger: ["A0427", "A0433", "ALS", "advanced life support"], questionContext: "Billing for Advanced Life Support (ALS) when only Basic Life Support (BLS, e.g., no IVs, no EKG) was provided.", weight: 450 },
+    { id: 'amb_mileage', issue: "Mileage Padding", trigger: ["A0425", "mileage", "miles"], questionContext: "Ambulance companies often round up or inflate the exact mileage driven to the hospital.", weight: 100 }
   ],
-  General: [
-    { id: 'gen_new_patient', q: "Have you seen this doctor or clinic within the last 3 years?", weight: 150, errorType: 'Upcoding', context: "Existing patients must be legally billed at lower 'Established Patient' rates, not 'New Patient' rates.", triggers: ['new patient', '99204', '99205'] },
-    { id: 'gen_time', q: "Did the consultation last less than 15 minutes?", weight: 120, errorType: 'Time Upcoding', context: "Extended consultation codes (e.g., 99214, 99215) require specific time thresholds that are often ignored.", triggers: ['consultation', 'office visit'] },
-    { id: 'gen_preventive_orig', q: "Was this a routine annual check-up (Preventive Care)?", weight: 200, errorType: 'Miscoding', context: "Routine preventive care should be 100% covered by insurance under the ACA, with no copay or deductible.", triggers: ['preventive', 'wellness', 'check up', 'physical'] },
-    { id: 'gen_modifier', q: "Does the bill show a 'Modifier 25' or 'Modifier 59' next to any code?", weight: 250, errorType: 'Unbundling (Modifier Abuse)', context: "Providers often use these modifiers to illegally charge for two services when only one was performed.", triggers: ['modifier', '-25', '-59', '25', '59'] },
-    { id: 'gen_preventive', q: "Was this originally scheduled as a 'Free Preventive/Annual Check-up'?", weight: 200, errorType: 'Upcoding (Preventive to Diagnostic)', context: "If you mentioned a minor ache during a free check-up, they might have illegally upcoded it to a paid diagnostic visit.", triggers: ['preventive', 'wellness', 'annual', 'physical'] }
+  "General Doctor Visit": [
+    { id: 'gen_new_patient', issue: "New vs Established Patient Upcoding", trigger: ["99203", "99204", "99205", "new patient"], questionContext: "Existing patients (seen within 3 years) must be billed at lower 'Established' rates (9921x), not 'New' rates (9920x).", weight: 200 },
+    { id: 'gen_modifier', issue: "Modifier 25/59 Abuse", trigger: ["modifier 25", "modifier 59", "-25", "-59"], questionContext: "Used to bypass edits. E.g., charging a full separate office visit fee on the exact same day a minor procedure was done.", weight: 250 },
+    { id: 'gen_preventive', issue: "Preventive to Diagnostic Upcoding", trigger: ["preventive", "annual", "physical", "wellness"], questionContext: "Annual check-ups should be 100% free under the ACA. If the doctor asked about a minor ache and added a 'Diagnostic' charge, it's a violation.", weight: 150 }
+  ],
+  "Lab & Imaging": [
+    { id: 'lab_unbundling', issue: "Lab Panel Unbundling", trigger: ["80050", "80053", "comprehensive metabolic", "lab", "blood"], questionContext: "Routine blood tests should be billed as a single cheap 'Panel'. If they billed each specific chemical separately, it's an unbundling violation.", weight: 200 },
+    { id: 'img_duplicate', issue: "Duplicate Imaging Reads", trigger: ["x-ray", "mri", "ct scan", "radiology"], questionContext: "Check if the patient was billed twice for the exact same scan (e.g., once by the hospital, once by a remote radiologist).", weight: 300 }
   ]
 };
 
-// Dynamic question selection based on trigger keyword matching
-function buildDynamicQuiz(category, extractedText) {
-  // Map category names to question bank keys
-  const categoryMap = {
-    'Emergency Room': 'ER',
-    'Ambulance': 'Ambulance',
-    'Surgery & Inpatient': 'Surgery',
-    'General Doctor Visit': 'General'
-  };
-  
-  const bankKey = categoryMap[category] || 'General';
-  const categoryQuestions = ExpertQuestionBank[bankKey] || ExpertQuestionBank.General;
-  const textLower = extractedText.toLowerCase();
-  
-  // Initialize with Universal questions (always first)
-  let selectedQuestions = [...ExpertQuestionBank.Universal];
-  
-  // Keyword matching: scan extractedText against triggers
-  const triggeredQuestions = [];
-  const nonTriggeredQuestions = [];
-  
-  categoryQuestions.forEach(q => {
-    if (q.triggers && q.triggers.length > 0) {
-      // Check if any trigger keyword matches
-      const hasMatch = q.triggers.some(trigger => textLower.includes(trigger.toLowerCase()));
-      if (hasMatch) {
-        triggeredQuestions.push(q);
-      } else {
-        nonTriggeredQuestions.push(q);
-      }
-    } else {
-      nonTriggeredQuestions.push(q);
+// ========== PHASE 2: AI-POWERED QUIZ GENERATOR (HYBRID RAG) ==========
+async function generateAIQuiz(category, extractedText) {
+  try {
+    console.log('[AI Quiz Generator] Starting for category:', category);
+    
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('API key missing');
     }
-  });
-  
-  // Add triggered questions first (prioritized)
-  selectedQuestions.push(...triggeredQuestions);
-  
-  // Fill remaining slots to reach 6-7 questions total
-  const targetCount = Math.min(7, 2 + categoryQuestions.length); // 2 universal + category questions
-  let remainingSlots = targetCount - selectedQuestions.length;
-  
-  if (remainingSlots > 0) {
-    selectedQuestions.push(...nonTriggeredQuestions.slice(0, remainingSlots));
-  }
-  
-  // Ensure we don't exceed 7 questions
-  if (selectedQuestions.length > 7) {
-    selectedQuestions = selectedQuestions.slice(0, 7);
-  }
-  
-  // Format questions for quiz renderer (compatible with existing UI)
-  return selectedQuestions.map(q => ({
-    id: q.id,
-    question: q.q,
-    weight: q.weight,
-    errorType: q.errorType,
-    context: q.context,
-    options: [
-      { label: 'Yes', value: 'yes', weight: q.weight },
-      { label: 'No', value: 'no', weight: 0 },
-      { label: 'Not Sure', value: 'not-sure', weight: q.weight * 0.5 }
+
+    // Map category to rules
+    const categoryRules = ReferenceAuditRules[category] || ReferenceAuditRules["General Doctor Visit"];
+    const combinedRules = [...categoryRules, ...ReferenceAuditRules["Lab & Imaging"]];
+
+    const prompt = `You are a Senior US Medical Billing Forensic Auditor. We use a Hybrid RAG approach to generate maximum accuracy audit questions.
+
+[OCR TEXT FROM BILL]
+"""${extractedText.substring(0, 1500)}"""
+
+[REFERENCE AUDIT RULES FOR THIS CATEGORY]
+${JSON.stringify(combinedRules)}
+
+[UNIVERSAL RULES]
+${JSON.stringify(ReferenceAuditRules.Universal)}
+
+[YOUR TASK]
+1. Cross-reference the OCR Text with the Reference Audit Rules. Find the top 3-5 rules that likely apply based on the text.
+2. Generate exactly 5 to 7 YES/NO/NOT-SURE questions.
+3. MANDATORY: Question 1 must be about Household Income (Universal Rule - Charity Care).
+4. MANDATORY: Question 2 must be about receiving an Itemized Bill (Universal Rule).
+5. The remaining questions MUST be highly personalized based on the OCR text and matched rules. (e.g., "I see code 99285 on your bill. Did the doctor actually spend more than 40 minutes with you?")
+
+[JSON OUTPUT FORMAT STRICTLY REQUIRED]
+Return an array of objects. NO markdown, NO \`\`\`json tags. It must be valid JSON.
+[
+  {
+    "id": "q_id",
+    "question": "Personalized question text...",
+    "context": "Professional explanation of why this matters legally/financially.",
+    "errorType": "The issue name from rules",
+    "options": [
+      { "label": "Yes", "value": "yes", "weight": 800 },
+      { "label": "No", "value": "no", "weight": 0 },
+      { "label": "Not Sure", "value": "not-sure", "weight": 400 }
     ]
-  }));
+  }
+]`;
+
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+    
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    // Clean markdown code blocks
+    aiText = aiText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+    
+    console.log('[AI Quiz Generator] Cleaned response:', aiText.substring(0, 200));
+    
+    const aiQuestions = JSON.parse(aiText);
+    
+    if (!Array.isArray(aiQuestions) || aiQuestions.length < 3) {
+      throw new Error('Invalid AI response format');
+    }
+
+    console.log('[AI Quiz Generator] ✓ Generated', aiQuestions.length, 'questions');
+    return aiQuestions;
+
+  } catch (error) {
+    console.error('[AI Quiz Generator] Error:', error);
+    
+    // Fallback: Return hardcoded universal questions
+    console.log('[AI Quiz Generator] Using fallback questions');
+    return [
+      {
+        id: 'fallback_charity',
+        question: 'Is your household income under $50,000/year?',
+        context: 'Non-profit hospitals must forgive or discount bills for low-to-middle income patients under IRS 501(r).',
+        errorType: 'Charity Care Eligibility',
+        options: [
+          { label: 'Yes', value: 'yes', weight: 1000 },
+          { label: 'No', value: 'no', weight: 0 },
+          { label: 'Not Sure', value: 'not-sure', weight: 500 }
+        ]
+      },
+      {
+        id: 'fallback_itemized',
+        question: 'Did you receive a detailed itemized bill with CPT/HCPCS codes?',
+        context: 'Hospitals often hide errors in summary bills. You have a legal right to request an itemized bill.',
+        errorType: 'Audit Requirement',
+        options: [
+          { label: 'Yes', value: 'yes', weight: 0 },
+          { label: 'No', value: 'no', weight: 0 },
+          { label: 'Not Sure', value: 'not-sure', weight: 0 }
+        ]
+      },
+      {
+        id: 'fallback_general',
+        question: 'Do you see any charges that seem unusually high or duplicated?',
+        context: 'Billing errors are extremely common. Look for duplicate charges, unbundled items, or inflated quantities.',
+        errorType: 'General Billing Error',
+        options: [
+          { label: 'Yes', value: 'yes', weight: 300 },
+          { label: 'No', value: 'no', weight: 0 },
+          { label: 'Not Sure', value: 'not-sure', weight: 150 }
+        ]
+      }
+    ];
+  }
 }
 
 // ========== GEMINI AI INTEGRATION ==========
 
 // Generate AI-powered audit verdict using Gemini 1.5 Flash
-async function generateAIVerdict(extractedText, auditFindings, detectedAmount, quizSavings) {
+async function generateAIVerdict(extractedText, auditFindings, detectedAmount, quizSavings, quizResponses) {
   try {
     console.log('[Gemini API] Calling AI with audit findings:', auditFindings);
     console.log('[Gemini API] Bill Amount:', detectedAmount, '| Quiz Savings:', quizSavings);
@@ -3979,32 +4137,55 @@ async function generateAIVerdict(extractedText, auditFindings, detectedAmount, q
     
     console.log('[Gemini API] ✓ API Key detected (length:', apiKey.length, 'chars)');
     
+    // ========== PHASE 3: INVESTIGATIVE PIVOT DETECTION ==========
+    const hasItemizedBill = quizResponses.find(r => 
+      r.errorType?.includes('Itemized') || 
+      r.errorType?.includes('Audit Requirement') ||
+      r.question?.toLowerCase().includes('itemized')
+    )?.answer === 'yes';
+    
+    const notSureCount = quizResponses.filter(r => r.answer === 'not-sure').length;
+    
+    console.log('[Phase 3] Itemized Bill:', hasItemizedBill, '| Not Sure Count:', notSureCount);
+    // ========== END PHASE 3 DETECTION ==========
+    
     // Extract specific error types for context
     const hasCharityCare = auditFindings.some(f => f.errorType === 'Charity Care Eligibility');
     const hasUpcoding = auditFindings.some(f => f.errorType === 'Upcoding');
     const hasPhantomBilling = auditFindings.some(f => f.errorType === 'Phantom Billing');
     const hasUnbundling = auditFindings.some(f => f.errorType === 'Unbundling');
     
-    const prompt = `You are an expert US Medical Billing Auditor. Do not guess a random number.
+    const prompt = `You are a Senior Medical Billing Auditor.
 
-INPUT DATA:
-- Total Bill Amount: $${detectedAmount}
-- Quiz-Calculated Savings: $${quizSavings}
+[INPUT DATA]
+- Bill Total: $${detectedAmount}
+- User Quiz Answers: ${JSON.stringify(quizResponses)}
+- Has Itemized Bill: ${hasItemizedBill}
+- "Not Sure" Count: ${notSureCount}
 - Audit Findings: ${JSON.stringify(auditFindings)}
 - Detected Violations: Charity Care=${hasCharityCare}, Upcoding=${hasUpcoding}, Phantom Billing=${hasPhantomBilling}, Unbundling=${hasUnbundling}
 
-CALCULATION RULES:
-1. If Charity Care is eligible, the refund should be 60-80% of total bill amount.
-2. If Phantom Billing or Upcoding is found, use the specific weighted values from quiz results.
-3. If multiple errors exist, the refund should reflect cumulative impact.
-4. The estimatedRefund MUST be a realistic number based on the bill amount and quiz findings.
-5. NEVER return a fixed amount like $450 for every bill.
-6. Base your calculation on: Quiz Savings ($${quizSavings}) as the minimum, adjusting up for severity.
+[LOGIC RULES - STRICT]
+1. CRITICAL: If 'Has Itemized Bill' is FALSE (user answered 'no'), you CANNOT calculate a refund.
+   - Return: { "refundProbability": "Low (Need Evidence)", "estimatedRefund": 0, "auditorNote": "Audit Impossible - Summary Bill Detected. Without an itemized bill showing CPT/HCPCS codes, we cannot verify specific charges or identify billing errors. Request an itemized bill immediately to proceed with a proper audit.", "recommendedTool": "Request Itemized Bill" }
+   
+2. AMBIGUITY: If "Not Sure" count is >= 2, the user lacks information.
+   - Return: { "refundProbability": "Low (Insufficient Evidence)", "estimatedRefund": 0, "auditorNote": "Insufficient Evidence for Dispute. Multiple uncertain responses indicate you need more details about your charges. Request an itemized bill to see exact CPT codes, quantities, and line-item charges before proceeding.", "recommendedTool": "Request Itemized Bill" }
+   
+3. STANDARD: If Itemized Bill = TRUE and Not Sure < 2:
+   - Calculate realistic refund based on detected violations (use Quiz Savings as minimum)
+   - If Charity Care is eligible, refund should be 60-80% of total bill
+   - If Phantom Billing or Upcoding found, use weighted values from quiz
+   - Recommend appropriate dispute tool ("Medical Bill Dispute Letter", "Urgent Care Bill Dispute", etc.)
 
-OCR TEXT EXCERPT: '${extractedText.substring(0, 500)}'
-
-Provide a JSON response with exactly these keys (NO Markdown, strictly valid JSON):
-{ "refundProbability": "High (85%)", "estimatedRefund": 1250, "auditorNote": "3-sentence professional explanation of specific violations found.", "recommendedTool": "Medical Bill Dispute Letter" }`;
+[JSON OUTPUT FORMAT - NO MARKDOWN]
+Return strictly valid JSON (no \`\`\`json tags):
+{ 
+  "refundProbability": "Low (Need Evidence)" | "High (85%)", 
+  "estimatedRefund": 0 or Number, 
+  "auditorNote": "Professional 2-3 sentence explanation", 
+  "recommendedTool": "Request Itemized Bill" | "Medical Bill Dispute Letter" | "Urgent Care Bill Dispute" 
+}`;
     
     // Use v1beta endpoint with gemini-3-flash-preview model
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
@@ -4086,12 +4267,8 @@ Provide a JSON response with exactly these keys (NO Markdown, strictly valid JSO
 }
 
 // Initialize targeted quiz based on bill category
-function initializeTargetedQuiz(category) {
-  // Build dynamic quiz using expert question bank with trigger matching
-  const questions = buildDynamicQuiz(category, currentBillText || '');
-  
-  console.log(`[Dynamic Quiz] Selected ${questions.length} questions for ${category}`);
-  console.log('[Dynamic Quiz] Question IDs:', questions.map(q => q.id).join(', '));
+async function initializeTargetedQuiz(category) {
+  console.log('[Phase 2] Initializing AI-powered quiz for:', category);
   
   const quizContainer = document.getElementById('quiz-container');
   const quizProgress = document.getElementById('quiz-progress');
@@ -4107,13 +4284,35 @@ function initializeTargetedQuiz(category) {
 
   if (!quizContainer) return;
   
+  // Show loading state while AI generates questions
+  quizContainer.style.display = 'none';
+  quizResult.style.display = 'flex';
+  quizAnalyzing.style.display = 'flex';
+  quizFinal.style.display = 'none';
+  
+  const analyzingText = document.querySelector('.analyzing-text');
+  if (analyzingText) {
+    analyzingText.textContent = 'Cross-referencing bill with Federal Guidelines...';
+  }
+
+  // Generate AI-powered questions
+  const questions = await generateAIQuiz(category, currentBillText || '');
+  
+  console.log(`[Phase 2] AI generated ${questions.length} questions for ${category}`);
+  console.log('[Phase 2] Question IDs:', questions.map(q => q.id).join(', '));
+  
+  // Hide loading, show quiz
+  quizResult.style.display = 'none';
+  quizAnalyzing.style.display = 'none';
+  quizContainer.style.display = 'block';
+  
   // Update header with category and amount
   if (auditorTitle) {
     auditorTitle.textContent = `Smart Audit: ${category}`;
   }
   if (auditorSubtitle) {
     const amountText = detectedAmount ? `$${detectedAmount}` : 'your';
-    auditorSubtitle.textContent = `${questions.length} targeted questions analyzing ${amountText} bill for common overcharges`;
+    auditorSubtitle.textContent = `${questions.length} AI-personalized questions analyzing ${amountText} bill for common overcharges`;
   }
 
   let currentQuestion = 0;
@@ -4345,7 +4544,8 @@ function initializeTargetedQuiz(category) {
           currentBillText || 'No text extracted',
           auditFindings,
           detectedAmount || '0',
-          Math.round(calculatedRefund)
+          Math.round(calculatedRefund),
+          quizResponses // ========== PHASE 3: Pass quiz responses ==========
         );
         
         console.log('[AI Verdict] Received:', aiVerdict);
@@ -4464,19 +4664,44 @@ function initializeTargetedQuiz(category) {
           resultDescription.innerHTML = breakdownHtml;
         }
         
-        // ========== ENSURE VALID REFUND BEFORE ANIMATION ==========
-        // Final safeguard: if finalRefund is 0 or invalid, use calculatedRefund
-        if (!finalRefund || finalRefund <= 0) {
+        // ========== PHASE 3: HANDLE $0 REFUND FOR INVESTIGATIVE PIVOT ==========
+        // If AI recommends "Request Itemized Bill", allow $0 refund
+        if (aiVerdict.recommendedTool === 'Request Itemized Bill' && aiVerdict.estimatedRefund === 0) {
+          finalRefund = 0;
+          console.log('[Phase 3] Investigative Pivot: Refund set to $0 (audit impossible without itemized bill)');
+        } else if (!finalRefund || finalRefund <= 0) {
+          // Standard safeguard: if finalRefund is 0 or invalid (but not investigative pivot), use calculatedRefund
           finalRefund = Math.max(Math.round(calculatedRefund), 100); // Minimum $100
           console.log('[UI Update] ⚠️ finalRefund was 0. Using calculatedRefund:', finalRefund);
         }
         
         console.log('[UI Update] Animating amount:', finalRefund);
         animateAmount(finalRefund);
+        
+        // ========== PHASE 3: ADD SUBTITLE FOR $0 REFUND ==========
+        if (finalRefund === 0 && resultAmount && resultAmount.parentElement) {
+          const subtitle = document.createElement('p');
+          subtitle.className = 'refund-subtitle';
+          subtitle.style.cssText = 'margin-top: 8px; font-size: 13px; color: #86868b; font-weight: 500;';
+          subtitle.textContent = 'Pending Detailed Audit';
+          
+          // Insert subtitle after the amount
+          if (!resultAmount.nextElementSibling || !resultAmount.nextElementSibling.classList.contains('refund-subtitle')) {
+            resultAmount.parentElement.insertBefore(subtitle, resultAmount.nextSibling);
+          }
+        }
 
         if (quizCtaBtn) {
-          // Update button text if AI recommended a specific tool
-          if (aiVerdict.recommendedTool) {
+          // ========== PHASE 3: INVESTIGATIVE PIVOT BUTTON LOGIC ==========
+          if (aiVerdict.recommendedTool === 'Request Itemized Bill') {
+            quizCtaBtn.innerHTML = `
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+              Get Itemized Bill & Audit Codes →
+            `;
+          } else if (aiVerdict.recommendedTool) {
+            // Update button text if AI recommended a specific tool
             const btnText = quizCtaBtn.querySelector('span') || quizCtaBtn;
             const originalText = btnText.textContent || 'Start My Dispute Now';
             if (!originalText.includes(aiVerdict.recommendedTool)) {
@@ -4516,7 +4741,8 @@ function initializeTargetedQuiz(category) {
               'Out-of-Network Billing Dispute': '/out-of-network-billing-dispute',
               'Insurance Claim Denied Appeal': '/insurance-claim-denied-appeal',
               'ER Bill Disputer': '/urgent-care-bill-dispute',
-              'Ambulance Bill Dispute': '/out-of-network-billing-dispute'
+              'Ambulance Bill Dispute': '/out-of-network-billing-dispute',
+              'Request Itemized Bill': '/request-itemized-medical-bill' // ========== PHASE 3: Add itemized bill route ==========
             };
             
             let targetRoute = currentBillCategory.route; // Fallback
