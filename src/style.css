@@ -278,6 +278,99 @@ a{ color:inherit; }
 
 .hero > *{ position: relative; }
 
+/* Two-Column Hero Layout */
+.hero-content{
+  display: flex;
+  flex-direction: row;
+  gap: 48px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.hero-left{
+  flex: 1;
+  max-width: 600px;
+}
+
+.hero-right{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: stretch;
+}
+
+/* Hero CTA Section */
+.hero-cta-section{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  background: linear-gradient(135deg, #0071e3, #0056b3);
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(0,113,227,0.25);
+}
+
+.hero-cta-text{
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  text-align: center;
+  margin: 0;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.hero-cta-btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  min-height: 52px;
+  background: rgba(255,255,255,0.95);
+  color: #0071e3;
+  font-size: 17px;
+  font-weight: 800 !important;
+  letter-spacing: -0.01em;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-decoration: none;
+  font-family: -apple-system, "SF Pro Display", sans-serif;
+}
+
+.hero-cta-btn:hover{
+  background: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+}
+
+.hero-cta-btn svg{
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5px;
+}
+
+/* Adjust stats box inside hero-right */
+.hero-right .hero-value-prop{
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
+  justify-content: space-around;
+}
+
+/* Adjust trust badges inside hero-right */
+.hero-right .hero-trust{
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  margin-top: 0;
+  padding-top: 20px;
+}
+
 .h1{
   margin:0;
   font-size: 4.5rem;
@@ -3407,6 +3500,60 @@ a{ color:inherit; }
   color: var(--accent);
 }
 
+/* ========== DESKTOP REFINEMENTS (Apple-style) ========== */
+@media (min-width: 1024px) {
+  /* Hero Container: Premium Layout */
+  .hero {
+    padding: 60px !important;
+  }
+  
+  .hero-content {
+    display: flex;
+    gap: 60px;
+  }
+  
+  .hero-left {
+    width: 55%;
+    max-width: none;
+    flex: none;
+  }
+  
+  .hero-right {
+    width: 45%;
+    flex: none;
+  }
+  
+  /* Hero Title: Refined Typography */
+  .hero-title {
+    line-height: 1.1 !important;
+  }
+  
+  /* Mechanism Stepper: Clean Informational Text */
+  .mechanism-stepper {
+    background: transparent !important;
+    border: 1px solid rgba(0,0,0,0.08);
+    color: var(--muted);
+  }
+  
+  /* Stats Box: Embedded Look */
+  .hero-value-prop {
+    background: rgba(0,0,0,0.03) !important;
+    border: 1px solid rgba(0,0,0,0.05) !important;
+    box-shadow: none !important;
+  }
+  
+  /* Hero CTA Button: Full Width Premium */
+  .hero-cta-btn {
+    width: 100%;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 8px 24px rgba(0,113,227,0.12);
+  }
+  
+  .hero-cta-btn:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12), 0 12px 32px rgba(0,113,227,0.18);
+  }
+}
+
 @media (max-width: 640px) {
   .guide-article h1 {
     font-size: 32px;
@@ -3426,6 +3573,36 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
 @media (max-width: 640px) {
   .header { height: 56px !important; }
   .main { padding: 8px 16px 80px !important; } /* Ultra-tight Apple-style spacing */
+
+  /* Two-Column Layout becomes Single Column */
+  .hero-content{
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+  
+  .hero-left{
+    max-width: 100% !important;
+  }
+  
+  .hero-right{
+    display: flex !important;
+    width: 100% !important;
+    gap: 16px !important;
+  }
+  
+  .hero-cta-section{
+    padding: 20px !important;
+  }
+  
+  .hero-cta-text{
+    font-size: 16px !important;
+  }
+  
+  .hero-cta-btn{
+    font-size: 15px !important;
+    padding: 12px 24px !important;
+    min-height: 48px !important;
+  }
 
   /* 2. Hero Section - Apple-style Premium Design */
   .hero {
