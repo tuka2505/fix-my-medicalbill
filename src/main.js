@@ -1963,6 +1963,55 @@ function renderToolPage(routePath) {
 
   const seoCopy = toolSeoCopy[routePath] || "";
   const toolSection = getToolSectionMarkup(tool.sectionId);
+  
+  // --- CONTEXT PRESERVATION BANNER LOGIC ---
+  let contextBannerHTML = "";
+  try {
+    const savedData = localStorage.getItem('medicalAuditData');
+    if (savedData) {
+      const auditData = JSON.parse(savedData);
+      
+      // Determine the primary issue to display
+      let primaryIssue = "potential billing discrepancies";
+      if (auditData.findings && auditData.findings.length > 0) {
+        // Use the first finding's error type
+        primaryIssue = auditData.findings[0].errorType || auditData.findings[0].issue || primaryIssue;
+      } else if (auditData.category) {
+        // Fallback to category
+        primaryIssue = `${auditData.category} billing issues`;
+      }
+      
+      // Apple-style Premium Banner HTML (Inline Styles)
+      contextBannerHTML = `
+        <div class="ai-context-banner" style="
+          animation: fadeInUp 0.5s ease-out;
+          margin-top: 16px;
+          margin-bottom: 24px;
+          padding: 18px 24px;
+          background: linear-gradient(135deg, rgba(0, 113, 227, 0.06), rgba(0, 168, 255, 0.03));
+          border: 1px solid rgba(0, 113, 227, 0.2);
+          border-radius: 16px;
+          display: flex;
+          align-items: flex-start;
+          gap: 16px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+        ">
+          <div style="font-size: 24px; line-height: 1;">✨</div>
+          <div>
+            <h4 style="margin: 0 0 6px 0; font-family: -apple-system, 'SF Pro Display', sans-serif; font-size: 16px; font-weight: 700; color: rgba(11, 15, 25, 0.96); letter-spacing: -0.01em;">
+              AI Audit Active: Proceeding with ${tool.title}
+            </h4>
+            <p style="margin: 0; font-family: -apple-system, 'SF Pro Text', sans-serif; font-size: 14px; line-height: 1.5; color: rgba(11, 15, 25, 0.7);">
+              We detected <strong>${primaryIssue}</strong> in your document. We've auto-filled the extracted data below. Please review the highlighted fields and click 'Generate'.
+            </p>
+          </div>
+        </div>
+      `;
+    }
+  } catch (e) {
+    console.error('[Context Banner] Error reading audit data:', e);
+  }
+  // --- END BANNER LOGIC ---
 
   document.querySelector("#app").innerHTML = `
     <div class="wrap">
@@ -1971,6 +2020,7 @@ function renderToolPage(routePath) {
         <div class="tool-seo">
           <p class="text">${seoCopy}</p>
         </div>
+        ${contextBannerHTML}
         ${toolSection}
         <a class="back-link" href="/" data-route="/">
           <span class="back-link-icon" aria-hidden="true">⟵</span>
@@ -2073,84 +2123,152 @@ function applyAutoFill(form) {
     const auditData = JSON.parse(savedData);
     console.log('[Phase 2 AutoFill] Retrieved audit data:', auditData);
     
-    // Action 2: Map data to inputs
+    // Action 2: Map extracted metadata to form inputs
     
-    // Fill amount fields (billAmount, totalAmount, totalDebtAmount, debtAmount)
+    // Helper function to fill field and add visual indicator
+    const fillField = (field, value) => {
+      if (field && value) {
+        field.value = value;
+        field.classList.add('is-autofilled');
+        
+        // Remove indicator when user focuses/edits the field
+        const removeIndicator = () => {
+          field.classList.remove('is-autofilled');
+          field.removeEventListener('focus', removeIndicator);
+        };
+        field.addEventListener('focus', removeIndicator);
+        
+        return true;
+      }
+      return false;
+    };
+    
+    // Fill facilityName -> providerName, facilityName, originalProvider, insuranceCompany (fallback)
+    const facilityFieldNames = ['providerName', 'facilityName', 'originalProvider', 'insuranceCompany'];
+    facilityFieldNames.forEach(fieldName => {
+      const field = form.querySelector(`input[name="${fieldName}"]`);
+      if (fillField(field, auditData.facilityName)) {
+        console.log(`[Phase 2 AutoFill] ✓ Filled ${fieldName}: ${auditData.facilityName}`);
+      }
+    });
+    
+    // Fill totalAmount -> billAmount, totalAmount, debtAmount, totalDebtAmount
     const amountFieldNames = ['billAmount', 'totalAmount', 'totalDebtAmount', 'debtAmount'];
     amountFieldNames.forEach(fieldName => {
       const field = form.querySelector(`input[name="${fieldName}"]`);
-      if (field && auditData.amount) {
+      if (field && auditData.totalAmount) {
         // Format currency using existing logic
-        const rawAmount = auditData.amount.replace(/[^0-9.]/g, '');
+        const rawAmount = auditData.totalAmount.replace(/[^0-9.]/g, '');
         const number = parseFloat(rawAmount);
         if (!isNaN(number)) {
-          field.value = `$${number.toLocaleString('en-US')}`;
-          console.log(`[Phase 2 AutoFill] ✓ Filled ${fieldName}: ${field.value}`);
+          const formattedValue = `$${number.toLocaleString('en-US')}`;
+          fillField(field, formattedValue);
+          console.log(`[Phase 2 AutoFill] ✓ Filled ${fieldName}: ${formattedValue}`);
         }
       }
     });
     
-    // Fill issueType dropdown based on findings
-    const issueTypeField = form.querySelector('select[name="issueType"]');
-    if (issueTypeField && auditData.findings && auditData.findings.length > 0) {
-      // Map error types to common dropdown values
-      const errorTypeMap = {
-        'Upcoding': ['upcoding', 'incorrect coding', 'wrong code'],
-        'Unbundling': ['unbundling', 'unbundled charges', 'separate billing'],
-        'Phantom Billing': ['phantom', 'not received', 'services not provided'],
-        'Facility Fee Abuse': ['facility fee', 'excessive fee', 'double billing'],
-        'Balance Billing': ['balance billing', 'surprise bill', 'out-of-network'],
-        'Charity Care Eligibility': ['financial assistance', 'charity care', 'indigent care']
-      };
-      
-      // Get the most common error type from findings
-      const primaryErrorType = auditData.findings[0]?.errorType || '';
-      console.log('[Phase 2 AutoFill] Primary error type:', primaryErrorType);
-      
-      // Try to find matching option
+    // Fill dateOfService -> dateOfService, dateOfVisit
+    const dateFieldNames = ['dateOfService', 'dateOfVisit'];
+    dateFieldNames.forEach(fieldName => {
+      const field = form.querySelector(`input[name="${fieldName}"]`);
+      if (fillField(field, auditData.dateOfService)) {
+        console.log(`[Phase 2 AutoFill] ✓ Filled ${fieldName}: ${auditData.dateOfService}`);
+      }
+    });
+    
+    // Fill accountNumber
+    const accountField = form.querySelector('input[name="accountNumber"]');
+    if (fillField(accountField, auditData.accountNumber)) {
+      console.log(`[Phase 2 AutoFill] ✓ Filled accountNumber: ${auditData.accountNumber}`);
+    }
+    
+    // Fill patientName
+    const patientField = form.querySelector('input[name="patientName"]');
+    if (fillField(patientField, auditData.patientName)) {
+      console.log(`[Phase 2 AutoFill] ✓ Filled patientName: ${auditData.patientName}`);
+    }
+    
+    // Fill issueType dropdown based on issueCategory or findings
+    // Smart dropdown selector: covers issueType, requestReason, denialReason
+    const issueTypeField = form.querySelector('select[name="issueType"], select[name="requestReason"], select[name="denialReason"]');
+    if (issueTypeField && (auditData.verdict || auditData.issueCategory || (auditData.findings && auditData.findings.length > 0))) {
       let matchFound = false;
       const options = Array.from(issueTypeField.options);
       
-      // First, try exact match with error type
-      for (const option of options) {
-        const optionTextLower = option.text.toLowerCase();
-        const optionValueLower = option.value.toLowerCase();
-        
-        // Check if option matches error type keywords
-        const keywords = errorTypeMap[primaryErrorType] || [primaryErrorType.toLowerCase()];
-        const hasMatch = keywords.some(keyword => 
-          optionTextLower.includes(keyword) || optionValueLower.includes(keyword)
-        );
-        
-        if (hasMatch && option.value !== '' && option.value !== 'Other') {
-          issueTypeField.value = option.value;
-          matchFound = true;
-          console.log('[Phase 2 AutoFill] ✓ Matched issueType:', option.value);
-          break;
+      // 1. Try to find a reasonable match from options
+      if (auditData.findings && auditData.findings.length > 0) {
+        const primaryError = auditData.findings[0].errorType || '';
+        for (const option of options) {
+          if (option.value !== 'Other' && option.value !== '' && !option.value.includes('Write my own')) {
+            const optionTextLower = option.text.toLowerCase();
+            const optionValueLower = option.value.toLowerCase();
+            const primaryErrorLower = primaryError.toLowerCase();
+            
+            // Check if option matches error type (bidirectional matching)
+            if (optionTextLower.includes(primaryErrorLower) || primaryErrorLower.includes(optionValueLower)) {
+              issueTypeField.value = option.value;
+              issueTypeField.classList.add('is-autofilled');
+              matchFound = true;
+              console.log('[Phase 2 AutoFill] ✓ Matched dropdown option:', option.value);
+              break;
+            }
+          }
         }
       }
       
-      // If no match found, select "Other" and fill customReason
+      // 2. If no match, force "Other" and fill custom reason
       if (!matchFound) {
-        const otherOption = options.find(opt => opt.value === 'Other');
+        const otherOption = options.find(opt => opt.value === 'Other' || opt.value.includes('Write my own'));
         if (otherOption) {
-          issueTypeField.value = 'Other';
+          issueTypeField.value = otherOption.value;
+          issueTypeField.classList.add('is-autofilled');
           console.log('[Phase 2 AutoFill] No exact match. Using "Other"');
           
-          // Trigger change event to create custom textarea
+          // Dispatch change event to trigger the UI (Custom Input System)
           issueTypeField.dispatchEvent(new Event('change', { bubbles: true }));
           
-          // Wait for custom field to be created, then fill it
+          // Wait for the DOM to render the custom textarea, then fill it
           setTimeout(() => {
             const customReasonField = form.querySelector('textarea[name="customReason"]');
-            if (customReasonField && auditData.verdict) {
-              const findingsSummary = auditData.findings
-                .map(f => `${f.errorType}: ${f.question}`)
-                .join('. ');
-              customReasonField.value = `${auditData.verdict}\n\nSpecific findings: ${findingsSummary}`;
-              console.log('[Phase 2 AutoFill] ✓ Filled customReason with AI verdict');
+            if (customReasonField) {
+              // Compile a strong legal reason from AI findings
+              let customContent = '';
+              
+              if (auditData.verdict) {
+                customContent = `Based on AI audit: ${auditData.verdict}`;
+                if (auditData.findings && auditData.findings.length > 0) {
+                  const findingsText = auditData.findings.map(f => f.issue || f.errorType).join(', ');
+                  customContent += ` Specific flags: ${findingsText}`;
+                }
+              } else if (auditData.auditorNote) {
+                customContent = auditData.auditorNote;
+                if (auditData.findings && auditData.findings.length > 0) {
+                  const findingsText = auditData.findings.map(f => f.issue || f.errorType).join(', ');
+                  customContent += ` Specific flags: ${findingsText}`;
+                }
+              } else if (auditData.findings && auditData.findings.length > 0) {
+                const findingsText = auditData.findings.map(f => f.issue || f.errorType).join(', ');
+                customContent = `Detected billing issues: ${findingsText}`;
+              } else if (auditData.issueCategory) {
+                customContent = `Issue detected in ${auditData.issueCategory} billing. Please review the charges for accuracy.`;
+              }
+              
+              if (customContent) {
+                customReasonField.value = customContent;
+                customReasonField.classList.add('is-autofilled');
+                
+                // Remove indicator when user focuses
+                const removeIndicator = () => {
+                  customReasonField.classList.remove('is-autofilled');
+                  customReasonField.removeEventListener('focus', removeIndicator);
+                };
+                customReasonField.addEventListener('focus', removeIndicator);
+                
+                console.log('[Phase 2 AutoFill] ✓ Filled customReason with AI logic');
+              }
             }
-          }, 350); // Wait for animation to complete
+          }, 150); // Small delay to let CSS transition finish
         }
       }
     }
@@ -3864,7 +3982,18 @@ function setupBillScanning() {
       scanProgressText.textContent = 'Analyzing document with AI...';
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
       
-      const prompt = `Analyze this document. Is it a US medical bill, receipt, or Explanation of Benefits (EOB)? If NO (e.g., blurry, unreadable, non-medical), return exactly {"isValid": false, "reason": "unreadable"}. If YES, extract all text, identify the facility name, and find the total billed amount. Return exactly: {"isValid": true, "extractedText": "...", "totalAmount": "...", "facilityName": "..."}`;
+      const prompt = `Analyze this image. Is it a US medical bill?
+If NO, return: {"isValid": false, "reason": "unreadable"}.
+If YES, extract the following (return null if not found):
+- facilityName (String, e.g., 'City Hospital')
+- totalAmount (String, formatted as '$1,250.00')
+- dateOfService (String, formatted 'MM/DD/YYYY')
+- accountNumber (String, account or guarantor #)
+- patientName (String, full name)
+- issueCategory (String, best guess: 'Emergency Room', 'Lab', 'Surgery', 'General')
+- extractedText (String, all text from bill)
+
+Return STRICT valid JSON only. No markdown.`;
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -3933,6 +4062,23 @@ function setupBillScanning() {
       currentBillText = extractedText;
       
       console.log('[Gemini Vision] ✓ Classification passed:', classification.category);
+
+      // Save extracted metadata to localStorage for auto-fill
+      try {
+        const metadataForAutoFill = {
+          facilityName: aiResult.facilityName || null,
+          totalAmount: aiResult.totalAmount || detectedAmount || null,
+          dateOfService: aiResult.dateOfService || null,
+          accountNumber: aiResult.accountNumber || null,
+          patientName: aiResult.patientName || null,
+          issueCategory: aiResult.issueCategory || classification.category || null,
+          extractedText: extractedText
+        };
+        localStorage.setItem('medicalAuditData', JSON.stringify(metadataForAutoFill));
+        console.log('[Gemini Vision] ✓ Saved metadata to localStorage:', metadataForAutoFill);
+      } catch (err) {
+        console.error('[Gemini Vision] Failed to save metadata:', err);
+      }
 
       // Update UI with success
       setTimeout(() => {
@@ -4195,6 +4341,20 @@ async function generateAIVerdict(extractedText, auditFindings, detectedAmount, q
     const hasPhantomBilling = auditFindings.some(f => f.errorType === 'Phantom Billing');
     const hasUnbundling = auditFindings.some(f => f.errorType === 'Unbundling');
     
+    // Define strict tool routes list to prevent AI hallucinations
+    const toolRoutesList = [
+      "/medical-bill-dispute-letter",
+      "/insurance-claim-denied-appeal",
+      "/urgent-care-bill-dispute",
+      "/out-of-network-billing-dispute",
+      "/request-itemized-medical-bill",
+      "/medical-debt-assistance-plan",
+      "/medical-collections-debt-validation",
+      "/prior-authorization-request-appeal",
+      "/good-faith-estimate-dispute",
+      "/medical-credit-report-removal"
+    ];
+    
     const prompt = `You are a Senior Medical Billing Auditor.
 
 [INPUT DATA]
@@ -4224,7 +4384,7 @@ Return strictly valid JSON (no \`\`\`json tags):
   "refundProbability": "Low (Need Evidence)" | "High (85%)", 
   "estimatedRefund": 0 or Number, 
   "auditorNote": "Professional 2-3 sentence explanation", 
-  "recommendedTool": "Request Itemized Bill" | "Medical Bill Dispute Letter" | "Urgent Care Bill Dispute" 
+  "recommendedTool": "MUST BE EXACTLY ONE OF THESE STRINGS: ${toolRoutesList.join(', ')}" 
 }`;
     
     // Use v1beta endpoint with gemini-3-flash-preview model
@@ -4790,26 +4950,16 @@ async function initializeTargetedQuiz(category) {
               console.error('[Phase 2] Failed to save audit data:', error);
             }
             
-            // Action 2: Dynamic Route Mapping - prefer aiVerdict.recommendedTool
-            const routeMap = {
-              'Medical Bill Dispute Letter': '/medical-bill-dispute-letter',
-              'Urgent Care Bill Dispute': '/urgent-care-bill-dispute',
-              'Out-of-Network Billing Dispute': '/out-of-network-billing-dispute',
-              'Insurance Claim Denied Appeal': '/insurance-claim-denied-appeal',
-              'ER Bill Disputer': '/urgent-care-bill-dispute',
-              'Ambulance Bill Dispute': '/out-of-network-billing-dispute',
-              'Request Itemized Bill': '/request-itemized-medical-bill' // ========== PHASE 3: Add itemized bill route ==========
-            };
+            // Action 2: Strict Routing Execution
+            // Because we locked down the prompt, recommendedTool is a guaranteed valid route path
+            let targetRoute = aiVerdict.recommendedTool || currentBillCategory.route;
             
-            let targetRoute = currentBillCategory.route; // Fallback
-            
-            if (aiVerdict.recommendedTool && routeMap[aiVerdict.recommendedTool]) {
-              targetRoute = routeMap[aiVerdict.recommendedTool];
-              console.log('[Phase 2] Using AI recommended route:', targetRoute);
-            } else {
-              console.log('[Phase 2] Using category fallback route:', targetRoute);
+            // Overrides based on Ambiguity (Phase 3)
+            if (aiVerdict.recommendedTool === '/request-itemized-medical-bill' || notSureCount >= 2) {
+              targetRoute = '/request-itemized-medical-bill';
             }
             
+            console.log('[Strict Routing] Navigating to:', targetRoute);
             navigate(targetRoute);
           };
         }
@@ -5118,6 +5268,22 @@ function initCountUpAnimation() {
 
 // Initialize count-up animation after DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+  // Inject CSS for auto-filled field styling
+  const style = document.createElement('style');
+  style.textContent = `
+    .is-autofilled {
+      background-color: rgba(0, 113, 227, 0.05) !important;
+      border-color: rgba(0, 113, 227, 0.3) !important;
+      transition: all 0.3s ease !important;
+    }
+    .is-autofilled:focus {
+      background-color: white !important;
+      border-color: rgba(0, 113, 227, 0.5) !important;
+    }
+  `;
+  document.head.appendChild(style);
+  console.log('[AutoFill CSS] ✓ Injected auto-fill styling');
+  
   // Small delay to ensure hero section is rendered
   setTimeout(initCountUpAnimation, 100);
 });
