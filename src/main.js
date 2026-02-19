@@ -3844,10 +3844,10 @@ function classifyBill(text) {
 function setupBillScanning() {
   const billUpload = document.getElementById('bill-upload');
   const dropZone = document.querySelector('.hero-cta-section');
+  const quickAuditorSection = document.getElementById('quick-auditor');
   const scanProgress = document.getElementById('scan-progress');
   const scanProgressFill = document.getElementById('scan-progress-fill');
   const scanProgressText = document.getElementById('scan-progress-text');
-  const privacyNotice = document.getElementById('privacy-notice');
 
   if (!billUpload || !dropZone) return; // Exit if not on home page
 
@@ -3897,13 +3897,16 @@ function setupBillScanning() {
 
   // Helper: Show manual input fallback UI
   function showManualFallback(reason = 'unreadable') {
-    const auditorCtaBox = document.querySelector('.hero-cta-section');
     const auditorQuizWrapper = document.getElementById('auditor-quiz-wrapper');
     
     if (!auditorQuizWrapper) return;
 
-    scanProgress.style.display = 'none';
-    auditorCtaBox.style.display = 'none';
+    if (scanProgress) {
+      scanProgress.style.display = 'none';
+    }
+    if (quickAuditorSection) {
+      quickAuditorSection.style.display = 'block';
+    }
     auditorQuizWrapper.style.display = 'block';
 
     const reasonText = reason === 'unreadable' 
@@ -3973,18 +3976,32 @@ function setupBillScanning() {
       return;
     }
 
-    privacyNotice.style.display = 'none';
-    scanProgress.style.display = 'flex';
-    scanProgressFill.style.width = '0%';
-    scanProgressText.textContent = 'Initializing AI scanner...';
+    // Show quick-auditor section and scan progress
+    if (quickAuditorSection) {
+      quickAuditorSection.style.display = 'block';
+    }
+    if (scanProgress) {
+      scanProgress.style.display = 'flex';
+      scanProgressFill.style.width = '0%';
+      scanProgressText.textContent = 'Initializing AI scanner...';
+    }
+
+    // Scroll to the scanning section
+    if (quickAuditorSection) {
+      quickAuditorSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 
     let progressValue = 0;
     const progressInterval = setInterval(() => {
       if (progressValue < 85) {
         progressValue += Math.random() * 12;
         if (progressValue > 85) progressValue = 85;
-        scanProgressFill.style.width = `${Math.round(progressValue)}%`;
-        scanProgressText.textContent = `Analyzing with Gemini AI... ${Math.round(progressValue)}%`;
+        if (scanProgressFill) {
+          scanProgressFill.style.width = `${Math.round(progressValue)}%`;
+        }
+        if (scanProgressText) {
+          scanProgressText.textContent = `Analyzing with Gemini AI... ${Math.round(progressValue)}%`;
+        }
       }
     }, 400);
 
@@ -3995,7 +4012,9 @@ function setupBillScanning() {
       let fileToProcess = file;
       if (file.type === 'application/pdf') {
         console.log('[Gemini Vision] PDF detected, converting to image...');
-        scanProgressText.textContent = 'Converting PDF...';
+        if (scanProgressText) {
+          scanProgressText.textContent = 'Converting PDF...';
+        }
         const imageBlob = await convertPDFToImage(file);
         fileToProcess = new File([imageBlob], file.name.replace('.pdf', '.png'), { type: 'image/png' });
         console.log('[Gemini Vision] PDF converted successfully');
@@ -4012,7 +4031,9 @@ function setupBillScanning() {
       }
 
       // Call Gemini API
-      scanProgressText.textContent = 'Analyzing document with AI...';
+      if (scanProgressText) {
+        scanProgressText.textContent = 'Analyzing document with AI...';
+      }
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
       
       const prompt = `Analyze this image. Is it a US medical bill?
@@ -4064,7 +4085,9 @@ Return STRICT valid JSON only. No markdown.`;
       const aiResult = JSON.parse(aiText);
 
       clearInterval(progressInterval);
-      scanProgressFill.style.width = '100%';
+      if (scanProgressFill) {
+        scanProgressFill.style.width = '100%';
+      }
 
       // Handle AI validation result
       if (!aiResult.isValid) {
@@ -4119,18 +4142,23 @@ Return STRICT valid JSON only. No markdown.`;
           ? 'General Consultation detected'
           : `${classification.category} detected`;
         
-        scanProgressText.textContent = `✓ ${categoryMessage} ${detectedAmount ? '($' + detectedAmount + ')' : ''}`;
-        scanProgressText.style.color = 'rgba(52, 199, 89, 1)';
-        scanProgressText.style.fontWeight = '700';
+        if (scanProgressText) {
+          scanProgressText.textContent = `✓ ${categoryMessage} ${detectedAmount ? '($' + detectedAmount + ')' : ''}`;
+          scanProgressText.style.color = 'rgba(52, 199, 89, 1)';
+          scanProgressText.style.fontWeight = '700';
+        }
         
         // Start quiz
         setTimeout(() => {
-          const auditorCtaBox = document.querySelector('.hero-cta-section');
           const auditorQuizWrapper = document.getElementById('auditor-quiz-wrapper');
           
-          if (auditorCtaBox && auditorQuizWrapper) {
-            scanProgress.style.display = 'none';
-            auditorCtaBox.style.display = 'none';
+          if (auditorQuizWrapper) {
+            if (scanProgress) {
+              scanProgress.style.display = 'none';
+            }
+            if (quickAuditorSection) {
+              quickAuditorSection.style.display = 'block';
+            }
             auditorQuizWrapper.style.display = 'block';
             billUpload.value = '';
             
