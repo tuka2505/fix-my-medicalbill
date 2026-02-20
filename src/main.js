@@ -2542,6 +2542,39 @@ function setupTool(options) {
     });
   }
 }
+
+// ========== AI EVIDENCE INJECTION HELPER ==========
+function buildAIEvidenceText() {
+  try {
+    const savedData = localStorage.getItem('medicalAuditData');
+    if (!savedData) return { letterAddendum: "", scriptAddendum: "" };
+    
+    const data = JSON.parse(savedData);
+    if (!data.findings || data.findings.length === 0) return { letterAddendum: "", scriptAddendum: "" };
+
+    let letterAddendum = "\n\nSPECIFIC AUDIT FINDINGS FOR DISPUTE:\nBased on a preliminary clinical audit of my bill, I am formally disputing the following items:\n";
+    let scriptAddendum = " Specifically, my audit flagged the following issue: ";
+
+    data.findings.forEach((f, index) => {
+      // Use reasoning if available (contains codes/prices), otherwise fallback to the question context
+      const detail = f.reasoning || f.question;
+      letterAddendum += `${index + 1}. [${f.errorType || 'Billing Anomaly'}]: ${detail}\n`;
+      
+      // Add only the most heavily weighted/first issue to the phone script to keep it natural
+      if (index === 0) {
+        scriptAddendum += detail;
+      }
+    });
+
+    letterAddendum += "\nI demand a full clinical review of these specific line items against NCCI guidelines and my medical records.";
+
+    return { letterAddendum, scriptAddendum };
+  } catch (error) {
+    console.error("Failed to build AI evidence text:", error);
+    return { letterAddendum: "", scriptAddendum: "" };
+  }
+}
+
 function generateDisputeContent(data) {
   const clean = (value, placeholder) => (value && value.trim() ? value.trim() : `[${placeholder}]`);
   
@@ -2559,6 +2592,11 @@ function generateDisputeContent(data) {
     };
   }
   const issueLetter = normalizeHello(issue.letter);
+
+  // Inject Dynamic AI Evidence
+  const aiEvidence = buildAIEvidenceText();
+  const finalLetterBody = issueLetter + (aiEvidence.letterAddendum ? aiEvidence.letterAddendum : "");
+  const finalScriptIssue = issue.script + (aiEvidence.scriptAddendum ? aiEvidence.scriptAddendum : "");
 
   const today = new Date().toLocaleDateString();
   const disputeTarget = clean(data.disputeTarget, "Dispute Target");
@@ -2585,7 +2623,7 @@ To Whom It May Concern:
 
 I am writing to formally dispute the balance on the above-referenced account. 
 
-${issueLetter}
+${finalLetterBody}
 
 Please place my account on an immediate collections hold while this dispute is investigated. I expect a written response within 30 days detailing your findings, the exact CPT/HCPCS codes billed, and an adjusted statement reflecting the corrected balance.
 
@@ -2598,7 +2636,7 @@ ${patientAddress}
 ${patientPhone}
 ${patientEmail}`;
 
-  const script = `Hello, my name is ${patientName}. I am calling to formally dispute the charges on account ${accountNumber} for my visit on ${dateOfService}. ${issue.script} Please place a hold on my account from entering collections while this is under review, and send me the audit results in writing.`;
+  const script = `Hello, my name is ${patientName}. I am calling to formally dispute the charges on account ${accountNumber} for my visit on ${dateOfService}. ${finalScriptIssue} Please place a hold on my account from entering collections while this is under review, and send me the audit results in writing.`;
 
   return { letter, script };
 }
@@ -4407,6 +4445,7 @@ async function initializeTargetedQuiz(category) {
           auditFindings.push({
             errorType: q.errorType,
             question: q.question,
+            reasoning: q.reasoning, // CRITICAL: Save the CoT reasoning containing codes/prices
             weight: weight
           });
         }
