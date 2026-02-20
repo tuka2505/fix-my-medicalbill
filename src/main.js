@@ -1985,90 +1985,70 @@ function initFaqAccordion() {
 
 function renderToolPage(routePath) {
   const tool = toolRoutes.find((item) => item.routePath === routePath);
-  if (!tool) {
-    renderHomePage();
-    return;
-  }
+  if (!tool) { renderHomePage(); return; }
 
   const seoCopy = toolSeoCopy[routePath] || "";
   const toolSection = getToolSectionMarkup(tool.sectionId);
   
-  // --- CONTEXT PRESERVATION BANNER LOGIC ---
+  // AI Context Banner Logic
   let contextBannerHTML = "";
   try {
     const savedData = localStorage.getItem('medicalAuditData');
     if (savedData) {
       const auditData = JSON.parse(savedData);
-      
-      // Determine the primary issue to display
+      // Determine primary issue safely
       let primaryIssue = "potential billing discrepancies";
       if (auditData.findings && auditData.findings.length > 0) {
-        // Use the first finding's error type
-        primaryIssue = auditData.findings[0].errorType || auditData.findings[0].issue || primaryIssue;
-      } else if (auditData.category) {
-        // Fallback to category
-        primaryIssue = `${auditData.category} billing issues`;
+        primaryIssue = auditData.findings[0].errorType || primaryIssue;
       }
       
-      // Apple-style Premium Banner HTML (Inline Styles)
       contextBannerHTML = `
-        <div class="ai-context-banner" style="
-          animation: fadeInUp 0.5s ease-out;
-          margin-top: 16px;
-          margin-bottom: 24px;
-          padding: 18px 24px;
-          background: linear-gradient(135deg, rgba(0, 113, 227, 0.06), rgba(0, 168, 255, 0.03));
-          border: 1px solid rgba(0, 113, 227, 0.2);
-          border-radius: 16px;
-          display: flex;
-          align-items: flex-start;
-          gap: 16px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-        ">
-          <div style="font-size: 24px; line-height: 1;">✨</div>
+        <div class="ai-context-banner" style="margin-bottom: 24px; padding: 18px 24px; background: #F0F7FF; border: 1px solid rgba(0, 113, 227, 0.2); border-radius: 12px; display: flex; align-items: flex-start; gap: 12px;">
+          <div style="font-size: 20px;">✨</div>
           <div>
-            <h4 style="margin: 0 0 6px 0; font-family: -apple-system, 'SF Pro Display', sans-serif; font-size: 16px; font-weight: 700; color: rgba(11, 15, 25, 0.96); letter-spacing: -0.01em;">
-              AI Audit Active: Proceeding with ${tool.title}
-            </h4>
-            <p style="margin: 0; font-family: -apple-system, 'SF Pro Text', sans-serif; font-size: 14px; line-height: 1.5; color: rgba(11, 15, 25, 0.7);">
-              We detected <strong>${primaryIssue}</strong> in your document. We've auto-filled the extracted data below. Please review the highlighted fields and click 'Generate'.
-            </p>
+            <h4 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 700; color: #000;">AI Audit Active: Proceeding with ${tool.title}</h4>
+            <p style="margin: 0; font-size: 14px; color: #444;">We detected <strong>${primaryIssue}</strong>. Data has been auto-filled below.</p>
           </div>
         </div>
       `;
     }
-  } catch (e) {
-    console.error('[Context Banner] Error reading audit data:', e);
-  }
-  // --- END BANNER LOGIC ---
+  } catch (e) { console.error(e); }
 
+  // Render the Tool Page Layout
   document.querySelector("#app").innerHTML = `
     <div class="wrap">
       ${renderHeader()}
-      <main class="main" style="padding-top: 40px; max-width: 1200px; margin: 0 auto;">
+      
+      <main class="main" style="padding-top: 0; max-width: 1000px; margin: 0 auto;">
         
-        <div class="tool-page-header" style="margin-bottom: 24px; text-align: left;">
-          <h1 style="font-size: 32px; font-weight: 700; color: #1D1D1F; margin-bottom: 8px; letter-spacing: -0.01em;">${tool.title}</h1>
+        <div class="tool-page-header" style="padding: 40px 0 20px 0; text-align: left;">
+          <h1 style="font-size: 32px; font-weight: 700; color: #1D1D1F; margin-bottom: 10px;">${tool.title}</h1>
           <p style="font-size: 16px; color: #86868B; margin: 0;">${tool.desc}</p>
         </div>
 
-        ${contextBannerHTML ? `<div style="margin-bottom: 32px;">${contextBannerHTML}</div>` : ''}
+        ${contextBannerHTML}
 
         ${toolSection}
         
-        <div class="tool-seo" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">
+        <div style="display: none;">
           <p>${seoCopy}</p>
         </div>
 
-        <a class="back-link" href="/" data-route="/" style="display: inline-flex; align-items: center; margin-top: 40px; color: #0071E3; font-weight: 500; text-decoration: none;">
-          <span class="back-link-icon" aria-hidden="true" style="margin-right: 6px;">←</span>
-          <span>Back to All Tools</span>
+        <a class="back-link" href="/" data-route="/" style="display: inline-block; margin-top: 40px; color: #0071E3; text-decoration: none; font-weight: 500;">
+          ← Back to All Tools
         </a>
         
       </main>
       ${renderFooter()}
     </div>
   `;
+  
+  // Re-initialize tool logic
+  setupTool({ 
+    toolId: tool.id, 
+    generatedContentId: tool.generatedContentId, 
+    canvasId: tool.canvasId 
+  }); 
 }
 
 function navigate(path) {
