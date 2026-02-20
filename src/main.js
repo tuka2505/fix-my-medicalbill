@@ -2038,18 +2038,28 @@ function renderToolPage(routePath) {
   document.querySelector("#app").innerHTML = `
     <div class="wrap">
       ${renderHeader()}
-      <main class="main">
-        <div class="tool-seo">
-          <p class="text">${seoCopy}</p>
+      <main class="main" style="padding-top: 40px; max-width: 1200px; margin: 0 auto;">
+        
+        <div class="tool-page-header" style="margin-bottom: 24px; text-align: left;">
+          <h1 style="font-size: 32px; font-weight: 700; color: #1D1D1F; margin-bottom: 8px; letter-spacing: -0.01em;">${tool.title}</h1>
+          <p style="font-size: 16px; color: #86868B; margin: 0;">${tool.desc}</p>
         </div>
-        ${contextBannerHTML}
+
+        ${contextBannerHTML ? `<div style="margin-bottom: 32px;">${contextBannerHTML}</div>` : ''}
+
         ${toolSection}
-        <a class="back-link" href="/" data-route="/">
-          <span class="back-link-icon" aria-hidden="true">⟵</span>
+        
+        <div class="tool-seo" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">
+          <p>${seoCopy}</p>
+        </div>
+
+        <a class="back-link" href="/" data-route="/" style="display: inline-flex; align-items: center; margin-top: 40px; color: #0071E3; font-weight: 500; text-decoration: none;">
+          <span class="back-link-icon" aria-hidden="true" style="margin-right: 6px;">←</span>
           <span>Back to All Tools</span>
         </a>
-        ${renderFooter()}
+        
       </main>
+      ${renderFooter()}
     </div>
   `;
 }
