@@ -2099,8 +2099,8 @@ a{ color:inherit; }
   box-sizing: border-box; 
   width: 100%; 
   max-width: 100vw;
-  margin-top: 14px;
-  padding: 32px;
+  margin-top: 0;
+  padding: 20px 24px 24px 24px;
   border-radius: calc(var(--radius) + 2px);
   background: linear-gradient(180deg, var(--glassTop), var(--glassBot));
   border: 1px solid rgba(255,255,255,.64);
@@ -4002,7 +4002,7 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
 /* --- PREMIUM TOOL UI OVERRIDES --- */
 
 /* Tool Layout Padding */
-.tool-section { padding-top: 0 !important; }
+.tool-section { padding-top: 0 !important; margin-top: 0 !important; }
 .tool-section .h2, .tool-section .tool-subtitle { display: none; } /* Hide old duplicated titles */
 
 /* Soft Labels */
@@ -4042,6 +4042,31 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
   border-left: 4px solid #0071E3 !important;
   color: #00428A !important;
   font-weight: 500;
+}
+
+/* Placeholder Text (Apple Subtle Grey) */
+.tool-form input::placeholder,
+.tool-form textarea::placeholder {
+  color: #C7C7CC !important;
+  opacity: 1 !important;
+}
+
+/* Textarea Optimization */
+.tool-form textarea {
+  resize: vertical !important;
+  min-height: 80px !important;
+}
+
+/* Error State (Validation) */
+.field.has-error input,
+.field.has-error select,
+.field.has-error textarea {
+  border-color: #FF3B30 !important;
+  box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.1) !important;
+}
+
+.field.has-error label {
+  color: #FF3B30 !important;
 }
 
 /* Output Area / Document Look */
@@ -4108,6 +4133,20 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
   background-color: #0071E3 !important;
   color: white !important;
   font-weight: 600 !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer;
+}
+
+.tool-actions button[type="submit"]:hover:not(:disabled) {
+  background-color: #0077ED !important;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(0, 113, 227, 0.25) !important;
+}
+
+.tool-actions button[type="submit"]:active:not(:disabled) {
+  background-color: #005BB5 !important;
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.2) !important;
 }
 
 /* Secondary Action Buttons (Copy / Download) */
@@ -4120,6 +4159,8 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
   border-radius: 10px !important;
   padding: 10px !important;
   font-size: 13px !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer;
 }
 
 .tool-actions button.neutral:disabled {
@@ -4129,4 +4170,11 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
 
 .tool-actions button.neutral:not(:disabled):hover {
   background-color: #E5E5EA !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+}
+
+.tool-actions button.neutral:not(:disabled):active {
+  background-color: #D1D1D6 !important;
+  transform: scale(0.98);
 }

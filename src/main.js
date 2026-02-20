@@ -304,7 +304,7 @@ function renderHero() {
       <div class="hero-content">
         
         <div class="hero-left">
-          <div class="hero-social-proof">
+          <div class="hero-social-proof" style="margin-bottom: 20px;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
               <circle cx="9" cy="7" r="4" stroke-width="1.5"></circle>
@@ -314,57 +314,10 @@ function renderHero() {
             <span>15,000+ Bills Analyzed</span>
           </div>
 
-          <h1 class="hero-title">Stop Overpaying.<br><span class="highlight-blue">Find Your Hidden&nbsp;Refund in&nbsp;10&nbsp;Seconds.</span></h1>
-          <p class="hero-sub">80% of US medical bills contain errors. Use our AI Audit to find your missing <strong><span style="white-space: nowrap;">$300 to $1,500</span></strong> in 60 seconds.</p>
+          <h1 class="hero-title" style="margin-bottom: 16px;">Stop Overpaying.<br><span class="highlight-blue">Find Your Hidden&nbsp;Refund in&nbsp;10&nbsp;Seconds.</span></h1>
+          <p class="hero-sub" style="margin-bottom: 20px;">80% of US medical bills contain errors. Use our AI Audit to find your missing <strong><span style="white-space: nowrap;">$300 to $1,500</span></strong> in 60 seconds.</p>
           
-          <div class="mechanism-stepper">🔍 1. AI Bill Scan<span style="margin: 0 8px;">➔</span>📝 2. Auto Dispute Letter</div>
-        </div>
-
-        <div class="hero-right">
-          
-          <div class="hero-value-prop">
-            <div class="value-stat">
-              <span class="value-number">$<span class="count-up" data-target="450">0</span></span>
-              <span class="value-label">Avg Recovered</span>
-            </div>
-            <div class="value-divider"></div>
-            <div class="value-stat">
-              <span class="value-number"><span class="count-up" data-target="60">0</span>s</span>
-              <span class="value-label">To Audit</span>
-            </div>
-            <div class="value-divider"></div>
-            <div class="value-stat">
-              <span class="value-number"><span class="count-up" data-target="98">0</span>%</span>
-              <span class="value-label">AI Accuracy</span>
-            </div>
-          </div>
-
-          <div class="hero-cta-section dropzone-container" style="background: #F8FBFF; border: 2px dashed rgba(0, 113, 227, 0.3); border-radius: 16px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s ease; margin-bottom: 16px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#0071E3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.8;">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="12" y1="18" x2="12" y2="12"></line>
-              <line x1="9" y1="15" x2="15" y2="15"></line>
-            </svg>
-            <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #1D1D1F;">Drag & Drop your bill</h3>
-            <p style="margin: 0 0 20px 0; font-size: 14px; color: #86868B;">Supports PDF, JPG, PNG</p>
-            
-            <input type="file" id="bill-upload" accept="image/*,application/pdf" style="display:none;">
-            <label for="bill-upload" class="hero-cta-btn" id="upload-label" style="display: inline-block; background: #0071E3; color: white; padding: 12px 28px; border-radius: 24px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);">
-              Browse Files
-            </label>
-          </div>
-
-          <div class="pro-tip-banner" style="background: #F5F5F7; border-radius: 12px; padding: 16px; display: flex; gap: 12px; align-items: flex-start; text-align: left; margin-bottom: 24px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#86868B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px;">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="16" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-            <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #515154;">
-              <strong>Pro Tip:</strong> For the most accurate deep audit, please upload an <strong>Itemized Bill</strong> containing CPT codes, rather than a basic summary receipt.
-            </p>
-          </div>
+          <div class="mechanism-stepper" style="margin-bottom: 24px;">🔍 1. AI Bill Scan<span style="margin: 0 8px;">➔</span>📝 2. Auto Dispute Letter<span style="margin: 0 8px;">➔</span>💰 3. Get Refund</div>
 
           <div class="hero-trust">
             <div class="trust-badge">
@@ -390,11 +343,63 @@ function renderHero() {
               <span>Your Data Stays Private</span>
             </div>
           </div>
+
+          <p class="alert-text-small" style="margin-top: 12px; margin-bottom: 0;">⚠️ Most dispute rights expire after 180 days. Start your review today.</p>
+        </div>
+
+        <div class="hero-right">
           
-          <p class="alert-text-small">⚠️ Most dispute rights expire after 180 days. Start your review today.</p>
+          <div class="hero-value-prop" style="margin-bottom: 20px;">
+            <div class="value-stat">
+              <span class="value-number">$<span class="count-up" data-target="450">0</span></span>
+              <span class="value-label">Avg Recovered</span>
+            </div>
+            <div class="value-divider"></div>
+            <div class="value-stat">
+              <span class="value-number"><span class="count-up" data-target="60">0</span>s</span>
+              <span class="value-label">To Audit</span>
+            </div>
+            <div class="value-divider"></div>
+            <div class="value-stat">
+              <span class="value-number"><span class="count-up" data-target="98">0</span>%</span>
+              <span class="value-label">AI Accuracy</span>
+            </div>
+          </div>
+
+          <div class="hero-cta-section dropzone-container" style="background: #F8FBFF; border: 2px dashed rgba(0, 113, 227, 0.3); border-radius: 16px; padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.2s ease; margin-bottom: 12px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#0071E3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 44px; height: 44px; margin-bottom: 10px; opacity: 0.8;">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            <h3 style="margin: 0 0 5px 0; font-size: 17px; font-weight: 600; color: #1D1D1F;">Drag & Drop your bill</h3>
+            <p style="margin: 0 0 12px 0; font-size: 13.5px; color: #86868B;">Supports PDF, JPG, PNG</p>
+            
+            <input type="file" id="bill-upload" accept="image/*,application/pdf" style="display:none;">
+            <label for="bill-upload" class="hero-cta-btn" id="upload-label" style="display: inline-block; background: #0071E3; color: white; padding: 10px 26px; border-radius: 24px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);">
+              Browse Files
+            </label>
+          </div>
+
+          <a href="#tools-section" style="display: block; text-align: center; margin-bottom: 12px; font-size: 13px; color: #86868B; text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#0071E3'" onmouseout="this.style.color='#86868B'">
+            Looking for a specific tool? Browse 10 templates ›
+          </a>
+
+          <div class="pro-tip-banner" style="background: #F5F5F7; border-radius: 12px; padding: 14px; display: flex; gap: 10px; align-items: flex-start; text-align: left;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#86868B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #515154;">
+              <strong>Pro Tip:</strong> For the most accurate deep audit, please upload an <strong>Itemized Bill</strong> containing CPT codes, rather than a basic summary receipt.
+            </p>
+          </div>
 
         </div>
       </div>
+
     </section>
   `;
 }
@@ -1125,13 +1130,13 @@ function getToolSectionMarkup(sectionId) {
                     <div class="result-header">
                       <div class="result-title">Dispute Letter</div>
                     </div>
-                    <pre id="letter-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="letter-output" class="result-content is-empty">📝 Your dispute letter will appear here.\n\nFill out the form on the left and click "Generate" to create your customized document.</pre>
                   </div>
                   <div class="result-card">
                     <div class="result-header">
                       <div class="result-title">Phone Script</div>
                     </div>
-                    <pre id="script-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="script-output" class="result-content is-empty">📞 Your phone script will appear here.\n\nFill out the form on the left and click "Generate" to create your customized script.</pre>
                   </div>
                 </div>
               </div>
@@ -1203,13 +1208,17 @@ function getToolSectionMarkup(sectionId) {
                     <div class="result-header">
                       <div class="result-title">Appeal Letter</div>
                     </div>
-                    <pre id="claim-letter-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="claim-letter-output" class="result-content is-empty">📝 Your appeal letter will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized document.</pre>
                   </div>
                   <div class="result-card">
                     <div class="result-header">
                       <div class="result-title">Phone Script</div>
                     </div>
-                    <pre id="claim-script-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="claim-script-output" class="result-content is-empty">📞 Your phone script will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized script.</pre>
                   </div>
                 </div>
               </div>
@@ -1280,13 +1289,17 @@ function getToolSectionMarkup(sectionId) {
                     <div class="result-header">
                       <div class="result-title">Dispute Letter</div>
                     </div>
-                    <pre id="urgent-letter-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="urgent-letter-output" class="result-content is-empty">📝 Your dispute letter will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized document.</pre>
                   </div>
                   <div class="result-card">
                     <div class="result-header">
                       <div class="result-title">Phone Script</div>
                     </div>
-                    <pre id="urgent-script-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="urgent-script-output" class="result-content is-empty">📞 Your phone script will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized script.</pre>
                   </div>
                 </div>
               </div>
@@ -1358,13 +1371,17 @@ function getToolSectionMarkup(sectionId) {
                     <div class="result-header">
                       <div class="result-title">Dispute Letter</div>
                     </div>
-                    <pre id="oon-letter-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="oon-letter-output" class="result-content is-empty">📝 Your dispute letter will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized document.</pre>
                   </div>
                   <div class="result-card">
                     <div class="result-header">
                       <div class="result-title">Phone Script</div>
                     </div>
-                    <pre id="oon-script-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="oon-script-output" class="result-content is-empty">📞 Your phone script will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized script.</pre>
                   </div>
                 </div>
               </div>
@@ -1426,13 +1443,17 @@ function getToolSectionMarkup(sectionId) {
                     <div class="result-header">
                       <div class="result-title">Itemized Bill Request</div>
                     </div>
-                    <pre id="itemized-letter-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="itemized-letter-output" class="result-content is-empty">📝 Your request letter will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized document.</pre>
                   </div>
                   <div class="result-card">
                     <div class="result-header">
                       <div class="result-title">Phone Script</div>
                     </div>
-                    <pre id="itemized-script-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="itemized-script-output" class="result-content is-empty">📞 Your phone script will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized script.</pre>
                   </div>
                 </div>
               </div>
@@ -1506,13 +1527,17 @@ function getToolSectionMarkup(sectionId) {
                     <div class="result-header">
                       <div class="result-title">Financial Assistance Letter</div>
                     </div>
-                    <pre id="debt-letter-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="debt-letter-output" class="result-content is-empty">📝 Your validation letter will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized document.</pre>
                   </div>
                   <div class="result-card">
                     <div class="result-header">
                       <div class="result-title">Phone Script</div>
                     </div>
-                    <pre id="debt-script-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="debt-script-output" class="result-content is-empty">📞 Your phone script will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized script.</pre>
                   </div>
                 </div>
               </div>
@@ -1592,13 +1617,17 @@ function getToolSectionMarkup(sectionId) {
                     <div class="result-header">
                       <div class="result-title">Debt Validation Letter</div>
                     </div>
-                    <pre id="collections-letter-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="collections-letter-output" class="result-content is-empty">📝 Your response letter will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized document.</pre>
                   </div>
                   <div class="result-card">
                     <div class="result-header">
                       <div class="result-title">Phone Script</div>
                     </div>
-                    <pre id="collections-script-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="collections-script-output" class="result-content is-empty">📞 Your phone script will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized script.</pre>
                   </div>
                 </div>
               </div>
@@ -1669,13 +1698,17 @@ function getToolSectionMarkup(sectionId) {
                     <div class="result-header">
                       <div class="result-title">Prior Authorization Letter</div>
                     </div>
-                    <pre id="prior-auth-letter-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="prior-auth-letter-output" class="result-content is-empty">📝 Your appeal letter will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized document.</pre>
                   </div>
                   <div class="result-card">
                     <div class="result-header">
                       <div class="result-title">Phone Script</div>
                     </div>
-                    <pre id="prior-auth-script-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="prior-auth-script-output" class="result-content is-empty">📞 Your phone script will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized script.</pre>
                   </div>
                 </div>
               </div>
@@ -1749,13 +1782,17 @@ function getToolSectionMarkup(sectionId) {
                     <div class="result-header">
                       <div class="result-title">Dispute Letter</div>
                     </div>
-                    <pre id="gfe-letter-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="gfe-letter-output" class="result-content is-empty">📝 Your request letter will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized document.</pre>
                   </div>
                   <div class="result-card">
                     <div class="result-header">
                       <div class="result-title">Phone Script</div>
                     </div>
-                    <pre id="gfe-script-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="gfe-script-output" class="result-content is-empty">📞 Your phone script will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized script.</pre>
                   </div>
                 </div>
               </div>
@@ -1826,13 +1863,17 @@ function getToolSectionMarkup(sectionId) {
                     <div class="result-header">
                       <div class="result-title">Dispute Letter</div>
                     </div>
-                    <pre id="credit-letter-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="credit-letter-output" class="result-content is-empty">📝 Your dispute letter will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized document.</pre>
                   </div>
                   <div class="result-card">
                     <div class="result-header">
                       <div class="result-title">Phone Script</div>
                     </div>
-                    <pre id="credit-script-output" class="result-content is-empty">No output yet. Fill out the form and click Generate.</pre>
+                    <pre id="credit-script-output" class="result-content is-empty">📞 Your phone script will appear here.
+
+Fill out the form on the left and click "Generate" to create your customized script.</pre>
                   </div>
                 </div>
               </div>
@@ -2021,18 +2062,14 @@ function renderToolPage(routePath) {
       
       <main class="main" style="padding-top: 0; max-width: 1000px; margin: 0 auto;">
         
-        <div class="tool-page-header" style="padding: 40px 0 20px 0; text-align: left;">
-          <h1 style="font-size: 32px; font-weight: 700; color: #1D1D1F; margin-bottom: 10px;">${tool.title}</h1>
-          <p style="font-size: 16px; color: #86868B; margin: 0;">${tool.desc}</p>
+        <div class="tool-page-header" style="padding: 20px 0 0 0; text-align: left; margin-bottom: 0;">
+          <h1 style="font-size: 32px; font-weight: 700; color: #1D1D1F; margin: 0 0 4px 0; line-height: 1.1;">${tool.title}</h1>
+          <p style="font-size: 16px; color: #86868B; margin: 0 0 12px 0; line-height: 1.4;">${tool.desc}</p>
         </div>
 
         ${contextBannerHTML}
 
         ${toolSection}
-        
-        <div style="display: none;">
-          <p>${seoCopy}</p>
-        </div>
 
         <a class="back-link" href="/" data-route="/" style="display: inline-block; margin-top: 40px; color: #0071E3; text-decoration: none; font-weight: 500;">
           ← Back to All Tools
