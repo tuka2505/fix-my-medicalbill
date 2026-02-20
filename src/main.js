@@ -302,8 +302,9 @@ function renderHero() {
   return `
     <section class="hero">
       <div class="hero-content">
+        
         <div class="hero-left">
-          <div class="hero-social-proof" style="margin-bottom: 24px;">
+          <div class="hero-social-proof">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
               <circle cx="9" cy="7" r="4" stroke-width="1.5"></circle>
@@ -313,79 +314,85 @@ function renderHero() {
             <span>15,000+ Bills Analyzed</span>
           </div>
 
-          <h1 class="hero-title" style="line-height: 1.15; margin-bottom: 20px;">
-            Stop Overpaying.<br>
-            <span class="highlight-blue">Find Your Refund.</span>
-          </h1>
+          <h1 class="hero-title">Stop Overpaying.<br><span class="highlight-blue">Find Your Hidden&nbsp;Refund in&nbsp;10&nbsp;Seconds.</span></h1>
+          <p class="hero-sub">80% of US medical bills contain errors. Use our AI Audit to find your missing <strong><span style="white-space: nowrap;">$300 to $1,500</span></strong> in 60 seconds.</p>
           
-          <p class="hero-sub" style="line-height: 1.6; margin-bottom: 32px; font-size: 1.1rem; color: var(--muted2); max-width: 90%;">
-            80% of US medical bills contain errors. Drop your bill here, and let our AI Auditor find your hidden overcharges in 60 seconds.
-          </p>
-          
-          <div class="mechanism-stepper" style="background: transparent; border: 1px solid var(--border); box-shadow: none; padding: 12px 20px;">
-            🔍 1. Scan Bill <span style="margin: 0 12px; color: var(--muted2);">➔</span> 📝 2. AI Audit <span style="margin: 0 12px; color: var(--muted2);">➔</span> ⚖️ 3. Get Refund
-          </div>
+          <div class="mechanism-stepper">🔍 1. AI Bill Scan<span style="margin: 0 8px;">➔</span>📝 2. Auto Dispute Letter</div>
         </div>
 
         <div class="hero-right">
           
-          <div class="super-card">
-            
-            <div class="hero-value-prop" style="box-shadow: none; background: transparent; padding: 0 0 24px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px;">
-              <div class="value-stat">
-                <span class="value-number">$<span class="count-up" data-target="450">0</span></span>
-                <span class="value-label">Avg Found</span>
-              </div>
-              <div class="value-divider"></div>
-              <div class="value-stat">
-                <span class="value-number"><span class="count-up" data-target="60">0</span>s</span>
-                <span class="value-label">Audit Time</span>
-              </div>
-              <div class="value-divider"></div>
-              <div class="value-stat">
-                <span class="value-number"><span class="count-up" data-target="98">0</span>%</span>
-                <span class="value-label">AI Accuracy</span>
-              </div>
+          <div class="hero-value-prop">
+            <div class="value-stat">
+              <span class="value-number">$<span class="count-up" data-target="450">0</span></span>
+              <span class="value-label">Avg Recovered</span>
             </div>
-
-            <div class="hero-cta-section dropzone-container">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.9;">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="12" y1="18" x2="12" y2="12"></line>
-                <line x1="9" y1="15" x2="15" y2="15"></line>
-              </svg>
-              <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: var(--text);">Drag & Drop your bill</h3>
-              <p style="margin: 0; font-size: 14px; color: var(--muted2);">Supports PDF, JPG, PNG</p>
-              
-              <input type="file" id="bill-upload" accept="image/*,application/pdf" style="display:none;">
-              <label for="bill-upload" id="upload-label" class="upload-pill-btn">
-                Browse Files
-              </label>
+            <div class="value-divider"></div>
+            <div class="value-stat">
+              <span class="value-number"><span class="count-up" data-target="60">0</span>s</span>
+              <span class="value-label">To Audit</span>
             </div>
-
-            <div class="pro-tip-banner">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px;">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-              </svg>
-              <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #515154;">
-                <strong>Pro Tip:</strong> For the most accurate deep audit, please upload an <strong>Itemized Bill</strong> containing 5-digit CPT codes, rather than a basic summary receipt.
-              </p>
+            <div class="value-divider"></div>
+            <div class="value-stat">
+              <span class="value-number"><span class="count-up" data-target="98">0</span>%</span>
+              <span class="value-label">AI Accuracy</span>
             </div>
-
           </div>
 
-          <div style="margin-top: 24px; display: flex; justify-content: center; gap: 24px; font-size: 13px; font-weight: 500; color: var(--muted2);">
-            <span style="display: flex; align-items: center; gap: 6px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> 100% Private
-            </span>
-            <span style="display: flex; align-items: center; gap: 6px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> Zero Data Stored
-            </span>
+          <div class="hero-cta-section dropzone-container" style="background: #F8FBFF; border: 2px dashed rgba(0, 113, 227, 0.3); border-radius: 16px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s ease; margin-bottom: 16px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#0071E3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.8;">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #1D1D1F;">Drag & Drop your bill</h3>
+            <p style="margin: 0 0 20px 0; font-size: 14px; color: #86868B;">Supports PDF, JPG, PNG</p>
+            
+            <input type="file" id="bill-upload" accept="image/*,application/pdf" style="display:none;">
+            <label for="bill-upload" class="hero-cta-btn" id="upload-label" style="display: inline-block; background: #0071E3; color: white; padding: 12px 28px; border-radius: 24px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);">
+              Browse Files
+            </label>
+          </div>
+
+          <div class="pro-tip-banner" style="background: #F5F5F7; border-radius: 12px; padding: 16px; display: flex; gap: 12px; align-items: flex-start; text-align: left; margin-bottom: 24px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#86868B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px;">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #515154;">
+              <strong>Pro Tip:</strong> For the most accurate deep audit, please upload an <strong>Itemized Bill</strong> containing CPT codes, rather than a basic summary receipt.
+            </p>
+          </div>
+
+          <div class="hero-trust">
+            <div class="trust-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
+              </svg>
+              <span>No Credit Card Required</span>
+            </div>
+            <span class="trust-dot">·</span>
+            <div class="trust-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
+                <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+              <span>100% Free Resources</span>
+            </div>
+            <span class="trust-dot">·</span>
+            <div class="trust-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="1.5"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-width="1.5" stroke-linecap="round"></path>
+              </svg>
+              <span>Your Data Stays Private</span>
+            </div>
           </div>
           
+          <p class="alert-text-small">⚠️ Most dispute rights expire after 180 days. Start your review today.</p>
+
         </div>
       </div>
     </section>
