@@ -354,6 +354,9 @@ function renderHero() {
                 <line x1="12" y1="3" x2="12" y2="15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></line>
               </svg>
             </label>
+            <p style="font-size: 12.5px; color: var(--muted2); margin-top: 14px; font-weight: 400; letter-spacing: -0.01em;">
+              *For a deep AI audit, please upload an <strong>itemized bill</strong> with CPT codes.
+            </p>
           </div>
 
           <!-- Secondary Tools Link -->
@@ -3882,7 +3885,10 @@ function setupBillScanning() {
     auditorQuizWrapper.innerHTML = `
       <div class="tool-panel manual-fallback" style="animation: fadeInUp 0.4s ease; width: 100%; max-width: 600px; margin: 0 auto; text-align: left;">
         <h3 class="question-title" style="text-align: center;">${reason === 'unreadable' ? "We couldn't clearly read your document." : "This doesn't appear to be a medical bill."}</h3>
-        <p class="question-context" style="text-align: center; margin-bottom: 24px;">Please enter the basic details below so our AI can begin the audit.</p>
+        <p class="question-context" style="text-align: center; margin-bottom: 24px; font-size: 14.5px; line-height: 1.5;">
+          We couldn't detect billing codes. A deep audit requires an <strong>Itemized Bill (with CPT codes)</strong>, not a summary or receipt.<br><br>
+          Please enter your basic details below. We will help you generate a formal legal request for an itemized bill.
+        </p>
         <div class="form-grid">
           <div class="field"><label>Facility / Provider Name</label><input type="text" id="manual-facility" class="accent-focus" placeholder="e.g. City General Hospital"></div>
           <div class="field"><label>Total Billed Amount</label><input type="text" id="manual-amount" class="accent-focus" placeholder="$0.00"></div>
@@ -4012,159 +4018,132 @@ function setupBillScanning() {
 
 // ========== SMART QUESTION ENGINE - EXPERT QUESTION BANK ==========
 
-// ========== PHASE 2: REFERENCE AUDIT RULES (RAG KNOWLEDGE BASE) ==========
+// ========== PHASE 2: CPC KNOWLEDGE BASE (CERTIFIED PROFESSIONAL CODER) ==========
 const ReferenceAuditRules = {
   Universal: [
-    { id: 'u_itemized', issue: "Summary Bill without CPT Codes", trigger: ["summary", "balance forward", "total due"], questionContext: "Hospitals hide errors in summary bills. Patients have a HIPAA right to an itemized bill with CPT/HCPCS codes.", weight: 0 },
-    { id: 'u_charity', issue: "IRS 501(r) Charity Care Eligibility", trigger: ["hospital", "medical center", "health system"], questionContext: "Non-profit hospitals must forgive/discount bills for households under 400% of the Federal Poverty Level. Ask about household income.", weight: 1000 }
+    { id: 'u_itemized', issue: "Summary Bill / Hidden Codes", trigger: ["summary", "balance forward", "total due", "previous balance"], questionContext: "Summary bills conceal upcoding and unbundling. HIPAA (45 CFR § 164.524) guarantees the right to an unbundled bill with CPT codes.", weight: 0 },
+    { id: 'u_charity', issue: "IRS 501(r) Charity Care", trigger: ["hospital", "medical center", "health system"], questionContext: "Non-profit hospitals are legally mandated to forgive or discount bills for households earning under 300-400% of the Federal Poverty Level.", weight: 1000 },
+    { id: 'u_duplicate', issue: "Duplicate Phantom Charge", trigger: ["x2", "quantity 2", "duplicate"], questionContext: "Billing exactly the same CPT code twice on the same date without a valid modifier (like -76) is a classic NCCI violation.", weight: 500 }
   ],
   "Emergency Room": [
-    { id: 'er_upcoding', issue: "E/M Upcoding (Level 4/5)", trigger: ["99284", "99285", "level 4", "level 5", "extended", "comprehensive"], questionContext: "Level 4/5 ER visits require high complexity and direct physician time. If it was a minor issue (cut, cold) or brief visit, it's illegal upcoding.", weight: 350 },
-    { id: 'er_facility', issue: "Invalid Facility Fee", trigger: ["0450", "facility fee", "trauma response"], questionContext: "Freestanding urgent cares (POS 20) illegally charging hospital facility fees (POS 22). Or charging ER facility fees for sitting in a hallway.", weight: 400 },
-    { id: 'er_triage', issue: "Phantom Triage Charge", trigger: ["triage", "assessment", "observation"], questionContext: "Patients who left after triage without seeing a doctor cannot be billed a full ER visit fee.", weight: 500 },
-    { id: 'er_unbundling', issue: "Unbundled Supplies", trigger: ["gloves", "kit", "tray", "iv start", "pulse oximetry"], questionContext: "Routine supplies are legally bundled into the ER Facility Fee. Billing them separately is an NCCI unbundling violation.", weight: 150 }
+    { id: 'er_upcoding', issue: "E/M Severity Upcoding (99284-99285)", trigger: ["99284", "99285", "level 4", "level 5", "high severity"], questionContext: "Code 99285 requires high-complexity medical decision-making (e.g., heart attack, severe trauma). If treated for a minor cut, flu, or simple sprain, this is fraudulent upcoding.", weight: 800 },
+    { id: 'er_facility', issue: "Invalid POS 20 Facility Fee", trigger: ["0450", "facility fee", "freestanding"], questionContext: "Freestanding urgent care centers (POS 20) legally cannot charge hospital-grade (POS 22) facility fees.", weight: 600 },
+    { id: 'er_supplies', issue: "Routine Supply Unbundling", trigger: ["gloves", "gown", "iv start", "pulse oximetry", "tylenol", "99070"], questionContext: "Under NCCI edits, basic supplies (gloves, oral meds) are bundled into the main E/M visit fee. Separate line items for these are illegal.", weight: 150 }
   ],
   "Surgery & Inpatient": [
-    { id: 'surg_assistant', issue: "Phantom Assistant Surgeon", trigger: ["assistant", "asst", "surgeon", "80", "81", "82"], questionContext: "Surprise out-of-network assistant surgeons the patient never met. Disputable under No Surprises Act.", weight: 800 },
-    { id: 'surg_anesthesia', issue: "Anesthesia Time Padding", trigger: ["anesthesia", "minutes", "time", "01999"], questionContext: "Anesthesia is billed in 15-minute increments. Ask if the billed time heavily exceeds the actual surgery duration.", weight: 300 },
-    { id: 'surg_observation', issue: "Inpatient vs Observation", trigger: ["room and board", "inpatient", "admission", "0110", "0120"], questionContext: "If the patient stayed under 24 hours (two midnights rule), it should be billed as 'Observation' (much cheaper), not 'Inpatient Admission'.", weight: 600 }
-  ],
-  "Out-of-Network / Ambulance": [
-    { id: 'nsa_surprise', issue: "No Surprises Act Violation", trigger: ["out of network", "non-contracted", "balance forward"], questionContext: "If the patient went to an in-network hospital but got an out-of-network bill for ER or an anesthesiologist/radiologist, it violates federal law.", weight: 1000 },
-    { id: 'amb_als_bls', issue: "Ambulance Upcoding (ALS vs BLS)", trigger: ["A0427", "A0433", "ALS", "advanced life support"], questionContext: "Billing for Advanced Life Support (ALS) when only Basic Life Support (BLS, e.g., no IVs, no EKG) was provided.", weight: 450 },
-    { id: 'amb_mileage', issue: "Mileage Padding", trigger: ["A0425", "mileage", "miles"], questionContext: "Ambulance companies often round up or inflate the exact mileage driven to the hospital.", weight: 100 }
+    { id: 'surg_timings', issue: "Anesthesia/OR Time Padding", trigger: ["operating room", "anesthesia", "minutes", "time", "01999"], questionContext: "Anesthesia is billed in strict 15-minute increments. Hospitals frequently round up aggressively. Compare billed time vs. actual time under the knife.", weight: 1500 },
+    { id: 'surg_implant', issue: "Implant/Device Price Gouging", trigger: ["implant", "screw", "plate", "device", "mesh"], questionContext: "Hospitals often mark up surgical hardware by 300%+. Patients have the right to request the manufacturer's original invoice to dispute the markup.", weight: 2000 },
+    { id: 'surg_obs', issue: "Observation Status Trick", trigger: ["observation", "short stay", "0110", "0120"], questionContext: "Staying overnight but classified as 'Observation' means Medicare/Insurance denies rehab coverage. A stay spanning two midnights should be 'Inpatient'.", weight: 3000 },
+    { id: 'surg_assistant', issue: "Phantom Assistant Surgeon", trigger: ["assistant", "surgeon", "80", "81", "82", "asst"], questionContext: "Billed for an out-of-network assistant surgeon the patient never met. Highly disputable under the No Surprises Act.", weight: 800 }
   ],
   "General Doctor Visit": [
-    { id: 'gen_new_patient', issue: "New vs Established Patient Upcoding", trigger: ["99203", "99204", "99205", "new patient"], questionContext: "Existing patients (seen within 3 years) must be billed at lower 'Established' rates (9921x), not 'New' rates (9920x).", weight: 200 },
-    { id: 'gen_modifier', issue: "Modifier 25/59 Abuse", trigger: ["modifier 25", "modifier 59", "-25", "-59"], questionContext: "Used to bypass edits. E.g., charging a full separate office visit fee on the exact same day a minor procedure was done.", weight: 250 },
-    { id: 'gen_preventive', issue: "Preventive to Diagnostic Upcoding", trigger: ["preventive", "annual", "physical", "wellness"], questionContext: "Annual check-ups should be 100% free under the ACA. If the doctor asked about a minor ache and added a 'Diagnostic' charge, it's a violation.", weight: 150 }
+    { id: 'gen_new', issue: "New Patient Upcoding (99203-99205)", trigger: ["99203", "99204", "99205", "new patient"], questionContext: "If seen by ANY provider in the same practice within 3 years, the patient is 'Established' (9921x). 'New' patient codes pay 30% more and are highly audited.", weight: 200 },
+    { id: 'gen_mod25', issue: "Modifier 25 Double-Dipping", trigger: ["25", "modifier 25", "office visit"], questionContext: "Modifier 25 allows an office visit and a minor procedure (e.g., injection) on the same day, BUT only if the visit was a 'significant, separately identifiable' service.", weight: 300 }
   ],
   "Lab & Imaging": [
-    { id: 'lab_unbundling', issue: "Lab Panel Unbundling", trigger: ["80050", "80053", "comprehensive metabolic", "lab", "blood"], questionContext: "Routine blood tests should be billed as a single cheap 'Panel'. If they billed each specific chemical separately, it's an unbundling violation.", weight: 200 },
-    { id: 'img_duplicate', issue: "Duplicate Imaging Reads", trigger: ["x-ray", "mri", "ct scan", "radiology"], questionContext: "Check if the patient was billed twice for the exact same scan (e.g., once by the hospital, once by a remote radiologist).", weight: 300 }
+    { id: 'lab_panel', issue: "Lab Panel Unbundling", trigger: ["80053", "metabolic", "lipid", "cbc", "85025", "venipuncture", "36415"], questionContext: "Routine blood tests must be bundled into a panel (e.g., 80053). Unbundling into individual chemical tests is an NCCI violation.", weight: 400 },
+    { id: 'img_read', issue: "Duplicate Interpretation (Modifier 26/TC)", trigger: ["radiology", "reading", "interpretation", "26", "tc"], questionContext: "Billing the Technical Component (the machine) and the Professional Component (doctor reading it) twice by different entities for the same scan.", weight: 500 }
   ]
 };
 
-// ========== PHASE 2: AI-POWERED QUIZ GENERATOR (HYBRID RAG) ==========
+// ========== PHASE 2: AI-POWERED QUIZ GENERATOR (COT-ENFORCED CPC AUDIT) ==========
 async function generateAIQuiz(category, extractedText) {
   try {
-    console.log('[AI Quiz Generator] Starting for category:', category);
-    
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error('API key missing');
-    }
+    if (!apiKey) throw new Error('API key missing');
 
-    // Map category to rules
+    const quizContainer = document.getElementById('quiz-container');
+    const quizAnalyzing = document.getElementById('quiz-analyzing');
+    if (quizContainer) quizContainer.style.display = 'none';
+    if (quizAnalyzing) quizAnalyzing.style.display = 'flex';
+
     const categoryRules = ReferenceAuditRules[category] || ReferenceAuditRules["General Doctor Visit"];
-    const combinedRules = [...categoryRules, ...ReferenceAuditRules["Lab & Imaging"]];
+    const combinedRules = [...categoryRules, ...ReferenceAuditRules["Universal"], ...ReferenceAuditRules["Lab & Imaging"]];
 
-    const prompt = `You are a Senior US Medical Billing Forensic Auditor. We use a Hybrid RAG approach to generate maximum accuracy audit questions.
+    const prompt = `You are an elite Certified Professional Coder (CPC) and Forensic Medical Auditor. Your goal is 99% accuracy in detecting NCCI violations, upcoding, and unbundling.
 
-[OCR TEXT FROM BILL]
-"""${extractedText.substring(0, 1500)}"""
+[EVIDENCE - OCR TEXT FROM BILL]
+"""${extractedText.substring(0, 3000)}"""
 
-[REFERENCE AUDIT RULES FOR THIS CATEGORY]
+[EXPERT AUDIT RULES]
 ${JSON.stringify(combinedRules)}
 
-[UNIVERSAL RULES]
-${JSON.stringify(ReferenceAuditRules.Universal)}
+[YOUR AUDIT PROTOCOL - CHAIN OF THOUGHT]
+Step 1: Evaluate Completeness. Does the bill have specific 5-digit CPT codes and itemized prices? Or is it a summary?
+Step 2: Line-by-Line Cross-Reference. Match every line item against the Expert Audit Rules.
+Step 3: Generate Questions. You MUST inject the EXACT prices, codes, and item names from the OCR text into your questions to prove you are analyzing their specific bill.
 
-[YOUR TASK]
-1. Cross-reference the OCR Text with the Reference Audit Rules. Find the top 3-5 rules that likely apply based on the text.
-2. Generate exactly 5 to 7 YES/NO/NOT-SURE questions.
-3. MANDATORY: Question 1 must be about Household Income (Universal Rule - Charity Care).
-4. MANDATORY: Question 2 must be about receiving an Itemized Bill (Universal Rule).
-5. The remaining questions MUST be highly personalized based on the OCR text and matched rules. (e.g., "I see code 99285 on your bill. Did the doctor actually spend more than 40 minutes with you?")
+[STRICT QUESTION SEQUENCE REQUIREMENTS]
+You MUST generate EXACTLY 6 to 8 questions. 
+1. Mandatory: "Is your annual household income roughly below $60,000?" (Charity Care check)
+2. Mandatory: "Does this document show specific 5-digit CPT codes, or is it just a summary?"
+3. Target #1: Find the MOST EXPENSIVE item. Inject its name and price. Ask if it matches the reality of the visit.
+4. Target #2: Look for Upcoding (e.g., 99285, 99205, Level 4/5). 
+5. Target #3: Look for Unbundling (supplies, labs, IV starts billed separately).
+6. Target #4: Look for Phantom charges (providers not seen, excessive time billed).
+7/8. Any other specific anomalies. If no more anomalies, ask a standard verification question regarding the duration of the visit.
 
-[JSON OUTPUT FORMAT STRICTLY REQUIRED]
-Return an array of objects. NO markdown, NO \`\`\`json tags. It must be valid JSON.
+[OUTPUT FORMAT - JSON ONLY]
+Produce ONLY a valid JSON array of objects. No markdown formatting.
+CRITICAL: You MUST include a "reasoning" key in each object. This is your internal Chain of Thought explaining WHY you generated this question based on the OCR data.
+
 [
   {
-    "id": "q_id",
-    "question": "Personalized question text...",
-    "context": "Professional explanation of why this matters legally/financially.",
-    "errorType": "The issue name from rules",
+    "id": "q1",
+    "reasoning": "I noticed the text includes 'Hospital'. IRS 501r mandates charity care screening for non-profits.",
+    "question": "Is your household income roughly below $60,000?",
+    "context": "Non-profit hospitals are legally mandated to forgive or discount bills for lower-income patients.",
+    "errorType": "Charity Care Eligibility",
     "options": [
       { "label": "Yes", "value": "yes", "weight": 800 },
       { "label": "No", "value": "no", "weight": 0 },
       { "label": "Not Sure", "value": "not-sure", "weight": 400 }
     ]
+  },
+  {
+    "id": "q3",
+    "reasoning": "OCR shows 'ER VISIT LEVEL 5' (CPT 99285) billed at $3,250. This requires high complexity. I must verify severity.",
+    "question": "I see a charge for 'ER VISIT LEVEL 5' (99285) at $3,250. This code is for life-threatening emergencies. Was your condition truly a severe emergency (like a heart attack or severe trauma)?",
+    "context": "Billing a Level 5 code for minor issues (flu, minor cuts) is illegal upcoding under CMS guidelines.",
+    "errorType": "E/M Severity Upcoding",
+    "options": [
+      { "label": "Yes, it was severe", "value": "no", "weight": 0 },
+      { "label": "No, it was a minor issue", "value": "yes", "weight": 800 },
+      { "label": "Not Sure", "value": "not-sure", "weight": 400 }
+    ]
   }
 ]`;
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-    
-    const response = await fetch(apiUrl, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{
-          parts: [{ text: prompt }]
-        }]
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { response_mime_type: "application/json" }
       })
     });
 
-    if (!response.ok) {
-      throw new Error(`API request failed: ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(`API request failed: ${response.status}`);
     const data = await response.json();
     let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    
-    // Clean markdown code blocks
     aiText = aiText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
     
-    console.log('[AI Quiz Generator] Cleaned response:', aiText.substring(0, 200));
-    
     const aiQuestions = JSON.parse(aiText);
-    
-    if (!Array.isArray(aiQuestions) || aiQuestions.length < 3) {
-      throw new Error('Invalid AI response format');
-    }
+    if (!Array.isArray(aiQuestions) || aiQuestions.length < 5) throw new Error('Invalid or insufficient AI questions');
 
-    console.log('[AI Quiz Generator] ✓ Generated', aiQuestions.length, 'questions');
+    console.log('[AI Quiz Generator] ✓ Generated CoT Enforced Questions:', aiQuestions);
     return aiQuestions;
 
   } catch (error) {
     console.error('[AI Quiz Generator] Error:', error);
-    
-    // Fallback: Return hardcoded universal questions
-    console.log('[AI Quiz Generator] Using fallback questions');
+    // Return standard 6 fallback questions if API fails
     return [
-      {
-        id: 'fallback_charity',
-        question: 'Is your household income under $50,000/year?',
-        context: 'Non-profit hospitals must forgive or discount bills for low-to-middle income patients under IRS 501(r).',
-        errorType: 'Charity Care Eligibility',
-        options: [
-          { label: 'Yes', value: 'yes', weight: 1000 },
-          { label: 'No', value: 'no', weight: 0 },
-          { label: 'Not Sure', value: 'not-sure', weight: 500 }
-        ]
-      },
-      {
-        id: 'fallback_itemized',
-        question: 'Did you receive a detailed itemized bill with CPT/HCPCS codes?',
-        context: 'Hospitals often hide errors in summary bills. You have a legal right to request an itemized bill.',
-        errorType: 'Audit Requirement',
-        options: [
-          { label: 'Yes', value: 'yes', weight: 0 },
-          { label: 'No', value: 'no', weight: 0 },
-          { label: 'Not Sure', value: 'not-sure', weight: 0 }
-        ]
-      },
-      {
-        id: 'fallback_general',
-        question: 'Do you see any charges that seem unusually high or duplicated?',
-        context: 'Billing errors are extremely common. Look for duplicate charges, unbundled items, or inflated quantities.',
-        errorType: 'General Billing Error',
-        options: [
-          { label: 'Yes', value: 'yes', weight: 300 },
-          { label: 'No', value: 'no', weight: 0 },
-          { label: 'Not Sure', value: 'not-sure', weight: 150 }
-        ]
-      }
+      { id: 'f1', question: 'Is your household income under $60,000/year?', context: 'Non-profit hospitals must forgive bills for low-to-middle income patients under IRS 501(r).', errorType: 'Charity Care Eligibility', options: [{ label: 'Yes', value: 'yes', weight: 1000 }, { label: 'No', value: 'no', weight: 0 }, { label: 'Not Sure', value: 'not-sure', weight: 500 }] },
+      { id: 'f2', question: 'Did you receive a detailed itemized bill with 5-digit CPT codes?', context: 'Hospitals often hide errors in summary bills. You have a legal right to request an itemized bill.', errorType: 'Audit Requirement', options: [{ label: 'Yes', value: 'yes', weight: 0 }, { label: 'No', value: 'no', weight: 0 }, { label: 'Not Sure', value: 'not-sure', weight: 0 }] },
+      { id: 'f3', question: 'Does the bill contain any "Facility Fees" for a simple clinic visit?', context: 'Freestanding clinics cannot legally charge hospital-grade facility fees.', errorType: 'Invalid Facility Fee', options: [{ label: 'Yes', value: 'yes', weight: 500 }, { label: 'No', value: 'no', weight: 0 }, { label: 'Not Sure', value: 'not-sure', weight: 200 }] },
+      { id: 'f4', question: 'Are you being billed separately for basic supplies (gloves, IV kits, Tylenol)?', context: 'Routine supplies are bundled into the main visit fee under NCCI guidelines. Separate charges are unbundling violations.', errorType: 'Unbundling', options: [{ label: 'Yes', value: 'yes', weight: 300 }, { label: 'No', value: 'no', weight: 0 }, { label: 'Not Sure', value: 'not-sure', weight: 150 }] },
+      { id: 'f5', question: 'Was the duration of your actual face-to-face time with the doctor less than 15 minutes?', context: 'Billing for extended, high-complexity visits when the doctor only spent a few minutes is considered upcoding.', errorType: 'E/M Upcoding', options: [{ label: 'Yes', value: 'yes', weight: 400 }, { label: 'No', value: 'no', weight: 0 }, { label: 'Not Sure', value: 'not-sure', weight: 200 }] },
+      { id: 'f6', question: 'Are there any providers listed on the bill (like an Assistant Surgeon or Radiologist) that you never met?', context: 'Phantom billing for out-of-network providers you did not choose is a violation of the No Surprises Act.', errorType: 'Surprise Billing', options: [{ label: 'Yes', value: 'yes', weight: 800 }, { label: 'No', value: 'no', weight: 0 }, { label: 'Not Sure', value: 'not-sure', weight: 300 }] }
     ];
   }
 }
@@ -4610,11 +4589,9 @@ async function initializeTargetedQuiz(category) {
         // Calculate initial savings from quiz responses
         const initialSavings = totalPotentialSavings + aiImpact;
         
-        // Calculate final refund with 40% cap
+        // Calculate bill amount for logic
         const billTotal = detectedAmount ? parseFloat(detectedAmount.replace(/,/g, '')) : 0;
-        const maxRefund = billTotal * 0.4;
         const calculatedRefund = initialSavings * adjustmentMultiplier;
-        let finalRefund = Math.min(Math.round(calculatedRefund), Math.round(maxRefund));
         
         // ========== GEMINI AI VERDICT ==========
         
@@ -4629,16 +4606,20 @@ async function initializeTargetedQuiz(category) {
         
         console.log('[AI Verdict] Received:', aiVerdict);
         
-        // ========== ENHANCED FALLBACK LOGIC ==========
-        // Override finalRefund with AI estimate if available and valid
+        // ========== UPGRADED LOGIC: Trust AI's judgment, cap at 100% of bill ==========
+        let finalRefund = 0;
+        
         if (aiVerdict && aiVerdict.estimatedRefund && aiVerdict.estimatedRefund > 0) {
-          finalRefund = Math.min(aiVerdict.estimatedRefund, Math.round(maxRefund));
+          // Cap at 100% of bill (total forgiveness), not 40%
+          finalRefund = Math.min(aiVerdict.estimatedRefund, billTotal);
           console.log('[AI Verdict] Using AI refund estimate:', finalRefund);
         } else {
-          // Use calculatedRefund as fallback if AI returns 0 or invalid
-          finalRefund = Math.round(calculatedRefund);
+          // Fallback if AI fails - cap at 100% of bill
+          finalRefund = Math.min(Math.round(calculatedRefund), billTotal);
           console.log('[AI Verdict] ⚠️ AI refund invalid or 0. Using calculatedRefund:', finalRefund);
         }
+        
+        console.log('[AI Verdict] Final Refund Amount:', finalRefund);
         
         // Calculate error probability (0-100%)
         const violationCount = detectedFlags.length + quizResponses.filter(r => r.answer === 'yes').length;
