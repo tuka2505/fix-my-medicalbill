@@ -302,10 +302,8 @@ function renderHero() {
   return `
     <section class="hero">
       <div class="hero-content">
-        <!-- Left Column: Text Content -->
         <div class="hero-left">
-          <!-- Social Proof Badge -->
-          <div class="hero-social-proof">
+          <div class="hero-social-proof" style="margin-bottom: 24px;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
               <circle cx="9" cy="7" r="4" stroke-width="1.5"></circle>
@@ -315,81 +313,79 @@ function renderHero() {
             <span>15,000+ Bills Analyzed</span>
           </div>
 
-          <h1 class="hero-title">Stop Overpaying.<br><span class="highlight-blue">Find Your Hidden&nbsp;Refund in&nbsp;10&nbsp;Seconds.</span></h1>
-          <p class="hero-sub">80% of US medical bills contain errors. Use our AI Audit to find your missing <strong><span style="white-space: nowrap;">$300 to $1,500</span></strong> in 60 seconds.</p>
+          <h1 class="hero-title" style="line-height: 1.15; margin-bottom: 20px;">
+            Stop Overpaying.<br>
+            <span class="highlight-blue">Find Your Refund.</span>
+          </h1>
           
-          <!-- Mechanism Stepper -->
-          <div class="mechanism-stepper">🔍 1. AI Bill Scan<span style="margin: 0 8px;">➔</span>📝 2. Auto Dispute Letter</div>
+          <p class="hero-sub" style="line-height: 1.6; margin-bottom: 32px; font-size: 1.1rem; color: var(--muted2); max-width: 90%;">
+            80% of US medical bills contain errors. Drop your bill here, and let our AI Auditor find your hidden overcharges in 60 seconds.
+          </p>
+          
+          <div class="mechanism-stepper" style="background: transparent; border: 1px solid var(--border); box-shadow: none; padding: 12px 20px;">
+            🔍 1. Scan Bill <span style="margin: 0 12px; color: var(--muted2);">➔</span> 📝 2. AI Audit <span style="margin: 0 12px; color: var(--muted2);">➔</span> ⚖️ 3. Get Refund
+          </div>
         </div>
 
-        <!-- Right Column: Visual Content -->
         <div class="hero-right">
-          <!-- Value Proposition Stats -->
-          <div class="hero-value-prop">
-            <div class="value-stat">
-              <span class="value-number">$<span class="count-up" data-target="450">0</span></span>
-              <span class="value-label">Avg Recovered</span>
+          
+          <div class="super-card">
+            
+            <div class="hero-value-prop" style="box-shadow: none; background: transparent; padding: 0 0 24px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px;">
+              <div class="value-stat">
+                <span class="value-number">$<span class="count-up" data-target="450">0</span></span>
+                <span class="value-label">Avg Found</span>
+              </div>
+              <div class="value-divider"></div>
+              <div class="value-stat">
+                <span class="value-number"><span class="count-up" data-target="60">0</span>s</span>
+                <span class="value-label">Audit Time</span>
+              </div>
+              <div class="value-divider"></div>
+              <div class="value-stat">
+                <span class="value-number"><span class="count-up" data-target="98">0</span>%</span>
+                <span class="value-label">AI Accuracy</span>
+              </div>
             </div>
-            <div class="value-divider"></div>
-            <div class="value-stat">
-              <span class="value-number"><span class="count-up" data-target="60">0</span>s</span>
-              <span class="value-label">To Audit</span>
+
+            <div class="hero-cta-section dropzone-container">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.9;">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="12" y1="18" x2="12" y2="12"></line>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+              </svg>
+              <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: var(--text);">Drag & Drop your bill</h3>
+              <p style="margin: 0; font-size: 14px; color: var(--muted2);">Supports PDF, JPG, PNG</p>
+              
+              <input type="file" id="bill-upload" accept="image/*,application/pdf" style="display:none;">
+              <label for="bill-upload" id="upload-label" class="upload-pill-btn">
+                Browse Files
+              </label>
             </div>
-            <div class="value-divider"></div>
-            <div class="value-stat">
-              <span class="value-number"><span class="count-up" data-target="98">0</span>%</span>
-              <span class="value-label">AI Accuracy</span>
+
+            <div class="pro-tip-banner">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #515154;">
+                <strong>Pro Tip:</strong> For the most accurate deep audit, please upload an <strong>Itemized Bill</strong> containing 5-digit CPT codes, rather than a basic summary receipt.
+              </p>
             </div>
+
           </div>
 
-          <!-- CTA Section -->
-          <div class="hero-cta-section">
-            <p class="hero-cta-text">Find Your Hidden Refund&nbsp;in <span style="white-space: nowrap;">10 Seconds.</span></p>
-            <input type="file" id="bill-upload" accept="image/*,application/pdf" style="display:none;">
-            <label for="bill-upload" class="hero-cta-btn" id="upload-label">
-              Scan Bill & Get Refund
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                <polyline points="17 8 12 3 7 8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></line>
-              </svg>
-            </label>
-            <p style="font-size: 12.5px; color: var(--muted2); margin-top: 14px; font-weight: 400; letter-spacing: -0.01em;">
-              *For a deep AI audit, please upload an <strong>itemized bill</strong> with CPT codes.
-            </p>
-          </div>
-
-          <!-- Secondary Tools Link -->
-          <a href="#tools-section" class="secondary-tools-link">Looking for a specific tool? Browse 8 templates ›</a>
-
-          <!-- Trust Indicators -->
-          <div class="hero-trust">
-            <div class="trust-badge">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-width="1.5" stroke-linejoin="round"></path>
-              </svg>
-              <span>No Credit Card Required</span>
-            </div>
-            <span class="trust-dot">·</span>
-            <div class="trust-badge">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" stroke-width="1.5"></circle>
-                <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-              </svg>
-              <span>100% Free Resources</span>
-            </div>
-            <span class="trust-dot">·</span>
-            <div class="trust-badge">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="1.5"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-width="1.5" stroke-linecap="round"></path>
-              </svg>
-              <span>Your Data Stays Private</span>
-            </div>
+          <div style="margin-top: 24px; display: flex; justify-content: center; gap: 24px; font-size: 13px; font-weight: 500; color: var(--muted2);">
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> 100% Private
+            </span>
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> Zero Data Stored
+            </span>
           </div>
           
-          <!-- Alert Text -->
-          <p class="alert-text-small">⚠️ Most dispute rights expire after 180 days. Start your review today.</p>
         </div>
       </div>
     </section>
@@ -4791,58 +4787,55 @@ async function initializeTargetedQuiz(category) {
         }
 
         if (quizCtaBtn) {
-          // ========== PHASE 3: INVESTIGATIVE PIVOT BUTTON LOGIC ==========
-          if (aiVerdict.recommendedTool === 'Request Itemized Bill') {
+          // 1. Determine safe target route and tool name
+          let targetRoute = "/medical-bill-dispute-letter"; // Ultimate fallback
+          let toolName = "Dispute Letter";
+
+          if (aiVerdict && aiVerdict.recommendedTool && aiVerdict.recommendedTool.startsWith('/')) {
+            targetRoute = aiVerdict.recommendedTool;
+          } else if (currentBillCategory && currentBillCategory.route) {
+            targetRoute = currentBillCategory.route;
+          }
+
+          // Create a readable name from the route (e.g. "/urgent-care-bill" -> "Urgent Care Bill")
+          toolName = targetRoute.split('/').pop().replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          if(toolName.toLowerCase().includes("itemized")) toolName = "Itemized Bill Request";
+
+          // 2. Set Button UI Dynamically
+          if (targetRoute === '/request-itemized-medical-bill') {
             quizCtaBtn.innerHTML = `
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
               </svg>
               Get Itemized Bill & Audit Codes →
             `;
-          } else if (aiVerdict.recommendedTool) {
-            // Update button text if AI recommended a specific tool
-            const btnText = quizCtaBtn.querySelector('span') || quizCtaBtn;
-            const originalText = btnText.textContent || 'Start My Dispute Now';
-            if (!originalText.includes(aiVerdict.recommendedTool)) {
-              quizCtaBtn.innerHTML = `
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                </svg>
-                Start ${aiVerdict.recommendedTool}
-              `;
-            }
+          } else {
+            quizCtaBtn.innerHTML = `
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+              Start ${toolName}
+            `;
           }
           
+          // 3. Set Bulletproof Click Handler
           quizCtaBtn.onclick = () => {
-            // ========== STEP 3: DYNAMIC AI ROUTING & DATA STORAGE ==========
-            
-            // Action 1: Save extracted audit data to localStorage
             try {
               const medicalAuditData = {
-                amount: detectedAmount,
-                category: currentBillCategory.category,
-                verdict: aiVerdict.auditorNote || '',
-                findings: auditFindings
+                amount: detectedAmount || '0',
+                category: currentBillCategory?.category || 'General',
+                verdict: aiVerdict?.auditorNote || 'Based on your quiz responses, we estimate potential savings. Please proceed with generating your dispute document.',
+                findings: auditFindings || []
               };
-              localStorage.setItem('medicalAuditData', JSON.stringify(medicalAuditData));
-              console.log('[Phase 2] Saved medicalAuditData:', medicalAuditData);
               
-              // Keep lastAudit for backward compatibility
-              localStorage.setItem('lastAudit', JSON.stringify(auditResults));
-            } catch (error) {
-              console.error('[Phase 2] Failed to save audit data:', error);
+              localStorage.setItem('medicalAuditData', JSON.stringify(medicalAuditData));
+              localStorage.setItem('lastAudit', JSON.stringify(auditResults)); // Keep for backward compatibility
+              console.log('[Strict Routing] Saved audit data:', medicalAuditData);
+            } catch (err) {
+              console.error('[Strict Routing] Failed to save data:', err);
             }
             
-            // Action 2: Strict Routing Execution
-            // Because we locked down the prompt, recommendedTool is a guaranteed valid route path
-            let targetRoute = aiVerdict.recommendedTool || currentBillCategory.route;
-            
-            // Overrides based on Ambiguity (Phase 3)
-            if (aiVerdict.recommendedTool === '/request-itemized-medical-bill' || notSureCount >= 2) {
-              targetRoute = '/request-itemized-medical-bill';
-            }
-            
-            console.log('[Strict Routing] Navigating to:', targetRoute);
+            console.log("[Strict Routing] Navigating safely to:", targetRoute);
             navigate(targetRoute);
           };
         }

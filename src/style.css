@@ -3941,3 +3941,60 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
 .hero-trust {
   margin-top: 24px !important;
 }
+
+/* --- HERO SECTION UI UPGRADES --- */
+.super-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.dropzone-container {
+  background: #F8FBFF;
+  border: 2px dashed rgba(0, 113, 227, 0.3);
+  border-radius: 16px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+}
+
+.dropzone-container:hover, .dropzone-container.drag-over {
+  background: #E8F2FF;
+  border-color: #0071E3;
+}
+
+.upload-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #0071E3;
+  color: #ffffff;
+  padding: 14px 32px;
+  border-radius: 30px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);
+  transition: transform 0.2s ease, background 0.2s ease;
+  margin-top: 16px;
+}
+
+.upload-pill-btn:hover {
+  background: #005BB5;
+  transform: translateY(-2px);
+}
+
+.pro-tip-banner {
+  background: #F5F5F7;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  text-align: left;
+}
