@@ -287,7 +287,7 @@ function renderHeader() {
         </a>
         <button class="mobile-menu-btn" aria-label="Toggle menu">☰</button>
         <nav class="nav desktop-nav">
-          <a href="/#tools">Tools</a>
+          <a href="/#tools-section">Tools</a>
           <a href="/#resources">Resources</a>
           <a href="/faq" data-route="/faq">FAQ</a>
           <a href="/terms-of-service" data-route="/terms-of-service">Disclaimer</a>
