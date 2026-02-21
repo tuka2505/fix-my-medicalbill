@@ -85,7 +85,7 @@
     <div id="cors-result"></div>
   </div>
 
-  <script src="https://www.google.com/recaptcha/api.js?render=6Lcw_HIsAAAAADUYy4ueF4DQ0D5Dr_uqOXF2xmEJ"></script>
+  <script src="https://www.google.com/recaptcha/api.js?render=6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK"></script>
   <script>
     function showResult(elementId, message, type) {
       const el = document.getElementById(elementId);
@@ -103,7 +103,7 @@
 
         const token = await new Promise((resolve, reject) => {
           grecaptcha.ready(() => {
-            grecaptcha.execute('6Lcw_HIsAAAAADUYy4ueF4DQ0D5Dr_uqOXF2xmEJ', { action: 'test' })
+            grecaptcha.execute('6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK', { action: 'test' })
               .then(resolve)
               .catch(reject);
           });
@@ -158,7 +158,7 @@
         // Get reCAPTCHA token first
         const token = await new Promise((resolve) => {
           grecaptcha.ready(() => {
-            grecaptcha.execute('6Lcw_HIsAAAAADUYy4ueF4DQ0D5Dr_uqOXF2xmEJ', { action: 'test' })
+            grecaptcha.execute('6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK', { action: 'test' })
               .then(resolve);
           });
         });

@@ -4306,7 +4306,7 @@ CRITICAL: You MUST include a "reasoning" key in each object. This is your intern
 
 // ========== SECURE BACKEND API HELPER ==========
 // All Gemini API calls go through our backend proxy with rate limiting and reCAPTCHA
-const RECAPTCHA_SITE_KEY = '6Lcw_HIsAAAAADUYy4ueF4DQ0D5Dr_uqOXF2xmEJ';
+const RECAPTCHA_SITE_KEY = '6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK';
 
 // Generate reCAPTCHA token
 async function getRecaptchaToken(action) {
