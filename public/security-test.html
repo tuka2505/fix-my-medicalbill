@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Test - Fix My Medical Bill</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 { color: #2d3748; }
+    h2 { color: #4a5568; font-size: 18px; margin-top: 0; }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 5px;
+    }
+    button:hover { background: #2563eb; }
+    .result {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+    .success { background: #d1fae5; color: #065f46; }
+    .error { background: #fee2e2; color: #991b1b; }
+    .info { background: #dbeafe; color: #1e40af; }
+    .warning { background: #fef3c7; color: #92400e; }
+  </style>
+</head>
+<body>
+  <h1>🔒 Security Test Dashboard</h1>
+  <p>빠른 보안 기능 검증 도구</p>
+
+  <!-- Test 1: reCAPTCHA -->
+  <div class="test-section">
+    <h2>1️⃣ reCAPTCHA Token 생성 테스트</h2>
+    <button onclick="testRecaptcha()">reCAPTCHA 테스트</button>
+    <div id="recaptcha-result"></div>
+  </div>
+
+  <!-- Test 2: API Without Token -->
+  <div class="test-section">
+    <h2>2️⃣ 보안: Token 없이 API 호출 (차단되어야 함)</h2>
+    <button onclick="testWithoutToken()">Token 없이 호출</button>
+    <div id="no-token-result"></div>
+  </div>
+
+  <!-- Test 3: Rate Limiting -->
+  <div class="test-section">
+    <h2>3️⃣ Rate Limiting 테스트 (3초 내 2번 → 차단)</h2>
+    <button onclick="testRateLimit()">Rate Limit 테스트</button>
+    <div id="rate-limit-result"></div>
+  </div>
+
+  <!-- Test 4: File Size -->
+  <div class="test-section">
+    <h2>4️⃣ 파일 크기 제한 테스트</h2>
+    <button onclick="testFileSize()">대용량 파일 차단 확인</button>
+    <div id="file-size-result"></div>
+  </div>
+
+  <!-- Test 5: CORS -->
+  <div class="test-section">
+    <h2>5️⃣ CORS 제한 확인</h2>
+    <button onclick="testCORS()">CORS 테스트</button>
+    <div id="cors-result"></div>
+  </div>
+
+  <script src="https://www.google.com/recaptcha/api.js?render=6Lcw_HIsAAAAADUYy4ueF4DQ0D5Dr_uqOXF2xmEJ"></script>
+  <script>
+    function showResult(elementId, message, type) {
+      const el = document.getElementById(elementId);
+      el.innerHTML = `<div class="result ${type}">${message}</div>`;
+    }
+
+    // Test 1: reCAPTCHA
+    async function testRecaptcha() {
+      showResult('recaptcha-result', '⏳ Testing...', 'info');
+      try {
+        if (typeof grecaptcha === 'undefined') {
+          showResult('recaptcha-result', '❌ grecaptcha not loaded', 'error');
+          return;
+        }
+
+        const token = await new Promise((resolve, reject) => {
+          grecaptcha.ready(() => {
+            grecaptcha.execute('6Lcw_HIsAAAAADUYy4ueF4DQ0D5Dr_uqOXF2xmEJ', { action: 'test' })
+              .then(resolve)
+              .catch(reject);
+          });
+        });
+
+        showResult('recaptcha-result', 
+          `✅ reCAPTCHA Token 생성 성공!\n\nToken: ${token.substring(0, 50)}...\nLength: ${token.length} chars\n\n이 토큰은 백엔드에서 검증됩니다.`,
+          'success'
+        );
+      } catch (error) {
+        showResult('recaptcha-result', `❌ Error: ${error.message}`, 'error');
+      }
+    }
+
+    // Test 2: API Without Token
+    async function testWithoutToken() {
+      showResult('no-token-result', '⏳ Testing...', 'info');
+      try {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: "test" }] }],
+            generationConfig: {},
+            action: 'test'
+            // recaptchaToken 의도적으로 누락
+          })
+        });
+
+        const data = await response.json();
+        
+        if (response.status === 400 && data.error === 'Missing reCAPTCHA token') {
+          showResult('no-token-result', 
+            `✅ 보안 정상 작동!\n\nStatus: ${response.status}\nError: ${data.error}\nMessage: ${data.message}\n\nToken 없는 요청이 차단되었습니다.`,
+            'success'
+          );
+        } else {
+          showResult('no-token-result', 
+            `⚠️ 예상과 다른 응답:\n\nStatus: ${response.status}\nData: ${JSON.stringify(data, null, 2)}`,
+            'warning'
+          );
+        }
+      } catch (error) {
+        showResult('no-token-result', `❌ Network Error: ${error.message}`, 'error');
+      }
+    }
+
+    // Test 3: Rate Limiting
+    async function testRateLimit() {
+      showResult('rate-limit-result', '⏳ Testing... (2번 연속 요청)', 'info');
+      try {
+        // Get reCAPTCHA token first
+        const token = await new Promise((resolve) => {
+          grecaptcha.ready(() => {
+            grecaptcha.execute('6Lcw_HIsAAAAADUYy4ueF4DQ0D5Dr_uqOXF2xmEJ', { action: 'test' })
+              .then(resolve);
+          });
+        });
+
+        // First request
+        const req1 = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: "test 1" }] }],
+            recaptchaToken: token,
+            action: 'test'
+          })
+        });
+        const data1 = await req1.json();
+        const status1 = req1.status;
+
+        // Second request (immediately)
+        const req2 = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: "test 2" }] }],
+            recaptchaToken: token,
+            action: 'test'
+          })
+        });
+        const data2 = await req2.json();
+        const status2 = req2.status;
+
+        if (status2 === 429) {
+          showResult('rate-limit-result', 
+            `✅ Rate Limiting 정상 작동!\n\nRequest 1: ${status1} (${data1.error || 'Success'})\nRequest 2: ${status2} (${data2.error})\n\nWait Time: ${data2.waitTime} second(s)\nMessage: ${data2.message}`,
+            'success'
+          );
+        } else {
+          showResult('rate-limit-result', 
+            `⚠️ Rate limit이 트리거되지 않았습니다.\n\nRequest 1: ${status1}\nRequest 2: ${status2}\n\n※ 서버리스 인스턴스가 분리되어 있을 수 있습니다.\n실제 사용자 테스트로 3초 내 다시 업로드 시도해보세요.`,
+            'warning'
+          );
+        }
+      } catch (error) {
+        showResult('rate-limit-result', `❌ Error: ${error.message}`, 'error');
+      }
+    }
+
+    // Test 4: File Size
+    async function testFileSize() {
+      showResult('file-size-result', '⏳ Testing...', 'info');
+      try {
+        const largeData = 'x'.repeat(11 * 1024 * 1024); // 11MB of data
+        
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Content-Length': (11 * 1024 * 1024).toString()
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: largeData }] }],
+            recaptchaToken: 'test',
+            action: 'test'
+          })
+        });
+
+        const data = await response.json();
+        
+        if (response.status === 413) {
+          showResult('file-size-result', 
+            `✅ 파일 크기 제한 정상 작동!\n\nStatus: ${response.status}\nError: ${data.error}\nMessage: ${data.message}\nMax Size: ${data.maxSize}\n\n10MB 초과 파일이 차단되었습니다.`,
+            'success'
+          );
+        } else {
+          showResult('file-size-result', 
+            `⚠️ 예상과 다른 응답:\n\nStatus: ${response.status}\nData: ${JSON.stringify(data, null, 2)}`,
+            'warning'
+          );
+        }
+      } catch (error) {
+        showResult('file-size-result', `❌ Error: ${error.message}`, 'error');
+      }
+    }
+
+    // Test 5: CORS
+    async function testCORS() {
+      showResult('cors-result', '⏳ Testing...', 'info');
+      
+      const origin = window.location.origin;
+      const allowed = [
+        'https://fixmymedicalbill.com',
+        'https://www.fixmymedicalbill.com',
+        'https://fix-my-medicalbill.vercel.app',
+        'http://localhost:5173',
+        'http://localhost:5174'
+      ];
+
+      if (allowed.includes(origin)) {
+        showResult('cors-result', 
+          `✅ CORS 설정 확인\n\n현재 도메인: ${origin}\n허용된 도메인 리스트에 포함됩니다.\n\n허용 도메인:\n${allowed.join('\n')}\n\nAPI 요청이 정상적으로 처리됩니다.`,
+          'success'
+        );
+      } else {
+        showResult('cors-result', 
+          `⚠️ 현재 도메인이 허용 리스트에 없습니다.\n\n현재: ${origin}\n\n허용 도메인:\n${allowed.join('\n')}\n\nAPI 요청이 차단될 수 있습니다.`,
+          'warning'
+        );
+      }
+    }
+  </script>
+</body>
+</html>

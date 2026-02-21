@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/(ads.txt|sitemap.xml|robots.txt|manifest.json|browserconfig.xml)",
+      "source": "/(ads.txt|sitemap.xml|robots.txt|manifest.json|browserconfig.xml|security-test.html)",
       "destination": "/$1"
     },
     {
