@@ -383,7 +383,7 @@ function renderHero() {
             <h3 style="margin: 0 0 5px 0; font-size: 17px; font-weight: 600; color: #1D1D1F;">Drag & Drop your bill</h3>
             <p style="margin: 0 0 12px 0; font-size: 13.5px; color: #86868B;">Supports PDF, JPG, PNG</p>
             
-            <input type="file" id="bill-upload" accept="image/*,application/pdf" style="display:none;">
+            <input type="file" id="bill-upload" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.pdf" style="display:none;">
             <label for="bill-upload" class="hero-cta-btn" id="upload-label" style="display: inline-flex; align-items: center; justify-content: center; background: #0071E3; color: white; padding: 10px 26px; border-radius: 24px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2); line-height: 1;">
               Browse Files
             </label>
