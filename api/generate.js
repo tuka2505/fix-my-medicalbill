@@ -30,15 +30,24 @@ async function verifyRecaptcha(token) {
     console.log('[reCAPTCHA] Verification result:', {
       success: data.success,
       score: data.score,
-      action: data.action
+      action: data.action,
+      hostname: data.hostname,
+      challenge_ts: data['challenge_ts'],
+      'error-codes': data['error-codes']
     });
     
     // Check if verification was successful and score is above threshold
     if (!data.success) {
-      return { success: false, error: 'reCAPTCHA verification failed' };
+      console.error('[reCAPTCHA] Verification failed. Error codes:', data['error-codes']);
+      return { 
+        success: false, 
+        error: 'reCAPTCHA verification failed',
+        errorCodes: data['error-codes']
+      };
     }
     
     if (data.score < RECAPTCHA_THRESHOLD) {
+      console.warn('[reCAPTCHA] Score too low:', data.score, '< threshold:', RECAPTCHA_THRESHOLD);
       return { 
         success: false, 
         error: 'Bot detected',
