@@ -4063,7 +4063,7 @@ function setupBillScanning() {
               ] 
             }],
             { response_mime_type: "application/json" },
-            'bill-ocr'
+            'bill_ocr'
           );
 
           let aiText = data.candidates[0].content.parts[0].text.replace(/```json/gi, '').replace(/```/gi, '').trim();
@@ -4260,7 +4260,7 @@ CRITICAL: You MUST include a "reasoning" key in each object. This is your intern
     const data = await callSecureGeminiAPI(
       [{ parts: [{ text: prompt }] }],
       { response_mime_type: "application/json" },
-      'quiz-generation'
+      'quiz_generation'
     );
 
     let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
@@ -4479,7 +4479,7 @@ Return strictly valid JSON (no \`\`\`json tags):
     const data = await callSecureGeminiAPI(
       [{ parts: [{ text: prompt }] }],
       {},
-      'verdict-generation'
+      'verdict_generation'
     );
     
     console.log('[Gemini API] ✓ Raw response received:', data);
