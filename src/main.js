@@ -5429,3 +5429,8 @@ window.addEventListener('popstate', () => {
 
 window.addEventListener("popstate", router);
 router();
+
+// Dispatch event for pre-rendering (used by vite-plugin-prerender)
+setTimeout(() => {
+  document.dispatchEvent(new Event('app-rendered'));
+}, 500);
