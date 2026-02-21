@@ -4053,24 +4053,19 @@ function setupBillScanning() {
       reader.onloadend = async () => {
         try {
           const base64String = reader.result.split(',')[1];
-          const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-          if (!apiKey) throw new Error("API Key missing");
+          
+          // Call secure backend API instead of direct Gemini API
+          const data = await callSecureGeminiAPI(
+            [{ 
+              parts: [
+                { text: "Analyze this US medical bill. Return ONLY flat JSON. Required keys: \"isValid\"(bool), \"facilityName\", \"totalAmount\", \"dateOfService\", \"issueCategory\" (ONE OF: 'Emergency Room', 'Lab & Imaging', 'Surgery & Inpatient', 'General Doctor Visit')." },
+                { inlineData: { mimeType: fileToProcess.type, data: base64String } }
+              ] 
+            }],
+            { response_mime_type: "application/json" },
+            'bill-ocr'
+          );
 
-          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: "Analyze this US medical bill. Return ONLY flat JSON. Required keys: \"isValid\"(bool), \"facilityName\", \"totalAmount\", \"dateOfService\", \"issueCategory\" (ONE OF: 'Emergency Room', 'Lab & Imaging', 'Surgery & Inpatient', 'General Doctor Visit')." }, { inlineData: { mimeType: fileToProcess.type, data: base64String } }] }],
-              generationConfig: { response_mime_type: "application/json" }
-            })
-          });
-
-          if (!response.ok) {
-            if (response.status === 429) { alert("Server busy (429). Please wait 1 minute."); if (scanProgress) scanProgress.style.display = 'none'; return; }
-            throw new Error(`HTTP ${response.status}`);
-          }
-
-          const data = await response.json();
           let aiText = data.candidates[0].content.parts[0].text.replace(/```json/gi, '').replace(/```/gi, '').trim();
           const aiResult = JSON.parse(aiText);
           const isActuallyValid = aiResult.isValid === true || aiResult.isValid === "true" || !!aiResult.facilityName || !!aiResult.totalAmount;
@@ -4098,7 +4093,53 @@ function setupBillScanning() {
               initializeTargetedQuiz(category);
             }, 800);
           } else { throw new Error("Invalid Data"); }
-        } catch (inner) { console.error(inner); showManualFallback(); }
+        } catch (inner) { 
+          console.error(inner); 
+          
+          // Handle file size errors
+          if (inner.message.includes('FILE_TOO_LARGE:')) {
+            const msg = inner.message.replace('FILE_TOO_LARGE:', '');
+            alert(`File Too Large: ${msg}`);
+            if (scanProgress) {
+              scanProgressText.textContent = 'File exceeds 10MB limit. Please compress and try again.';
+              setTimeout(() => { if (scanProgress) scanProgress.style.display = 'none'; }, 3000);
+            }
+            return;
+          }
+          
+          // Handle security and rate limiting errors
+          if (inner.message.includes('RATE_LIMIT:')) {
+            const msg = inner.message.replace('RATE_LIMIT:', '');
+            alert(`Rate Limit: ${msg}`);
+            if (scanProgress) {
+              scanProgressText.textContent = 'Rate limit reached. Please try again later.';
+              setTimeout(() => { if (scanProgress) scanProgress.style.display = 'none'; }, 3000);
+            }
+            return;
+          }
+          
+          if (inner.message.includes('BOT_DETECTED:')) {
+            const msg = inner.message.replace('BOT_DETECTED:', '');
+            alert(`Security Check Failed: ${msg}`);
+            if (scanProgress) {
+              scanProgressText.textContent = 'Security verification failed. Please refresh the page.';
+              setTimeout(() => { if (scanProgress) scanProgress.style.display = 'none'; }, 3000);
+            }
+            return;
+          }
+          
+          if (inner.message.includes('SECURITY_FAILED:')) {
+            const msg = inner.message.replace('SECURITY_FAILED:', '');
+            alert(`Security Error: ${msg}`);
+            if (scanProgress) {
+              scanProgressText.textContent = 'Security verification required. Please refresh the page.';
+              setTimeout(() => { if (scanProgress) scanProgress.style.display = 'none'; }, 3000);
+            }
+            return;
+          }
+          
+          showManualFallback(); 
+        }
       };
       reader.readAsDataURL(fileToProcess);
     } catch (outer) { console.error(outer); showManualFallback(); }
@@ -4153,9 +4194,6 @@ const ReferenceAuditRules = {
 // ========== PHASE 2: AI-POWERED QUIZ GENERATOR (COT-ENFORCED CPC AUDIT) ==========
 async function generateAIQuiz(category, extractedText) {
   try {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) throw new Error('API key missing');
-
     const quizContainer = document.getElementById('quiz-container');
     const quizAnalyzing = document.getElementById('quiz-analyzing');
     if (quizContainer) quizContainer.style.display = 'none';
@@ -4218,17 +4256,13 @@ CRITICAL: You MUST include a "reasoning" key in each object. This is your intern
   }
 ]`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { response_mime_type: "application/json" }
-      })
-    });
+    // Call secure backend API
+    const data = await callSecureGeminiAPI(
+      [{ parts: [{ text: prompt }] }],
+      { response_mime_type: "application/json" },
+      'quiz-generation'
+    );
 
-    if (!response.ok) throw new Error(`API request failed: ${response.status}`);
-    const data = await response.json();
     let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     aiText = aiText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
     
@@ -4240,6 +4274,24 @@ CRITICAL: You MUST include a "reasoning" key in each object. This is your intern
 
   } catch (error) {
     console.error('[AI Quiz Generator] Error:', error);
+    
+    // Handle file size errors
+    if (error.message.includes('FILE_TOO_LARGE:')) {
+      const msg = error.message.replace('FILE_TOO_LARGE:', '');
+      alert(`File Too Large: ${msg}`);
+    }
+    // Handle security and rate limiting errors
+    else if (error.message.includes('RATE_LIMIT:')) {
+      const msg = error.message.replace('RATE_LIMIT:', '');
+      alert(`Rate Limit: ${msg}`);
+    } else if (error.message.includes('BOT_DETECTED:')) {
+      const msg = error.message.replace('BOT_DETECTED:', '');
+      alert(`Security Check Failed: ${msg}`);
+    } else if (error.message.includes('SECURITY_FAILED:')) {
+      const msg = error.message.replace('SECURITY_FAILED:', '');
+      alert(`Security Error: ${msg}`);
+    }
+    
     // Return standard 6 fallback questions if API fails
     return [
       { id: 'f1', question: 'Is your household income under $60,000/year?', context: 'Non-profit hospitals must forgive bills for low-to-middle income patients under IRS 501(r).', errorType: 'Charity Care Eligibility', options: [{ label: 'Yes', value: 'yes', weight: 1000 }, { label: 'No', value: 'no', weight: 0 }, { label: 'Not Sure', value: 'not-sure', weight: 500 }] },
@@ -4252,22 +4304,110 @@ CRITICAL: You MUST include a "reasoning" key in each object. This is your intern
   }
 }
 
+// ========== SECURE BACKEND API HELPER ==========
+// All Gemini API calls go through our backend proxy with rate limiting and reCAPTCHA
+const RECAPTCHA_SITE_KEY = '6Lcw_HIsAAAAADUYy4ueF4DQ0D5Dr_uqOXF2xmEJ';
+
+// Generate reCAPTCHA token
+async function getRecaptchaToken(action) {
+  return new Promise((resolve, reject) => {
+    if (typeof grecaptcha === 'undefined') {
+      console.warn('[reCAPTCHA] grecaptcha not loaded, proceeding without token');
+      resolve(null);
+      return;
+    }
+    
+    grecaptcha.ready(() => {
+      grecaptcha.execute(RECAPTCHA_SITE_KEY, { action })
+        .then(token => {
+          console.log('[reCAPTCHA] Token generated for action:', action);
+          resolve(token);
+        })
+        .catch(error => {
+          console.error('[reCAPTCHA] Token generation failed:', error);
+          reject(error);
+        });
+    });
+  });
+}
+
+async function callSecureGeminiAPI(contents, generationConfig = {}, action = 'unknown') {
+  try {
+    // Generate reCAPTCHA token
+    let recaptchaToken = null;
+    try {
+      recaptchaToken = await getRecaptchaToken(action);
+    } catch (captchaError) {
+      console.error('[reCAPTCHA] Failed to get token:', captchaError);
+      throw new Error('Security verification failed. Please refresh the page and try again.');
+    }
+    
+    if (!recaptchaToken) {
+      throw new Error('Security verification required. Please refresh the page.');
+    }
+    
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents,
+        generationConfig,
+        action,
+        recaptchaToken
+      })
+    });
+    
+    // Handle different error types
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      
+      // File too large (10MB limit)
+      if (response.status === 413) {
+        const receivedSize = errorData.receivedSize || 'unknown';
+        throw new Error(`FILE_TOO_LARGE:Your file (${receivedSize}) exceeds the 10MB limit. Please compress your image and try again.`);
+      }
+      
+      // Rate limiting (1 req per 3 seconds)
+      if (response.status === 429) {
+        const waitTime = errorData.waitTime || 'a few';
+        throw new Error(`RATE_LIMIT:Please wait ${waitTime} second(s) before trying again.`);
+      }
+      
+      // Bot detection / Security check failed
+      if (response.status === 403) {
+        if (errorData.details === 'Bot detected') {
+          throw new Error('BOT_DETECTED:Automated access detected. If you are a real user, please refresh the page and try again. Contact support if this persists.');
+        }
+        throw new Error(`SECURITY_FAILED:${errorData.message || 'Security verification failed. Please refresh and try again.'}`);
+      }
+      
+      // Other errors
+      throw new Error(errorData.message || `API request failed: ${response.status}`);
+    }
+    
+    return await response.json();
+    
+  } catch (error) {
+    // Re-throw with original error if it's a known error type
+    if (error.message.startsWith('RATE_LIMIT:') || 
+        error.message.startsWith('BOT_DETECTED:') || 
+        error.message.startsWith('SECURITY_FAILED:') ||
+        error.message.startsWith('FILE_TOO_LARGE:')) {
+      throw error;
+    }
+    throw new Error(`Backend API error: ${error.message}`);
+  }
+}
+
 // ========== GEMINI AI INTEGRATION ==========
 
-// Generate AI-powered audit verdict using Gemini 1.5 Flash
+// Generate AI-powered audit verdict using Gemini 3 Flash
 async function generateAIVerdict(extractedText, auditFindings, detectedAmount, quizSavings, quizResponses) {
   try {
     console.log('[Gemini API] Calling AI with audit findings:', auditFindings);
     console.log('[Gemini API] Bill Amount:', detectedAmount, '| Quiz Savings:', quizSavings);
-    
-    // Validate API key exists
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      console.error('[Gemini API] ❌ API Key is missing! Check .env file and VITE_GEMINI_API_KEY variable.');
-      throw new Error('API key missing');
-    }
-    
-    console.log('[Gemini API] ✓ API Key detected (length:', apiKey.length, 'chars)');
     
     // ========== PHASE 3: INVESTIGATIVE PIVOT DETECTION ==========
     const hasItemizedBill = quizResponses.find(r => 
@@ -4333,33 +4473,15 @@ Return strictly valid JSON (no \`\`\`json tags):
   "recommendedTool": "MUST BE EXACTLY ONE OF THESE STRINGS: ${toolRoutesList.join(', ')}" 
 }`;
     
-    // Use v1beta endpoint with gemini-3-flash-preview model
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-    console.log('[Gemini API] Calling URL: https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=***');
+    // Call secure backend API
+    console.log('[Gemini API] Calling backend proxy for AI verdict');
     
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }]
-      })
-    });
+    const data = await callSecureGeminiAPI(
+      [{ parts: [{ text: prompt }] }],
+      {},
+      'verdict-generation'
+    );
     
-    console.log('[Gemini API] Response status:', response.status, response.statusText);
-    
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error('[Gemini API] ❌ Error response body:', errorBody);
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
     console.log('[Gemini API] ✓ Raw response received:', data);
     
     // Extract text from Gemini response
@@ -4396,6 +4518,23 @@ Return strictly valid JSON (no \`\`\`json tags):
     
   } catch (error) {
     console.error('[Gemini API] Error:', error);
+    
+    // Handle file size errors
+    if (error.message.includes('FILE_TOO_LARGE:')) {
+      const msg = error.message.replace('FILE_TOO_LARGE:', '');
+      alert(`File Too Large: ${msg}`);
+    }
+    // Handle security and rate limiting errors
+    else if (error.message.includes('RATE_LIMIT:')) {
+      const msg = error.message.replace('RATE_LIMIT:', '');
+      alert(`Rate Limit: ${msg}`);
+    } else if (error.message.includes('BOT_DETECTED:')) {
+      const msg = error.message.replace('BOT_DETECTED:', '');
+      alert(`Security Check Failed: ${msg}`);
+    } else if (error.message.includes('SECURITY_FAILED:')) {
+      const msg = error.message.replace('SECURITY_FAILED:', '');
+      alert(`Security Error: ${msg}`);
+    }
     
     // Fallback: Calculate refund from auditFindings weights
     const fallbackRefund = auditFindings.reduce((sum, finding) => sum + finding.weight, 0);
