@@ -220,6 +220,51 @@ a{ color:inherit; }
   box-shadow: 0 10px 20px rgba(0,0,0,.08);
 }
 
+/* Mobile navigation (hidden by default) */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  top: var(--header-offset);
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0,0,0,.08);
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  flex-direction: column;
+  gap: 0;
+  padding: 16px 0;
+  margin: 0;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  z-index: 999;
+}
+
+.mobile-nav.is-open {
+  display: flex;
+  max-height: 400px;
+  opacity: 1;
+}
+
+.mobile-nav a {
+  padding: 16px 24px;
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid rgba(0,0,0,.05);
+  font-size: 16px;
+  width: 100%;
+  text-align: left;
+}
+
+.mobile-nav a:hover {
+  background: rgba(0,113,227,.08);
+  border-radius: 0;
+  box-shadow: none;
+}
+
 /* Layout */
 .main{
   max-width: var(--max);
@@ -3229,6 +3274,31 @@ a{ color:inherit; }
     width: 100%;
     min-height: 52px;
   }
+
+  /* Tool actions - Mobile optimization */
+  .tool-actions {
+    flex-direction: column;
+  }
+
+  .tool-actions button.neutral {
+    flex: 1 1 100% !important;
+    min-height: 48px !important;
+    font-size: 15px !important;
+  }
+
+  /* Tool page header - Mobile optimization */
+  .tool-page-header {
+    padding: 16px 0 0 0 !important;
+  }
+
+  .tool-page-header h1 {
+    font-size: 28px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .tool-page-header p {
+    font-size: 15px !important;
+  }
   
   /* Ensure readable font sizes on mobile */
   .field input,
@@ -3683,6 +3753,10 @@ a{ color:inherit; }
 /* 1. Global Reset & Header-to-Hero Gap */
 html, body { overflow-x: hidden !important; width: 100% !important; }
 @media (max-width: 640px) {
+  :root {
+    --header-offset: 56px;
+  }
+
   .header { height: 56px !important; }
   .main { padding: 8px 16px 80px !important; } /* Ultra-tight Apple-style spacing */
 
@@ -4127,9 +4201,9 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
 /* Primary Generate Button */
 .tool-actions button[type="submit"] {
   flex: 1 1 100%;
-  padding: 16px !important;
-  font-size: 16px !important;
-  border-radius: 14px !important;
+  padding: 12px !important;
+  font-size: 15px !important;
+  border-radius: 12px !important;
   background-color: #0071E3 !important;
   color: white !important;
   font-weight: 600 !important;

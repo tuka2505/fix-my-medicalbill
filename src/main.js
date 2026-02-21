@@ -285,8 +285,15 @@ function renderHeader() {
           <span class="brand-badge" aria-hidden="true"></span>
           <span>FixMyMedicalBill</span>
         </a>
-        <button class="mobile-menu-btn" aria-label="Toggle menu">☰</button>
+        <button class="mobile-menu-btn" aria-label="Toggle menu" aria-expanded="false">☰</button>
         <nav class="nav desktop-nav">
+          <a href="/#tools-section">Tools</a>
+          <a href="/#resources">Resources</a>
+          <a href="/faq" data-route="/faq">FAQ</a>
+          <a href="/terms-of-service" data-route="/terms-of-service">Disclaimer</a>
+          <a href="/contact" data-route="/contact">Contact</a>
+        </nav>
+        <nav class="nav mobile-nav">
           <a href="/#tools-section">Tools</a>
           <a href="/#resources">Resources</a>
           <a href="/faq" data-route="/faq">FAQ</a>
@@ -377,7 +384,7 @@ function renderHero() {
             <p style="margin: 0 0 12px 0; font-size: 13.5px; color: #86868B;">Supports PDF, JPG, PNG</p>
             
             <input type="file" id="bill-upload" accept="image/*,application/pdf" style="display:none;">
-            <label for="bill-upload" class="hero-cta-btn" id="upload-label" style="display: inline-block; background: #0071E3; color: white; padding: 10px 26px; border-radius: 24px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);">
+            <label for="bill-upload" class="hero-cta-btn" id="upload-label" style="display: inline-flex; align-items: center; justify-content: center; background: #0071E3; color: white; padding: 10px 26px; border-radius: 24px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2); line-height: 1;">
               Browse Files
             </label>
           </div>
@@ -2114,6 +2121,35 @@ function bindNavigation() {
       }
     });
   });
+
+  // Mobile menu toggle
+  const mobileMenuBtn = document.querySelector(".mobile-menu-btn");
+  const mobileNav = document.querySelector(".mobile-nav");
+  
+  if (mobileMenuBtn && mobileNav) {
+    mobileMenuBtn.addEventListener("click", () => {
+      const isOpen = mobileNav.classList.contains("is-open");
+      
+      if (isOpen) {
+        mobileNav.classList.remove("is-open");
+        mobileMenuBtn.setAttribute("aria-expanded", "false");
+        mobileMenuBtn.innerHTML = "☰";
+      } else {
+        mobileNav.classList.add("is-open");
+        mobileMenuBtn.setAttribute("aria-expanded", "true");
+        mobileMenuBtn.innerHTML = "✕";
+      }
+    });
+
+    // Close mobile menu when clicking on a link
+    mobileNav.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        mobileNav.classList.remove("is-open");
+        mobileMenuBtn.setAttribute("aria-expanded", "false");
+        mobileMenuBtn.innerHTML = "☰";
+      });
+    });
+  }
 }
 
 function formatCurrencyInput(value) {
