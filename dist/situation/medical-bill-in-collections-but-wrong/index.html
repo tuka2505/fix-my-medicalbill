@@ -136,103 +136,52 @@
       </div>
     </header>
   
-      
-      <main class="main" style="padding-top: 0; max-width: 1000px; margin: 0 auto;">
-        
-        <div class="tool-page-header" style="padding: 20px 0 0 0; text-align: left; margin-bottom: 0;">
-          <h1 style="font-size: 32px; font-weight: 700; color: #1D1D1F; margin: 0 0 4px 0; line-height: 1.1;">Urgent Care Bill</h1>
-          <p style="font-size: 16px; color: #86868B; margin: 0 0 12px 0; line-height: 1.4;">Challenge a high urgent care bill.</p>
-        </div>
-
-        
-
-        
-        <section id="urgent-care" class="section tool-section">
-          <h2 class="h2">Urgent Care Bill</h2>
-          <p class="text tool-subtitle">Challenge high urgent care charges with a clear dispute letter.</p>
-          <div class="tool-shell">
-            <div class="tool-split">
-              <div class="tool-panel">
-                <form id="urgent-care-form" class="tool-form">
-                  <div class="form-grid">
-                    <div class="field">
-                      <label for="facilityName">Facility name</label>
-                      <input id="facilityName" name="facilityName" type="text" placeholder="Urgent care facility" class="accent-focus">
-                    </div>
-                    <div class="field">
-                      <label for="dateOfVisit">Date of visit</label>
-                      <input id="dateOfVisit" name="dateOfVisit" type="text" placeholder="MM/DD/YYYY" class="accent-focus">
-                    </div>
-                    <div class="field">
-                      <label for="totalAmount">Total amount</label>
-                      <input id="totalAmount" name="totalAmount" type="text" placeholder="$850" class="accent-focus">
-                    </div>
-                    <div class="field">
-                      <label for="urgentIssueType">Issue type</label>
-                      <select id="urgentIssueType" name="issueType" required="" class="accent-focus">
-                        <option>Invalid Facility Fee (Freestanding POS 20)</option>
-                        <option>E/M Upcoding (Level 4/5 for minor issue)</option>
-                        <option>Unclear / Bundled Supply Charges</option>
-                        <option value="Other">Other (Write my own)</option>
-                      </select>
-                    </div>
-                    <div class="field">
-                      <label for="urgentPatientName">Patient name</label>
-                      <input id="urgentPatientName" name="patientName" type="text" placeholder="Full name" class="accent-focus">
-                    </div>
-                    <div class="field">
-                      <label for="urgentPatientPhone">Patient phone</label>
-                      <input id="urgentPatientPhone" name="patientPhone" type="text" placeholder="(555) 123-4567" class="accent-focus">
-                    </div>
-                    <div class="field">
-                      <label for="urgentPatientEmail">Patient email</label>
-                      <input id="urgentPatientEmail" name="patientEmail" type="text" placeholder="name@email.com" class="accent-focus">
-                    </div>
-                    <div class="field field-full">
-                      <label for="urgentPatientAddress">Patient address</label>
-                      <textarea id="urgentPatientAddress" name="patientAddress" rows="3" placeholder="Street, City, State ZIP" class="accent-focus"></textarea>
-                    </div>
-                  </div>
-                  <div class="form-actions tool-actions">
-                    <button class="btn" type="submit">Generate</button>
-                    <button class="btn neutral" type="button" data-copy="letter" disabled="">Copy Letter</button>
-                    <button class="btn neutral" type="button" data-copy="script" disabled="">Copy Phone Script</button>
-                    <button class="btn neutral" type="button" data-download="pdf" disabled="">Download PDF</button>
-                  </div>
-                  <p style="font-size: 11px; color: var(--muted2); margin-top: 12px; margin-bottom: 0; line-height: 1.4;">By generating this document, you acknowledge that you are solely responsible for reviewing its accuracy before submission. FixMyMedicalBill provides informational templates, not legal counsel.</p>
-                </form>
-              </div>
-              <div class="tool-results">
-                <div class="results-grid">
-                  <div class="result-card">
-                    <div class="result-header">
-                      <div class="result-title">Dispute Letter</div>
-                    </div>
-                    <pre id="urgent-letter-output" class="result-content is-empty">📝 Your dispute letter will appear here.
-
-Fill out the form on the left and click "Generate" to create your customized document.</pre>
-                  </div>
-                  <div class="result-card">
-                    <div class="result-header">
-                      <div class="result-title">Phone Script</div>
-                    </div>
-                    <pre id="urgent-script-output" class="result-content is-empty">📞 Your phone script will appear here.
-
-Fill out the form on the left and click "Generate" to create your customized script.</pre>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <main class="main info-main">
+        <article class="info-article">
+          <p class="info-eyebrow">A medical bill you dispute is in collections. Learn your FDCPA rights, debt validation tactics, and how to remove invalid debts from credit reports.</p>
+          <h1>Medical Bill in Collections But It's Wrong: How to Validate Debt and Dispute Errors</h1>
+          
+        <section class="info-section">
+          <h2>Understanding Your Situation</h2>
+          <p>You received a collection notice or phone call about a medical debt. The problem: the bill contains errors, you don't recognize the charges, you already paid it, or it's from a service you never received. Maybe it's a duplicate charge, balance billing that was illegal, or a billing error you tried to dispute before. Now it's in the hands of a collection agency, and you're worried about your credit score and legal action. The good news: you have powerful rights under the <strong>Fair Debt Collection Practices Act (FDCPA)</strong>, including the right to <strong>validate the debt</strong> — forcing the collector to prove the debt is legitimate and accurate before they can continue collection activity.</p>
         </section>
       
-
-        <a class="back-link" href="/" data-route="/" style="display: inline-block; margin-top: 40px; color: #0071E3; text-decoration: none; font-weight: 500;">
-          ← Back to All Tools
+        <section class="info-section">
+          <h2>Why This Happens</h2>
+          <p>Medical bills with errors end up in collections because:<br><br><strong>Providers Sell Debts Before Resolving Disputes:</strong> Many hospitals send bills to collections after 60-120 days, even if you filed a dispute or requested an itemized bill. Once sold to a debt buyer, your dispute often gets lost in the transfer.<br><br><strong>Collection Agencies Don't Verify Accuracy:</strong> Debt collectors buy medical debts in bulk for pennies on the dollar, often with incomplete records. They may not have itemized bills, medical records, or proof you actually owe the amount claimed.<br><br><strong>Billing Errors Were Never Corrected:</strong> If the original bill contained duplicate charges, upcoding, or balance billing violations, those errors carry over into the collection amount.<br><br><strong>Insurance Processing Errors:</strong> Your insurance may have paid the bill, but poor communication between the provider, insurer, and collector results in you being billed incorrectly.<br><br><strong>Identity Theft or Wrong Patient:</strong> Medical identity theft or clerical errors can result in bills for services you never received appearing in your name.<br><br><strong>Time-Barred Debts:</strong> Some collectors attempt to collect on debts that are past your state's statute of limitations for lawsuits — these 'zombie debts' are often unenforceable.</p>
+        </section>
+      
+        <section class="info-section">
+          <h2>What To Check</h2>
+          <p>Verify the debt's legitimacy and gather evidence:<br><br>✓ <strong>Request debt validation</strong> — within 30 days of the first collection notice, send a written debt validation request<br>✓ <strong>Review your original medical bills and EOBs</strong> — do the amounts match what the collector claims?<br>✓ <strong>Check payment records</strong> — verify you didn't already pay the bill (bank statements, receipts)<br>✓ <strong>Verify the service date and provider</strong> — confirm you actually received care from this provider on the date claimed<br>✓ <strong>Check your state's statute of limitations</strong> — if the debt is old (typically 3-6 years depending on state), it may be time-barred<br>✓ <strong>Review credit reports</strong> — check if the debt is reported to Experian, Equifax, and TransUnion<br>✓ <strong>Confirm collection agency licensing</strong> — verify the collector is licensed in your state<br>✓ <strong>Document FDCPA violations</strong> — note any harassment, threats, or false statements made by collectors</p>
+        </section>
+      
+        <section class="info-section">
+          <h2>What To Do Next</h2>
+          <p><strong>Step 1: Send a Debt Validation Letter Within 30 Days</strong><br>Under the FDCPA, you have 30 days from the first collection notice to request debt validation. Send a certified letter demanding:<br>• Proof that you owe the debt<br>• Itemized bill showing services, dates, and charges<br>• Documentation that the collector owns or is authorized to collect the debt<br>• Proof that insurance was properly billed<br>• Verification that the debt is within your state's statute of limitations<br><br>Once you send this letter, the collector <strong>must stop all collection activity until they provide validation</strong>.<br><br>Use our <a href="/medical-collections-debt-validation" data-route="/medical-collections-debt-validation"><strong>Debt Validation Letter tool</strong></a> to generate a professional FDCPA-compliant demand letter.<br><br><strong>Step 2: Dispute Billing Errors Directly with the Original Provider</strong><br>While the debt is in validation, contact the original provider (hospital, doctor, etc.) and formally dispute the billing errors. Use our <a href="/medical-bill-dispute-letter" data-route="/medical-bill-dispute-letter"><strong>Medical Bill Dispute Letter tool</strong></a> to generate a dispute citing specific errors (duplicates, upcoding, balance billing violations, etc.).<br><br><strong>Step 3: Dispute Credit Report Entries</strong><br>If the debt appears on your credit report, dispute it with all three bureaus (Experian, Equifax, TransUnion) citing:<br>• 'This debt is disputed and currently under validation'<br>• 'The debt contains billing errors: [list specific errors]'<br>• 'I request removal pending proof of accuracy'<br><br>Use our <a href="/medical-credit-report-removal" data-route="/medical-credit-report-removal"><strong>Credit Report Dispute tool</strong></a> to generate dispute letters for each bureau.<br><br><strong>Step 4: Do Not Pay Until Validation Is Provided</strong><br>Do not make any payment until the collector provides complete validation. Even a small 'goodwill payment' can restart the statute of limitations and be interpreted as acknowledgment that you owe the debt.<br><br><strong>Step 5: Negotiate Pay-for-Delete If Debt Is Valid</strong><br>If the collector provides proper validation and you determine the debt is legitimate (perhaps legitimate but inflated), negotiate a settlement with a 'pay-for-delete' clause: you'll pay a reduced amount (typically 40-60% of balance) in exchange for complete removal from credit reports. Get this agreement in writing before sending money.<br><br>For comprehensive medical debt guidance, see our <a href="/medical-debt" data-route="/medical-debt"><strong>Medical Debt Hub</strong></a>.</p>
+        </section>
+      
+        <section class="info-section">
+          <h2>Frequently Asked Questions</h2>
+          <p></p><h3>What if I miss the 30-day validation window?</h3><p>You still have the right to request validation after 30 days, but the collector is not required to stop collection activity while investigating. However, they still must provide verification if you request it, and you can dispute the debt at any time. Act quickly, but don't panic if 30 days have passed — your rights remain.</p><h3>What if the collector doesn't respond to my validation request?</h3><p>If the collector fails to provide validation and continues collection activity, they're violating the FDCPA. Document this violation and: (1) File a complaint with the Consumer Financial Protection Bureau (CFPB); (2) File a complaint with your state Attorney General; (3) Consult a consumer rights attorney — you may be entitled to damages up to $1,000 plus attorney fees under the FDCPA.</p><h3>Can collectors garnish my wages for medical debt?</h3><p>Collectors cannot garnish wages, freeze bank accounts, or place liens without first suing you and obtaining a court judgment. If a collector threatens these actions without a judgment, they're violating the FDCPA. However, if they do sue and win, garnishment becomes possible. Always respond to lawsuits — never ignore court papers.</p><h3>What if the debt is from years ago?</h3><p>Check your state's statute of limitations for medical debt (typically 3-6 years). If the debt is time-barred, collectors cannot sue you for payment, though they can still attempt to collect. If a collector sues on a time-barred debt, respond with an affirmative defense citing the expired statute of limitations. Never make a payment on a time-barred debt, as this can restart the clock.</p><h3>Will disputing a medical debt hurt my credit score?</h3><p>No. Disputing a debt does not directly harm your credit. However, the debt's presence on your credit report can harm your score until removed. Successfully disputing and removing the debt can <strong>improve</strong> your score, especially since paid medical debts must be immediately removed under 2023 credit reporting rules.</p><p></p>
+        </section>
+      
+        <section class="info-section">
+          <h2>Take Action Now</h2>
+          <p></p><div style="background: linear-gradient(135deg, #0071E3 0%, #5E5CE6 100%); border-radius: 16px; padding: 40px 32px; text-align: center; color: white; margin-top: 32px;"><h2 style="margin-top: 0; color: white; font-size: 28px; font-weight: 700;">Still Unsure? Let Our AI Scan Your Bill</h2><p style="color: rgba(255, 255, 255, 0.95); font-size: 17px; margin-bottom: 28px;">Upload your original medical bill or collection notice and our AI will identify billing errors, generate a debt validation letter, and create credit dispute letters automatically — free in under 60 seconds.</p><a href="/" data-route="/" style="display: inline-block; padding: 16px 36px; background: white; color: #0071E3; border-radius: 12px; font-weight: 700; font-size: 17px; text-decoration: none; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);">Start Free AI Bill Scan</a><p style="margin-top: 18px; margin-bottom: 0; font-size: 13px; color: rgba(255, 255, 255, 0.85);">✓ No credit card required  ✓ Your data stays private  ✓ Results in under 60 seconds</p></div><p></p>
+        </section>
+      
+        <section class="info-section">
+          <h2>Legal Disclaimer</h2>
+          <p></p><p style="font-size: 14px; color: #6e6e73; margin-top: 32px;"><strong>Educational purposes only.</strong> This information is not legal, medical, or financial advice. Debt collection laws vary by state. Consult a consumer rights attorney for advice specific to your situation.</p><p></p>
+        </section>
+      
+        </article>
+        <a class="back-link" href="/" data-route="/">
+          <span class="back-link-icon" aria-hidden="true">⟵</span>
+          <span>Back to All Tools</span>
         </a>
         
-      </main>
-      
     <footer class="footer">
       <div>FixMyMedicalBill</div>
       <div class="footer-links">
@@ -242,8 +191,9 @@ Fill out the form on the left and click "Generate" to create your customized scr
       </div>
     </footer>
   
+      </main>
     </div>
   </div>
   
 
-<ins class="adsbygoogle adsbygoogle-noablate" data-adsbygoogle-status="done" style="display: none !important;" data-ad-status="unfilled"><div id="aswift_0_host" style="border: none; height: 0px; width: 0px; margin: 0px; padding: 0px; position: relative; visibility: visible; background-color: transparent; display: inline-block;"><iframe id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;border:0;width:undefinedpx;height:undefinedpx;min-height:auto;max-height:none;min-width:auto;max-width:none;" sandbox="allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allow="attribution-reporting; run-ad-auction" src="https://googleads.g.doubleclick.net/pagead/ads?client=ca-pub-5557614723972447&amp;output=html&amp;adk=1812271804&amp;adf=3025194257&amp;lmt=1771699597&amp;plat=1%3A8%2C2%3A8%2C3%3A2162688%2C4%3A2162688%2C9%3A32776%2C16%3A8388608%2C17%3A32%2C24%3A32%2C25%3A32%2C30%3A1048576%2C32%3A32%2C41%3A32%2C42%3A32%2C43%3A32&amp;format=0x0&amp;url=http%3A%2F%2Flocalhost%3A3000%2F&amp;pra=5&amp;asro=0&amp;aiapm=0.1542&amp;aiapmd=0.1423&amp;aiapmi=0.16&amp;aiapmid=1&amp;aiact=0.5423&amp;aiactd=0.7&amp;aicct=0.7&amp;aicctd=0.5799&amp;ailct=0.5849&amp;ailctd=0.65&amp;aimart=4&amp;aimartd=4&amp;aieuf=1&amp;aicrs=1&amp;uach=WyJXaW5kb3dzIiwiMTkuMC4wIiwieDg2IiwiIiwiMTQ1LjAuNzYzMi43NyIsbnVsbCwwLG51bGwsIjY0IixbWyJDaHJvbWl1bSIsIjE0NS4wLjc2MzIuNzciXSxbIk5vdDpBLUJyYW5kIiwiOTkuMC4wLjAiXV0sMF0.&amp;abgtt=6&amp;dt=1771699596842&amp;bpp=21&amp;bdt=468&amp;idt=698&amp;shv=r20260218&amp;mjsv=m202602190101&amp;ptt=9&amp;saldr=aa&amp;abxe=1&amp;cookie_enabled=1&amp;eoidce=1&amp;nras=1&amp;correlator=5181819012530&amp;frm=20&amp;pv=2&amp;u_tz=540&amp;u_his=2&amp;u_h=600&amp;u_w=800&amp;u_ah=600&amp;u_aw=800&amp;u_cd=24&amp;u_sd=1&amp;dmc=8&amp;adx=-12245933&amp;ady=-12245933&amp;biw=800&amp;bih=600&amp;scr_x=0&amp;scr_y=0&amp;eid=95378429%2C95382853%2C95383860%2C31096864%2C95344787&amp;oid=2&amp;pvsid=3231030862942842&amp;tmod=1883856057&amp;uas=0&amp;nvt=1&amp;fsapi=1&amp;fc=1920&amp;brdim=10%2C10%2C10%2C10%2C800%2C0%2C780%2C580%2C800%2C600&amp;vis=1&amp;rsz=%7C%7Cs%7C&amp;abl=NS&amp;fu=32768&amp;bc=31&amp;bz=0.98&amp;ifi=1&amp;uci=a!1&amp;fsb=1&amp;dtd=740" data-google-container-id="a!1" tabindex="0" title="Advertisement" aria-label="Advertisement" data-load-complete="true"></iframe></div></ins><div><div class="grecaptcha-badge" data-style="bottomright" style="width: 256px; height: 60px; display: block; transition: right 0.3s; position: fixed; bottom: 14px; right: -186px; box-shadow: gray 0px 0px 5px; border-radius: 2px; overflow: hidden;"><div class="grecaptcha-logo"><iframe title="reCAPTCHA" width="256" height="60" role="presentation" name="a-wx8dk0xcax29" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="https://www.google.com/recaptcha/api2/anchor?ar=1&amp;k=6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK&amp;co=aHR0cDovL2xvY2FsaG9zdDozMDAw&amp;hl=ko&amp;v=vUgXt_KV952_-5BB2jjloYzl&amp;size=invisible&amp;anchor-ms=20000&amp;execute-ms=30000&amp;cb=fpsb45n3bn5k"></iframe></div><div class="grecaptcha-error"></div><textarea id="g-recaptcha-response-100000" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;"></iframe></div><iframe src="https://www.google.com/recaptcha/api2/aframe" width="0" height="0" style="display: none;"></iframe><iframe id="google_esf" name="google_esf" src="https://googleads.g.doubleclick.net/pagead/html/r20260218/r20190131/zrt_lookup.html" style="display: none;"></iframe><div><div class="grecaptcha-badge" data-style="none" style="width: 256px; height: 60px; position: fixed; visibility: hidden;"><div class="grecaptcha-logo"><iframe title="reCAPTCHA" width="256" height="60" role="presentation" name="a-qr0wd37p95cg" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="https://www.google.com/recaptcha/api2/anchor?ar=1&amp;k=6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK&amp;co=aHR0cDovL2xvY2FsaG9zdDozMDAw&amp;hl=ko&amp;v=vUgXt_KV952_-5BB2jjloYzl&amp;size=invisible&amp;anchor-ms=20000&amp;execute-ms=30000&amp;cb=298d417m8wvx"></iframe></div><div class="grecaptcha-error"></div><textarea id="g-recaptcha-response-100000" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;"></iframe></div></body></html>
+<ins class="adsbygoogle adsbygoogle-noablate" data-adsbygoogle-status="done" style="display: none !important;" data-ad-status="unfilled"><div id="aswift_0_host" style="border: none; height: 0px; width: 0px; margin: 0px; padding: 0px; position: relative; visibility: visible; background-color: transparent; display: inline-block;"><iframe id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;border:0;width:undefinedpx;height:undefinedpx;min-height:auto;max-height:none;min-width:auto;max-width:none;" sandbox="allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allow="attribution-reporting; run-ad-auction" src="https://googleads.g.doubleclick.net/pagead/ads?client=ca-pub-5557614723972447&amp;output=html&amp;adk=1812271804&amp;adf=3025194257&amp;lmt=1771699597&amp;plat=1%3A8%2C2%3A8%2C3%3A2162688%2C4%3A2162688%2C9%3A32776%2C16%3A8388608%2C17%3A32%2C24%3A32%2C25%3A32%2C30%3A1048576%2C32%3A32%2C41%3A32%2C42%3A32%2C43%3A32&amp;format=0x0&amp;url=http%3A%2F%2Flocalhost%3A3000%2F&amp;pra=5&amp;asro=0&amp;aiapm=0.1542&amp;aiapmd=0.1423&amp;aiapmi=0.16&amp;aiapmid=1&amp;aiact=0.5423&amp;aiactd=0.7&amp;aicct=0.7&amp;aicctd=0.5799&amp;ailct=0.5849&amp;ailctd=0.65&amp;aimart=4&amp;aimartd=4&amp;aieuf=1&amp;aicrs=1&amp;uach=WyJXaW5kb3dzIiwiMTkuMC4wIiwieDg2IiwiIiwiMTQ1LjAuNzYzMi43NyIsbnVsbCwwLG51bGwsIjY0IixbWyJDaHJvbWl1bSIsIjE0NS4wLjc2MzIuNzciXSxbIk5vdDpBLUJyYW5kIiwiOTkuMC4wLjAiXV0sMF0.&amp;abgtt=6&amp;dt=1771699596842&amp;bpp=21&amp;bdt=468&amp;idt=698&amp;shv=r20260218&amp;mjsv=m202602190101&amp;ptt=9&amp;saldr=aa&amp;abxe=1&amp;cookie_enabled=1&amp;eoidce=1&amp;nras=1&amp;correlator=5181819012530&amp;frm=20&amp;pv=2&amp;u_tz=540&amp;u_his=2&amp;u_h=600&amp;u_w=800&amp;u_ah=600&amp;u_aw=800&amp;u_cd=24&amp;u_sd=1&amp;dmc=8&amp;adx=-12245933&amp;ady=-12245933&amp;biw=800&amp;bih=600&amp;scr_x=0&amp;scr_y=0&amp;eid=95378429%2C95382853%2C95383860%2C31096864%2C95344787&amp;oid=2&amp;pvsid=3231030862942842&amp;tmod=1883856057&amp;uas=0&amp;nvt=1&amp;fsapi=1&amp;fc=1920&amp;brdim=10%2C10%2C10%2C10%2C800%2C0%2C780%2C580%2C800%2C600&amp;vis=1&amp;rsz=%7C%7Cs%7C&amp;abl=NS&amp;fu=32768&amp;bc=31&amp;bz=0.98&amp;ifi=1&amp;uci=a!1&amp;fsb=1&amp;dtd=740" data-google-container-id="a!1" tabindex="0" title="Advertisement" aria-label="Advertisement" data-load-complete="true"></iframe></div></ins><div><div class="grecaptcha-badge" data-style="bottomright" style="width: 256px; height: 60px; display: block; transition: right 0.3s; position: fixed; bottom: 14px; right: -186px; box-shadow: gray 0px 0px 5px; border-radius: 2px; overflow: hidden;"><div class="grecaptcha-logo"><iframe title="reCAPTCHA" width="256" height="60" role="presentation" name="a-wx8dk0xcax29" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="https://www.google.com/recaptcha/api2/anchor?ar=1&amp;k=6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK&amp;co=aHR0cDovL2xvY2FsaG9zdDozMDAw&amp;hl=ko&amp;v=vUgXt_KV952_-5BB2jjloYzl&amp;size=invisible&amp;anchor-ms=20000&amp;execute-ms=30000&amp;cb=fpsb45n3bn5k"></iframe></div><div class="grecaptcha-error"></div><textarea id="g-recaptcha-response-100000" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;"></iframe></div><iframe src="https://www.google.com/recaptcha/api2/aframe" width="0" height="0" style="display: none;"></iframe><iframe id="google_esf" name="google_esf" src="https://googleads.g.doubleclick.net/pagead/html/r20260218/r20190131/zrt_lookup.html" style="display: none;"></iframe><div><div class="grecaptcha-badge" data-style="none" style="width: 256px; height: 60px; position: fixed; visibility: hidden;"><div class="grecaptcha-logo"><iframe title="reCAPTCHA" width="256" height="60" role="presentation" name="a-wtxq0a4cpoi8" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="https://www.google.com/recaptcha/api2/anchor?ar=1&amp;k=6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK&amp;co=aHR0cDovL2xvY2FsaG9zdDozMDAw&amp;hl=ko&amp;v=vUgXt_KV952_-5BB2jjloYzl&amp;size=invisible&amp;anchor-ms=20000&amp;execute-ms=30000&amp;cb=uf9qzk33rj8p"></iframe></div><div class="grecaptcha-error"></div><textarea id="g-recaptcha-response-100000" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;"></iframe></div></body></html>

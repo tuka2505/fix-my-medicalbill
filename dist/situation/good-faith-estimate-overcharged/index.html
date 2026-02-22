@@ -136,103 +136,52 @@
       </div>
     </header>
   
-      
-      <main class="main" style="padding-top: 0; max-width: 1000px; margin: 0 auto;">
-        
-        <div class="tool-page-header" style="padding: 20px 0 0 0; text-align: left; margin-bottom: 0;">
-          <h1 style="font-size: 32px; font-weight: 700; color: #1D1D1F; margin: 0 0 4px 0; line-height: 1.1;">Urgent Care Bill</h1>
-          <p style="font-size: 16px; color: #86868B; margin: 0 0 12px 0; line-height: 1.4;">Challenge a high urgent care bill.</p>
-        </div>
-
-        
-
-        
-        <section id="urgent-care" class="section tool-section">
-          <h2 class="h2">Urgent Care Bill</h2>
-          <p class="text tool-subtitle">Challenge high urgent care charges with a clear dispute letter.</p>
-          <div class="tool-shell">
-            <div class="tool-split">
-              <div class="tool-panel">
-                <form id="urgent-care-form" class="tool-form">
-                  <div class="form-grid">
-                    <div class="field">
-                      <label for="facilityName">Facility name</label>
-                      <input id="facilityName" name="facilityName" type="text" placeholder="Urgent care facility" class="accent-focus">
-                    </div>
-                    <div class="field">
-                      <label for="dateOfVisit">Date of visit</label>
-                      <input id="dateOfVisit" name="dateOfVisit" type="text" placeholder="MM/DD/YYYY" class="accent-focus">
-                    </div>
-                    <div class="field">
-                      <label for="totalAmount">Total amount</label>
-                      <input id="totalAmount" name="totalAmount" type="text" placeholder="$850" class="accent-focus">
-                    </div>
-                    <div class="field">
-                      <label for="urgentIssueType">Issue type</label>
-                      <select id="urgentIssueType" name="issueType" required="" class="accent-focus">
-                        <option>Invalid Facility Fee (Freestanding POS 20)</option>
-                        <option>E/M Upcoding (Level 4/5 for minor issue)</option>
-                        <option>Unclear / Bundled Supply Charges</option>
-                        <option value="Other">Other (Write my own)</option>
-                      </select>
-                    </div>
-                    <div class="field">
-                      <label for="urgentPatientName">Patient name</label>
-                      <input id="urgentPatientName" name="patientName" type="text" placeholder="Full name" class="accent-focus">
-                    </div>
-                    <div class="field">
-                      <label for="urgentPatientPhone">Patient phone</label>
-                      <input id="urgentPatientPhone" name="patientPhone" type="text" placeholder="(555) 123-4567" class="accent-focus">
-                    </div>
-                    <div class="field">
-                      <label for="urgentPatientEmail">Patient email</label>
-                      <input id="urgentPatientEmail" name="patientEmail" type="text" placeholder="name@email.com" class="accent-focus">
-                    </div>
-                    <div class="field field-full">
-                      <label for="urgentPatientAddress">Patient address</label>
-                      <textarea id="urgentPatientAddress" name="patientAddress" rows="3" placeholder="Street, City, State ZIP" class="accent-focus"></textarea>
-                    </div>
-                  </div>
-                  <div class="form-actions tool-actions">
-                    <button class="btn" type="submit">Generate</button>
-                    <button class="btn neutral" type="button" data-copy="letter" disabled="">Copy Letter</button>
-                    <button class="btn neutral" type="button" data-copy="script" disabled="">Copy Phone Script</button>
-                    <button class="btn neutral" type="button" data-download="pdf" disabled="">Download PDF</button>
-                  </div>
-                  <p style="font-size: 11px; color: var(--muted2); margin-top: 12px; margin-bottom: 0; line-height: 1.4;">By generating this document, you acknowledge that you are solely responsible for reviewing its accuracy before submission. FixMyMedicalBill provides informational templates, not legal counsel.</p>
-                </form>
-              </div>
-              <div class="tool-results">
-                <div class="results-grid">
-                  <div class="result-card">
-                    <div class="result-header">
-                      <div class="result-title">Dispute Letter</div>
-                    </div>
-                    <pre id="urgent-letter-output" class="result-content is-empty">📝 Your dispute letter will appear here.
-
-Fill out the form on the left and click "Generate" to create your customized document.</pre>
-                  </div>
-                  <div class="result-card">
-                    <div class="result-header">
-                      <div class="result-title">Phone Script</div>
-                    </div>
-                    <pre id="urgent-script-output" class="result-content is-empty">📞 Your phone script will appear here.
-
-Fill out the form on the left and click "Generate" to create your customized script.</pre>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <main class="main info-main">
+        <article class="info-article">
+          <p class="info-eyebrow">Your final bill exceeds the Good Faith Estimate by $400 or more. Learn your rights under the No Surprises Act and PPDR dispute process.</p>
+          <h1>Good Faith Estimate Overcharged by $400+: How to Dispute Under Patient-Provider Dispute Resolution</h1>
+          
+        <section class="info-section">
+          <h2>Understanding Your Situation</h2>
+          <p>You're uninsured or self-pay, and you requested a <strong>Good Faith Estimate (GFE)</strong> for a scheduled medical service, as required under the <strong>No Surprises Act</strong>. The provider gave you an estimate — perhaps $2,000 for a procedure. You proceeded with care based on that estimate. Then you received a final bill that's $400 or more higher than the estimate — maybe $2,500, $3,000, or more. This is a <strong>Good Faith Estimate violation</strong>, and you have specific federal rights. Under the No Surprises Act, if your final bill exceeds the GFE by <strong>$400 or more</strong>, you can dispute the charges through a federal process called <strong>Patient-Provider Dispute Resolution (PPDR)</strong>, which can result in a binding decision capping what you owe.</p>
         </section>
       
-
-        <a class="back-link" href="/" data-route="/" style="display: inline-block; margin-top: 40px; color: #0071E3; text-decoration: none; font-weight: 500;">
-          ← Back to All Tools
+        <section class="info-section">
+          <h2>Why This Happens</h2>
+          <p>Good Faith Estimate violations occur because:<br><br><strong>Providers Underestimate Complexity:</strong> Once treatment begins, the provider may discover additional work is needed, add procedures, or encounter complications — legitimately increasing costs beyond the estimate.<br><br><strong>Poor Estimating Practices:</strong> Some providers give low 'teaser' estimates to attract self-pay patients, knowing the final bill will be higher once the patient is committed to care.<br><br><strong>Ancillary Services Not Included:</strong> The GFE may cover the primary provider but not include anesthesia, pathology, radiology, or facility fees from other providers involved in your care.<br><br><strong>Billing Errors Post-Service:</strong> After care is provided, the billing department may add charges that weren't disclosed in the GFE, such as supplies, medications, or administrative fees.<br><br><strong>Lack of Coordination:</strong> In multi-provider scenarios (e.g., surgery), not all co-providers may coordinate their estimates, resulting in unexpected bills from providers not listed in the GFE.<br><br><strong>Provider Ignorance of GFE Requirements:</strong> The No Surprises Act's GFE requirements are relatively new (effective 2022), and some providers don't understand their obligations or consequences for violations.</p>
+        </section>
+      
+        <section class="info-section">
+          <h2>What To Check</h2>
+          <p>Verify you qualify for PPDR and gather documentation:<br><br>✓ <strong>Date of service:</strong> Was care provided on or after January 1, 2022?<br>✓ <strong>Good Faith Estimate received:</strong> Do you have the written GFE? It must be in writing to dispute.<br>✓ <strong>$400 threshold:</strong> Does your final bill exceed the GFE by $400 or more?<br>✓ <strong>Uninsured or self-pay status:</strong> Were you uninsured or not using insurance for this service?<br>✓ <strong>Estimate was requested:</strong> Did you request the GFE before scheduling, or was it voluntarily provided?<br>✓ <strong>Compare GFE to final bill:</strong> Identify which specific charges were added that weren't in the estimate<br>✓ <strong>Timeframe for PPDR:</strong> You must initiate PPDR within 120 calendar days of receiving the final bill</p>
+        </section>
+      
+        <section class="info-section">
+          <h2>What To Do Next</h2>
+          <p><strong>Step 1: Gather Your Documentation</strong><br>Collect:<br>• Copy of the written Good Faith Estimate<br>• Final itemized bill showing all charges<br>• Proof of payment (if you paid already)<br>• All correspondence with the provider<br>• Medical records related to the service<br>• Calendar showing when you received the final bill<br><br><strong>Step 2: Contact the Provider to Attempt Resolution</strong><br>Before initiating formal PPDR, contact the provider's billing department:<br>• Explain that the final bill exceeds the GFE by more than $400<br>• Reference the No Surprises Act and your right to dispute<br>• Request they adjust the bill to match the GFE or provide written justification for the excess charges<br>• Give them 5-7 business days to respond<br><br>Some providers will voluntarily adjust bills to avoid PPDR.<br><br><strong>Step 3: Initiate Patient-Provider Dispute Resolution (PPDR)</strong><br>If the provider doesn't resolve the issue, you can file a PPDR dispute:<br>• <strong>Timeframe:</strong> Must be initiated within 120 calendar days of receiving the final bill<br>• <strong>Selected Dispute Resolution Entity:</strong> You use a federally-certified independent arbitrator (SDR entity)<br>• <strong>Initiation fee:</strong> $25 (may be refunded if you prevail)<br>• <strong>Process:</strong> Both you and the provider submit evidence. The arbiter reviews and issues a binding decision within 30 business days.<br><br><strong>How to initiate PPDR:</strong><br>1. Find a certified SDR entity: <a href="https://www.cms.gov/nosurprises/consumers" target="_blank" rel="noopener">CMS List of SDR Entities</a><br>2. Complete the dispute initiation form<br>3. Pay the $25 fee<br>4. Submit your evidence (GFE, final bill, correspondence, medical justification)<br><br>Use our <a href="/good-faith-estimate-dispute" data-route="/good-faith-estimate-dispute"><strong>Good Faith Estimate Dispute tool</strong></a> to generate a formal dispute package.<br><br><strong>Step 4: Do Not Pay the Disputed Amount</strong><br>While PPDR is pending, do not pay the amount in dispute (the amount exceeding the GFE by $400+). Providers cannot send disputed amounts to collections or report them to credit bureaus while PPDR is active.<br><br><strong>Step 5: Participate in the PPDR Process</strong><br>The SDR entity will request evidence from both parties:<br>• You: Submit why the final bill should match the GFE (reliance on estimate, no disclosure of added charges, etc.)<br>• Provider: Must justify why charges exceeded the GFE (complications, additional necessary services, etc.)<br><br>The arbiter will issue a binding decision. If you win, your charges are capped at the GFE amount plus $400. If the provider wins, you must pay the full bill.<br><br><strong>Step 6: File Complaints if Provider Doesn't Comply</strong><br>If the provider refuses to honor the PPDR decision, file complaints with:<br>• <strong>CMS Enforcement:</strong> <a href="https://www.cms.gov/nosurprises" target="_blank" rel="noopener">No Surprises Complaint Portal</a><br>• <strong>State Attorney General</strong><br>• <strong>State Insurance Commissioner</strong><br><br>For comprehensive guidance on surprise billing, see our <a href="/medical-bill" data-route="/medical-bill"><strong>Medical Bill Dispute Guide</strong></a>.</p>
+        </section>
+      
+        <section class="info-section">
+          <h2>Frequently Asked Questions</h2>
+          <p></p><h3>What if I didn't request a Good Faith Estimate?</h3><p>Under the No Surprises Act, providers must give uninsured/self-pay patients a Good Faith Estimate upon request or when scheduling services at least 3 days in advance (1 day for services scheduled less than 3 days out). If you weren't provided a GFE when required, you may have grounds to dispute the entire bill. File a complaint with CMS.</p><h3>Does the $400 threshold apply to each provider separately?</h3><p>Yes. If multiple providers were involved (e.g., surgeon, anesthesiologist, facility), the $400 threshold applies to each provider's estimate separately. If the surgeon's final bill exceeds their GFE by $400+, you can dispute that provider even if others stayed within their estimates.</p><h3>What if the provider says complications justified the higher charges?</h3><p>Providers can argue that unanticipated complications or medically necessary additional services justified exceeding the GFE. However, they must prove this with medical documentation. In PPDR, the arbiter will review whether the additional charges were truly medically necessary and unforeseeable. If the provider could have reasonably anticipated the costs, you're more likely to prevail.</p><h3>Can I use PPDR if I have insurance but chose not to use it?</h3><p>Yes. If you have insurance but elected to pay out-of-pocket as a self-pay patient, you're entitled to Good Faith Estimates and PPDR protections. The key is that you were treated as uninsured/self-pay for that specific service.</p><h3>What if I already paid the full bill?</h3><p>You can still dispute via PPDR even if you already paid. If you win, the provider must refund the amount exceeding the GFE + $400 threshold. The 120-day window runs from when you received the final bill, not from when you paid.</p><p></p>
+        </section>
+      
+        <section class="info-section">
+          <h2>Take Action Now</h2>
+          <p></p><div style="background: linear-gradient(135deg, #0071E3 0%, #5E5CE6 100%); border-radius: 16px; padding: 40px 32px; text-align: center; color: white; margin-top: 32px;"><h2 style="margin-top: 0; color: white; font-size: 28px; font-weight: 700;">Still Unsure? Let Our AI Scan Your Bill</h2><p style="color: rgba(255, 255, 255, 0.95); font-size: 17px; margin-bottom: 28px;">Upload your Good Faith Estimate and final bill. Our AI will calculate the difference, verify you meet the $400+ threshold, and generate a PPDR dispute package automatically — free in under 60 seconds.</p><a href="/" data-route="/" style="display: inline-block; padding: 16px 36px; background: white; color: #0071E3; border-radius: 12px; font-weight: 700; font-size: 17px; text-decoration: none; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);">Start Free AI Bill Scan</a><p style="margin-top: 18px; margin-bottom: 0; font-size: 13px; color: rgba(255, 255, 255, 0.85);">✓ No credit card required  ✓ Your data stays private  ✓ Results in under 60 seconds</p></div><p></p>
+        </section>
+      
+        <section class="info-section">
+          <h2>Legal Disclaimer</h2>
+          <p></p><p style="font-size: 14px; color: #6e6e73; margin-top: 32px;"><strong>Educational purposes only.</strong> This information is not legal, medical, or financial advice. No Surprises Act regulations are complex and evolving. Consult a healthcare attorney or patient advocate for personalized guidance on PPDR disputes.</p><p></p>
+        </section>
+      
+        </article>
+        <a class="back-link" href="/" data-route="/">
+          <span class="back-link-icon" aria-hidden="true">⟵</span>
+          <span>Back to All Tools</span>
         </a>
         
-      </main>
-      
     <footer class="footer">
       <div>FixMyMedicalBill</div>
       <div class="footer-links">
@@ -242,8 +191,9 @@ Fill out the form on the left and click "Generate" to create your customized scr
       </div>
     </footer>
   
+      </main>
     </div>
   </div>
   
 
-<ins class="adsbygoogle adsbygoogle-noablate" data-adsbygoogle-status="done" style="display: none !important;" data-ad-status="unfilled"><div id="aswift_0_host" style="border: none; height: 0px; width: 0px; margin: 0px; padding: 0px; position: relative; visibility: visible; background-color: transparent; display: inline-block;"><iframe id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;border:0;width:undefinedpx;height:undefinedpx;min-height:auto;max-height:none;min-width:auto;max-width:none;" sandbox="allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allow="attribution-reporting; run-ad-auction" src="https://googleads.g.doubleclick.net/pagead/ads?client=ca-pub-5557614723972447&amp;output=html&amp;adk=1812271804&amp;adf=3025194257&amp;lmt=1771699597&amp;plat=1%3A8%2C2%3A8%2C3%3A2162688%2C4%3A2162688%2C9%3A32776%2C16%3A8388608%2C17%3A32%2C24%3A32%2C25%3A32%2C30%3A1048576%2C32%3A32%2C41%3A32%2C42%3A32%2C43%3A32&amp;format=0x0&amp;url=http%3A%2F%2Flocalhost%3A3000%2F&amp;pra=5&amp;asro=0&amp;aiapm=0.1542&amp;aiapmd=0.1423&amp;aiapmi=0.16&amp;aiapmid=1&amp;aiact=0.5423&amp;aiactd=0.7&amp;aicct=0.7&amp;aicctd=0.5799&amp;ailct=0.5849&amp;ailctd=0.65&amp;aimart=4&amp;aimartd=4&amp;aieuf=1&amp;aicrs=1&amp;uach=WyJXaW5kb3dzIiwiMTkuMC4wIiwieDg2IiwiIiwiMTQ1LjAuNzYzMi43NyIsbnVsbCwwLG51bGwsIjY0IixbWyJDaHJvbWl1bSIsIjE0NS4wLjc2MzIuNzciXSxbIk5vdDpBLUJyYW5kIiwiOTkuMC4wLjAiXV0sMF0.&amp;abgtt=6&amp;dt=1771699596842&amp;bpp=21&amp;bdt=468&amp;idt=698&amp;shv=r20260218&amp;mjsv=m202602190101&amp;ptt=9&amp;saldr=aa&amp;abxe=1&amp;cookie_enabled=1&amp;eoidce=1&amp;nras=1&amp;correlator=5181819012530&amp;frm=20&amp;pv=2&amp;u_tz=540&amp;u_his=2&amp;u_h=600&amp;u_w=800&amp;u_ah=600&amp;u_aw=800&amp;u_cd=24&amp;u_sd=1&amp;dmc=8&amp;adx=-12245933&amp;ady=-12245933&amp;biw=800&amp;bih=600&amp;scr_x=0&amp;scr_y=0&amp;eid=95378429%2C95382853%2C95383860%2C31096864%2C95344787&amp;oid=2&amp;pvsid=3231030862942842&amp;tmod=1883856057&amp;uas=0&amp;nvt=1&amp;fsapi=1&amp;fc=1920&amp;brdim=10%2C10%2C10%2C10%2C800%2C0%2C780%2C580%2C800%2C600&amp;vis=1&amp;rsz=%7C%7Cs%7C&amp;abl=NS&amp;fu=32768&amp;bc=31&amp;bz=0.98&amp;ifi=1&amp;uci=a!1&amp;fsb=1&amp;dtd=740" data-google-container-id="a!1" tabindex="0" title="Advertisement" aria-label="Advertisement" data-load-complete="true"></iframe></div></ins><div><div class="grecaptcha-badge" data-style="bottomright" style="width: 256px; height: 60px; display: block; transition: right 0.3s; position: fixed; bottom: 14px; right: -186px; box-shadow: gray 0px 0px 5px; border-radius: 2px; overflow: hidden;"><div class="grecaptcha-logo"><iframe title="reCAPTCHA" width="256" height="60" role="presentation" name="a-wx8dk0xcax29" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="https://www.google.com/recaptcha/api2/anchor?ar=1&amp;k=6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK&amp;co=aHR0cDovL2xvY2FsaG9zdDozMDAw&amp;hl=ko&amp;v=vUgXt_KV952_-5BB2jjloYzl&amp;size=invisible&amp;anchor-ms=20000&amp;execute-ms=30000&amp;cb=fpsb45n3bn5k"></iframe></div><div class="grecaptcha-error"></div><textarea id="g-recaptcha-response-100000" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;"></iframe></div><iframe src="https://www.google.com/recaptcha/api2/aframe" width="0" height="0" style="display: none;"></iframe><iframe id="google_esf" name="google_esf" src="https://googleads.g.doubleclick.net/pagead/html/r20260218/r20190131/zrt_lookup.html" style="display: none;"></iframe><div><div class="grecaptcha-badge" data-style="none" style="width: 256px; height: 60px; position: fixed; visibility: hidden;"><div class="grecaptcha-logo"><iframe title="reCAPTCHA" width="256" height="60" role="presentation" name="a-qr0wd37p95cg" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="https://www.google.com/recaptcha/api2/anchor?ar=1&amp;k=6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK&amp;co=aHR0cDovL2xvY2FsaG9zdDozMDAw&amp;hl=ko&amp;v=vUgXt_KV952_-5BB2jjloYzl&amp;size=invisible&amp;anchor-ms=20000&amp;execute-ms=30000&amp;cb=298d417m8wvx"></iframe></div><div class="grecaptcha-error"></div><textarea id="g-recaptcha-response-100000" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;"></iframe></div></body></html>
+<ins class="adsbygoogle adsbygoogle-noablate" data-adsbygoogle-status="done" style="display: none !important;" data-ad-status="unfilled"><div id="aswift_0_host" style="border: none; height: 0px; width: 0px; margin: 0px; padding: 0px; position: relative; visibility: visible; background-color: transparent; display: inline-block;"><iframe id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;border:0;width:undefinedpx;height:undefinedpx;min-height:auto;max-height:none;min-width:auto;max-width:none;" sandbox="allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allow="attribution-reporting; run-ad-auction" src="https://googleads.g.doubleclick.net/pagead/ads?client=ca-pub-5557614723972447&amp;output=html&amp;adk=1812271804&amp;adf=3025194257&amp;lmt=1771699597&amp;plat=1%3A8%2C2%3A8%2C3%3A2162688%2C4%3A2162688%2C9%3A32776%2C16%3A8388608%2C17%3A32%2C24%3A32%2C25%3A32%2C30%3A1048576%2C32%3A32%2C41%3A32%2C42%3A32%2C43%3A32&amp;format=0x0&amp;url=http%3A%2F%2Flocalhost%3A3000%2F&amp;pra=5&amp;asro=0&amp;aiapm=0.1542&amp;aiapmd=0.1423&amp;aiapmi=0.16&amp;aiapmid=1&amp;aiact=0.5423&amp;aiactd=0.7&amp;aicct=0.7&amp;aicctd=0.5799&amp;ailct=0.5849&amp;ailctd=0.65&amp;aimart=4&amp;aimartd=4&amp;aieuf=1&amp;aicrs=1&amp;uach=WyJXaW5kb3dzIiwiMTkuMC4wIiwieDg2IiwiIiwiMTQ1LjAuNzYzMi43NyIsbnVsbCwwLG51bGwsIjY0IixbWyJDaHJvbWl1bSIsIjE0NS4wLjc2MzIuNzciXSxbIk5vdDpBLUJyYW5kIiwiOTkuMC4wLjAiXV0sMF0.&amp;abgtt=6&amp;dt=1771699596842&amp;bpp=21&amp;bdt=468&amp;idt=698&amp;shv=r20260218&amp;mjsv=m202602190101&amp;ptt=9&amp;saldr=aa&amp;abxe=1&amp;cookie_enabled=1&amp;eoidce=1&amp;nras=1&amp;correlator=5181819012530&amp;frm=20&amp;pv=2&amp;u_tz=540&amp;u_his=2&amp;u_h=600&amp;u_w=800&amp;u_ah=600&amp;u_aw=800&amp;u_cd=24&amp;u_sd=1&amp;dmc=8&amp;adx=-12245933&amp;ady=-12245933&amp;biw=800&amp;bih=600&amp;scr_x=0&amp;scr_y=0&amp;eid=95378429%2C95382853%2C95383860%2C31096864%2C95344787&amp;oid=2&amp;pvsid=3231030862942842&amp;tmod=1883856057&amp;uas=0&amp;nvt=1&amp;fsapi=1&amp;fc=1920&amp;brdim=10%2C10%2C10%2C10%2C800%2C0%2C780%2C580%2C800%2C600&amp;vis=1&amp;rsz=%7C%7Cs%7C&amp;abl=NS&amp;fu=32768&amp;bc=31&amp;bz=0.98&amp;ifi=1&amp;uci=a!1&amp;fsb=1&amp;dtd=740" data-google-container-id="a!1" tabindex="0" title="Advertisement" aria-label="Advertisement" data-load-complete="true"></iframe></div></ins><div><div class="grecaptcha-badge" data-style="bottomright" style="width: 256px; height: 60px; display: block; transition: right 0.3s; position: fixed; bottom: 14px; right: -186px; box-shadow: gray 0px 0px 5px; border-radius: 2px; overflow: hidden;"><div class="grecaptcha-logo"><iframe title="reCAPTCHA" width="256" height="60" role="presentation" name="a-wx8dk0xcax29" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="https://www.google.com/recaptcha/api2/anchor?ar=1&amp;k=6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK&amp;co=aHR0cDovL2xvY2FsaG9zdDozMDAw&amp;hl=ko&amp;v=vUgXt_KV952_-5BB2jjloYzl&amp;size=invisible&amp;anchor-ms=20000&amp;execute-ms=30000&amp;cb=fpsb45n3bn5k"></iframe></div><div class="grecaptcha-error"></div><textarea id="g-recaptcha-response-100000" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;"></iframe></div><iframe src="https://www.google.com/recaptcha/api2/aframe" width="0" height="0" style="display: none;"></iframe><iframe id="google_esf" name="google_esf" src="https://googleads.g.doubleclick.net/pagead/html/r20260218/r20190131/zrt_lookup.html" style="display: none;"></iframe><div><div class="grecaptcha-badge" data-style="none" style="width: 256px; height: 60px; position: fixed; visibility: hidden;"><div class="grecaptcha-logo"><iframe title="reCAPTCHA" width="256" height="60" role="presentation" name="a-qb7mtqgrf0so" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="https://www.google.com/recaptcha/api2/anchor?ar=1&amp;k=6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK&amp;co=aHR0cDovL2xvY2FsaG9zdDozMDAw&amp;hl=ko&amp;v=vUgXt_KV952_-5BB2jjloYzl&amp;size=invisible&amp;anchor-ms=20000&amp;execute-ms=30000&amp;cb=bk6quie92van"></iframe></div><div class="grecaptcha-error"></div><textarea id="g-recaptcha-response-100000" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;"></iframe></div></body></html>

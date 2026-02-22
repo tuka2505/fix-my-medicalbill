@@ -136,103 +136,52 @@
       </div>
     </header>
   
-      
-      <main class="main" style="padding-top: 0; max-width: 1000px; margin: 0 auto;">
-        
-        <div class="tool-page-header" style="padding: 20px 0 0 0; text-align: left; margin-bottom: 0;">
-          <h1 style="font-size: 32px; font-weight: 700; color: #1D1D1F; margin: 0 0 4px 0; line-height: 1.1;">Urgent Care Bill</h1>
-          <p style="font-size: 16px; color: #86868B; margin: 0 0 12px 0; line-height: 1.4;">Challenge a high urgent care bill.</p>
-        </div>
-
-        
-
-        
-        <section id="urgent-care" class="section tool-section">
-          <h2 class="h2">Urgent Care Bill</h2>
-          <p class="text tool-subtitle">Challenge high urgent care charges with a clear dispute letter.</p>
-          <div class="tool-shell">
-            <div class="tool-split">
-              <div class="tool-panel">
-                <form id="urgent-care-form" class="tool-form">
-                  <div class="form-grid">
-                    <div class="field">
-                      <label for="facilityName">Facility name</label>
-                      <input id="facilityName" name="facilityName" type="text" placeholder="Urgent care facility" class="accent-focus">
-                    </div>
-                    <div class="field">
-                      <label for="dateOfVisit">Date of visit</label>
-                      <input id="dateOfVisit" name="dateOfVisit" type="text" placeholder="MM/DD/YYYY" class="accent-focus">
-                    </div>
-                    <div class="field">
-                      <label for="totalAmount">Total amount</label>
-                      <input id="totalAmount" name="totalAmount" type="text" placeholder="$850" class="accent-focus">
-                    </div>
-                    <div class="field">
-                      <label for="urgentIssueType">Issue type</label>
-                      <select id="urgentIssueType" name="issueType" required="" class="accent-focus">
-                        <option>Invalid Facility Fee (Freestanding POS 20)</option>
-                        <option>E/M Upcoding (Level 4/5 for minor issue)</option>
-                        <option>Unclear / Bundled Supply Charges</option>
-                        <option value="Other">Other (Write my own)</option>
-                      </select>
-                    </div>
-                    <div class="field">
-                      <label for="urgentPatientName">Patient name</label>
-                      <input id="urgentPatientName" name="patientName" type="text" placeholder="Full name" class="accent-focus">
-                    </div>
-                    <div class="field">
-                      <label for="urgentPatientPhone">Patient phone</label>
-                      <input id="urgentPatientPhone" name="patientPhone" type="text" placeholder="(555) 123-4567" class="accent-focus">
-                    </div>
-                    <div class="field">
-                      <label for="urgentPatientEmail">Patient email</label>
-                      <input id="urgentPatientEmail" name="patientEmail" type="text" placeholder="name@email.com" class="accent-focus">
-                    </div>
-                    <div class="field field-full">
-                      <label for="urgentPatientAddress">Patient address</label>
-                      <textarea id="urgentPatientAddress" name="patientAddress" rows="3" placeholder="Street, City, State ZIP" class="accent-focus"></textarea>
-                    </div>
-                  </div>
-                  <div class="form-actions tool-actions">
-                    <button class="btn" type="submit">Generate</button>
-                    <button class="btn neutral" type="button" data-copy="letter" disabled="">Copy Letter</button>
-                    <button class="btn neutral" type="button" data-copy="script" disabled="">Copy Phone Script</button>
-                    <button class="btn neutral" type="button" data-download="pdf" disabled="">Download PDF</button>
-                  </div>
-                  <p style="font-size: 11px; color: var(--muted2); margin-top: 12px; margin-bottom: 0; line-height: 1.4;">By generating this document, you acknowledge that you are solely responsible for reviewing its accuracy before submission. FixMyMedicalBill provides informational templates, not legal counsel.</p>
-                </form>
-              </div>
-              <div class="tool-results">
-                <div class="results-grid">
-                  <div class="result-card">
-                    <div class="result-header">
-                      <div class="result-title">Dispute Letter</div>
-                    </div>
-                    <pre id="urgent-letter-output" class="result-content is-empty">📝 Your dispute letter will appear here.
-
-Fill out the form on the left and click "Generate" to create your customized document.</pre>
-                  </div>
-                  <div class="result-card">
-                    <div class="result-header">
-                      <div class="result-title">Phone Script</div>
-                    </div>
-                    <pre id="urgent-script-output" class="result-content is-empty">📞 Your phone script will appear here.
-
-Fill out the form on the left and click "Generate" to create your customized script.</pre>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <main class="main info-main">
+        <article class="info-article">
+          <p class="info-eyebrow">Received an unexpected facility fee from the ER? Learn why hospitals charge these fees and how to dispute them effectively.</p>
+          <h1>Surprise ER Facility Fee: How to Dispute Hidden Emergency Room Charges</h1>
+          
+        <section class="info-section">
+          <h2>Understanding Your Situation</h2>
+          <p>You went to the emergency room for treatment and received two separate bills: one from the physician who treated you, and another from the hospital itself for a 'facility fee.' This facility fee can be hundreds or even thousands of dollars—sometimes more than the doctor's charge. You may be wondering why you're being charged twice for the same visit. <strong>Emergency room facility fees</strong> are charges for using the hospital's equipment, space, and infrastructure, separate from professional medical services. While legal in most cases, these fees are often inflated, poorly disclosed, and may contain errors that make them disputable.</p>
         </section>
       
-
-        <a class="back-link" href="/" data-route="/" style="display: inline-block; margin-top: 40px; color: #0071E3; text-decoration: none; font-weight: 500;">
-          ← Back to All Tools
+        <section class="info-section">
+          <h2>Why This Happens</h2>
+          <p><strong>Hospital Cost Recovery:</strong> Hospitals claim facility fees help cover the cost of maintaining emergency departments 24/7, including staffing, equipment, and regulatory compliance.<br><br><strong>Revenue Generation:</strong> Facility fees are a significant revenue source for hospitals, especially as they've acquired more freestanding ERs and urgent care centers that can bill facility fees.<br><br><strong>Coding Flexibility:</strong> Hospital billing departments use facility fee codes (often based on acuity levels) that can be subjectively determined, leading to higher charges for lower-acuity visits.<br><br><strong>Lack of Transparency:</strong> Many hospitals don't clearly disclose facility fees upfront, and patients don't realize they'll be charged separately until bills arrive weeks later.<br><br><strong>Network Status Confusion:</strong> The hospital may be in-network while the ER physician is out-of-network (or vice versa), creating unexpected balance billing on top of facility fees.</p>
+        </section>
+      
+        <section class="info-section">
+          <h2>What To Check</h2>
+          <p>✓ <strong>Request an itemized bill</strong> showing the facility fee code, level, and individual charges<br>✓ <strong>Compare to your EOB</strong> to see what insurance paid and what you're expected to pay<br>✓ <strong>Check facility fee acuity level:</strong> Was your visit coded as Level 1-5? Does it match your actual medical situation?<br>✓ <strong>Verify disclosure:</strong> Were you informed about facility fees before receiving care?<br>✓ <strong>Review for duplicate charges:</strong> Ensure services aren't billed twice (once in physician charge, once in facility fee)<br>✓ <strong>Check network status:</strong> Confirm both hospital and physician network status<br>✓ <strong>Compare to FAIR Health data:</strong> See if charges exceed typical costs in your area</p>
+        </section>
+      
+        <section class="info-section">
+          <h2>What To Do Next</h2>
+          <p><strong>Step 1: Request Full Documentation</strong><br>Call the hospital billing department and request an itemized bill showing all facility fee components, codes, and the acuity level assigned to your visit.<br><br><strong>Step 2: Identify Disputable Issues</strong><br>Look for:<br>• Facility fee level that doesn't match your visit's actual acuity<br>• Charges for services not provided<br>• Duplicate charges between facility and professional fees<br>• Lack of upfront disclosure (cite transparency violations)<br><br><strong>Step 3: File a Formal Dispute</strong><br>Use our <a href="/medical-bill-dispute-letter" data-route="/medical-bill-dispute-letter"><strong>Medical Bill Dispute Letter tool</strong></a> to generate a professional dispute citing specific errors and requesting adjustment.<br><br><strong>Step 4: Negotiate Reduction</strong><br>If errors don't fully resolve the fee, negotiate based on:<br>• FAIR Health data showing typical costs<br>• Financial hardship<br>• Lump-sum payment offer<br><br>For comprehensive ER billing guidance, see our <a href="/medical-bill" data-route="/medical-bill"><strong>Medical Bill Hub</strong></a>.</p>
+        </section>
+      
+        <section class="info-section">
+          <h2>Frequently Asked Questions</h2>
+          <p></p><h3>Are ER facility fees legal?</h3><p>Yes, in most cases. Hospitals are permitted to charge facility fees for emergency services. However, the fees must be reasonable, properly coded, and in some jurisdictions, disclosed upfront. Excessive facility fees or those containing billing errors can be disputed.</p><h3>Why am I being charged twice for the same ER visit?</h3><p>You're not being charged twice for the same service—you're being charged for two different components: (1) the physician's professional service (evaluation, diagnosis, treatment), and (2) the hospital's facility resources (room, equipment, nursing, overhead). While the system seems duplicative, it's standard practice in hospital billing.</p><h3>Can I refuse to pay a facility fee?</h3><p>You generally cannot refuse to pay a legitimate facility fee simply because you disagree with the practice. However, you can dispute facility fees that are incorrectly coded, contain errors, exceed reasonable amounts, or weren't properly disclosed. Focus your dispute on specific billing inaccuracies.</p><h3>What if my insurance already paid the facility fee?</h3><p>If insurance paid their contracted amount, you typically owe your cost-sharing (copay, coinsurance, deductible). However, if the facility fee contains coding errors or was inappropriately high, you can dispute it with both the hospital and your insurance, potentially resulting in reduced patient responsibility.</p><p></p>
+        </section>
+      
+        <section class="info-section">
+          <h2>Take Action Now</h2>
+          <p></p><div style="background: linear-gradient(135deg, #0071E3 0%, #5E5CE6 100%); border-radius: 16px; padding: 40px 32px; text-align: center; color: white; margin-top: 32px;"><h2 style="margin-top: 0; color: white; font-size: 28px; font-weight: 700;">Still Unsure? Let Our AI Scan Your Bill</h2><p style="color: rgba(255, 255, 255, 0.95); font-size: 17px; margin-bottom: 28px;">Upload your ER bill and our AI will analyze facility fee coding, identify overcharges, and generate a professional dispute letter automatically—free in under 60 seconds.</p><a href="/" data-route="/" style="display: inline-block; padding: 16px 36px; background: white; color: #0071E3; border-radius: 12px; font-weight: 700; font-size: 17px; text-decoration: none; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);">Start Free AI Bill Scan</a><p style="margin-top: 18px; margin-bottom: 0; font-size: 13px; color: rgba(255, 255, 255, 0.85);">✓ No credit card required  ✓ Your data stays private  ✓ Results in under 60 seconds</p></div><p></p>
+        </section>
+      
+        <section class="info-section">
+          <h2>Legal Disclaimer</h2>
+          <p></p><p style="font-size: 14px; color: #6e6e73; margin-top: 32px;"><strong>Educational purposes only.</strong> This information is not legal, medical, or financial advice. Hospital billing regulations vary by state. Consult a healthcare attorney for personalized guidance.</p><p></p>
+        </section>
+      
+        </article>
+        <a class="back-link" href="/" data-route="/">
+          <span class="back-link-icon" aria-hidden="true">⟵</span>
+          <span>Back to All Tools</span>
         </a>
         
-      </main>
-      
     <footer class="footer">
       <div>FixMyMedicalBill</div>
       <div class="footer-links">
@@ -242,8 +191,9 @@ Fill out the form on the left and click "Generate" to create your customized scr
       </div>
     </footer>
   
+      </main>
     </div>
   </div>
   
 
-<ins class="adsbygoogle adsbygoogle-noablate" data-adsbygoogle-status="done" style="display: none !important;" data-ad-status="unfilled"><div id="aswift_0_host" style="border: none; height: 0px; width: 0px; margin: 0px; padding: 0px; position: relative; visibility: visible; background-color: transparent; display: inline-block;"><iframe id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;border:0;width:undefinedpx;height:undefinedpx;min-height:auto;max-height:none;min-width:auto;max-width:none;" sandbox="allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allow="attribution-reporting; run-ad-auction" src="https://googleads.g.doubleclick.net/pagead/ads?client=ca-pub-5557614723972447&amp;output=html&amp;adk=1812271804&amp;adf=3025194257&amp;lmt=1771699597&amp;plat=1%3A8%2C2%3A8%2C3%3A2162688%2C4%3A2162688%2C9%3A32776%2C16%3A8388608%2C17%3A32%2C24%3A32%2C25%3A32%2C30%3A1048576%2C32%3A32%2C41%3A32%2C42%3A32%2C43%3A32&amp;format=0x0&amp;url=http%3A%2F%2Flocalhost%3A3000%2F&amp;pra=5&amp;asro=0&amp;aiapm=0.1542&amp;aiapmd=0.1423&amp;aiapmi=0.16&amp;aiapmid=1&amp;aiact=0.5423&amp;aiactd=0.7&amp;aicct=0.7&amp;aicctd=0.5799&amp;ailct=0.5849&amp;ailctd=0.65&amp;aimart=4&amp;aimartd=4&amp;aieuf=1&amp;aicrs=1&amp;uach=WyJXaW5kb3dzIiwiMTkuMC4wIiwieDg2IiwiIiwiMTQ1LjAuNzYzMi43NyIsbnVsbCwwLG51bGwsIjY0IixbWyJDaHJvbWl1bSIsIjE0NS4wLjc2MzIuNzciXSxbIk5vdDpBLUJyYW5kIiwiOTkuMC4wLjAiXV0sMF0.&amp;abgtt=6&amp;dt=1771699596842&amp;bpp=21&amp;bdt=468&amp;idt=698&amp;shv=r20260218&amp;mjsv=m202602190101&amp;ptt=9&amp;saldr=aa&amp;abxe=1&amp;cookie_enabled=1&amp;eoidce=1&amp;nras=1&amp;correlator=5181819012530&amp;frm=20&amp;pv=2&amp;u_tz=540&amp;u_his=2&amp;u_h=600&amp;u_w=800&amp;u_ah=600&amp;u_aw=800&amp;u_cd=24&amp;u_sd=1&amp;dmc=8&amp;adx=-12245933&amp;ady=-12245933&amp;biw=800&amp;bih=600&amp;scr_x=0&amp;scr_y=0&amp;eid=95378429%2C95382853%2C95383860%2C31096864%2C95344787&amp;oid=2&amp;pvsid=3231030862942842&amp;tmod=1883856057&amp;uas=0&amp;nvt=1&amp;fsapi=1&amp;fc=1920&amp;brdim=10%2C10%2C10%2C10%2C800%2C0%2C780%2C580%2C800%2C600&amp;vis=1&amp;rsz=%7C%7Cs%7C&amp;abl=NS&amp;fu=32768&amp;bc=31&amp;bz=0.98&amp;ifi=1&amp;uci=a!1&amp;fsb=1&amp;dtd=740" data-google-container-id="a!1" tabindex="0" title="Advertisement" aria-label="Advertisement" data-load-complete="true"></iframe></div></ins><div><div class="grecaptcha-badge" data-style="bottomright" style="width: 256px; height: 60px; display: block; transition: right 0.3s; position: fixed; bottom: 14px; right: -186px; box-shadow: gray 0px 0px 5px; border-radius: 2px; overflow: hidden;"><div class="grecaptcha-logo"><iframe title="reCAPTCHA" width="256" height="60" role="presentation" name="a-wx8dk0xcax29" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="https://www.google.com/recaptcha/api2/anchor?ar=1&amp;k=6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK&amp;co=aHR0cDovL2xvY2FsaG9zdDozMDAw&amp;hl=ko&amp;v=vUgXt_KV952_-5BB2jjloYzl&amp;size=invisible&amp;anchor-ms=20000&amp;execute-ms=30000&amp;cb=fpsb45n3bn5k"></iframe></div><div class="grecaptcha-error"></div><textarea id="g-recaptcha-response-100000" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;"></iframe></div><iframe src="https://www.google.com/recaptcha/api2/aframe" width="0" height="0" style="display: none;"></iframe><iframe id="google_esf" name="google_esf" src="https://googleads.g.doubleclick.net/pagead/html/r20260218/r20190131/zrt_lookup.html" style="display: none;"></iframe><div><div class="grecaptcha-badge" data-style="none" style="width: 256px; height: 60px; position: fixed; visibility: hidden;"><div class="grecaptcha-logo"><iframe title="reCAPTCHA" width="256" height="60" role="presentation" name="a-qr0wd37p95cg" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="https://www.google.com/recaptcha/api2/anchor?ar=1&amp;k=6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK&amp;co=aHR0cDovL2xvY2FsaG9zdDozMDAw&amp;hl=ko&amp;v=vUgXt_KV952_-5BB2jjloYzl&amp;size=invisible&amp;anchor-ms=20000&amp;execute-ms=30000&amp;cb=298d417m8wvx"></iframe></div><div class="grecaptcha-error"></div><textarea id="g-recaptcha-response-100000" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;"></iframe></div></body></html>
+<ins class="adsbygoogle adsbygoogle-noablate" data-adsbygoogle-status="done" style="display: none !important;" data-ad-status="unfilled"><div id="aswift_0_host" style="border: none; height: 0px; width: 0px; margin: 0px; padding: 0px; position: relative; visibility: visible; background-color: transparent; display: inline-block;"><iframe id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;border:0;width:undefinedpx;height:undefinedpx;min-height:auto;max-height:none;min-width:auto;max-width:none;" sandbox="allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allow="attribution-reporting; run-ad-auction" src="https://googleads.g.doubleclick.net/pagead/ads?client=ca-pub-5557614723972447&amp;output=html&amp;adk=1812271804&amp;adf=3025194257&amp;lmt=1771699597&amp;plat=1%3A8%2C2%3A8%2C3%3A2162688%2C4%3A2162688%2C9%3A32776%2C16%3A8388608%2C17%3A32%2C24%3A32%2C25%3A32%2C30%3A1048576%2C32%3A32%2C41%3A32%2C42%3A32%2C43%3A32&amp;format=0x0&amp;url=http%3A%2F%2Flocalhost%3A3000%2F&amp;pra=5&amp;asro=0&amp;aiapm=0.1542&amp;aiapmd=0.1423&amp;aiapmi=0.16&amp;aiapmid=1&amp;aiact=0.5423&amp;aiactd=0.7&amp;aicct=0.7&amp;aicctd=0.5799&amp;ailct=0.5849&amp;ailctd=0.65&amp;aimart=4&amp;aimartd=4&amp;aieuf=1&amp;aicrs=1&amp;uach=WyJXaW5kb3dzIiwiMTkuMC4wIiwieDg2IiwiIiwiMTQ1LjAuNzYzMi43NyIsbnVsbCwwLG51bGwsIjY0IixbWyJDaHJvbWl1bSIsIjE0NS4wLjc2MzIuNzciXSxbIk5vdDpBLUJyYW5kIiwiOTkuMC4wLjAiXV0sMF0.&amp;abgtt=6&amp;dt=1771699596842&amp;bpp=21&amp;bdt=468&amp;idt=698&amp;shv=r20260218&amp;mjsv=m202602190101&amp;ptt=9&amp;saldr=aa&amp;abxe=1&amp;cookie_enabled=1&amp;eoidce=1&amp;nras=1&amp;correlator=5181819012530&amp;frm=20&amp;pv=2&amp;u_tz=540&amp;u_his=2&amp;u_h=600&amp;u_w=800&amp;u_ah=600&amp;u_aw=800&amp;u_cd=24&amp;u_sd=1&amp;dmc=8&amp;adx=-12245933&amp;ady=-12245933&amp;biw=800&amp;bih=600&amp;scr_x=0&amp;scr_y=0&amp;eid=95378429%2C95382853%2C95383860%2C31096864%2C95344787&amp;oid=2&amp;pvsid=3231030862942842&amp;tmod=1883856057&amp;uas=0&amp;nvt=1&amp;fsapi=1&amp;fc=1920&amp;brdim=10%2C10%2C10%2C10%2C800%2C0%2C780%2C580%2C800%2C600&amp;vis=1&amp;rsz=%7C%7Cs%7C&amp;abl=NS&amp;fu=32768&amp;bc=31&amp;bz=0.98&amp;ifi=1&amp;uci=a!1&amp;fsb=1&amp;dtd=740" data-google-container-id="a!1" tabindex="0" title="Advertisement" aria-label="Advertisement" data-load-complete="true"></iframe></div></ins><div><div class="grecaptcha-badge" data-style="bottomright" style="width: 256px; height: 60px; display: block; transition: right 0.3s; position: fixed; bottom: 14px; right: -186px; box-shadow: gray 0px 0px 5px; border-radius: 2px; overflow: hidden;"><div class="grecaptcha-logo"><iframe title="reCAPTCHA" width="256" height="60" role="presentation" name="a-wx8dk0xcax29" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="https://www.google.com/recaptcha/api2/anchor?ar=1&amp;k=6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK&amp;co=aHR0cDovL2xvY2FsaG9zdDozMDAw&amp;hl=ko&amp;v=vUgXt_KV952_-5BB2jjloYzl&amp;size=invisible&amp;anchor-ms=20000&amp;execute-ms=30000&amp;cb=fpsb45n3bn5k"></iframe></div><div class="grecaptcha-error"></div><textarea id="g-recaptcha-response-100000" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;"></iframe></div><iframe src="https://www.google.com/recaptcha/api2/aframe" width="0" height="0" style="display: none;"></iframe><iframe id="google_esf" name="google_esf" src="https://googleads.g.doubleclick.net/pagead/html/r20260218/r20190131/zrt_lookup.html" style="display: none;"></iframe><div><div class="grecaptcha-badge" data-style="none" style="width: 256px; height: 60px; position: fixed; visibility: hidden;"><div class="grecaptcha-logo"><iframe title="reCAPTCHA" width="256" height="60" role="presentation" name="a-66xqjufgj2a4" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="https://www.google.com/recaptcha/api2/anchor?ar=1&amp;k=6LfyC3MsAAAAAIAOMW8YGl3HfOtbsR6yo81AqZpK&amp;co=aHR0cDovL2xvY2FsaG9zdDozMDAw&amp;hl=ko&amp;v=vUgXt_KV952_-5BB2jjloYzl&amp;size=invisible&amp;anchor-ms=20000&amp;execute-ms=30000&amp;cb=d4s3cna4xfm0"></iframe></div><div class="grecaptcha-error"></div><textarea id="g-recaptcha-response-100000" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;"></iframe></div></body></html>

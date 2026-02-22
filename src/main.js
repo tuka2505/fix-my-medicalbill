@@ -6821,7 +6821,75 @@ function setupBillScanning() {
           const data = await callSecureGeminiAPI(
             [{ 
               parts: [
-                { text: "Analyze this US medical bill. Return ONLY flat JSON. Required keys: \"isValid\"(bool), \"facilityName\", \"totalAmount\", \"dateOfService\", \"issueCategory\" (ONE OF: 'Emergency Room', 'Lab & Imaging', 'Surgery & Inpatient', 'General Doctor Visit')." },
+                { text: `You are a medical billing data extraction expert analyzing US healthcare bills.
+
+EXTRACT ALL DATA from this bill into the following JSON structure. If information is not visible, use null.
+
+OUTPUT SCHEMA (JSON ONLY, NO MARKDOWN):
+{
+  "isValid": boolean,
+  "documentType": "itemized_bill" | "summary_bill" | "eob" | "statement" | "unknown",
+  "facilityInfo": {
+    "name": string,
+    "npi": string | null,
+    "address": string | null,
+    "phone": string | null
+  },
+  "patientInfo": {
+    "name": string | null,
+    "accountNumber": string | null,
+    "insuranceCompany": string | null
+  },
+  "billSummary": {
+    "totalCharges": number,
+    "insurancePaid": number | null,
+    "adjustments": number | null,
+    "patientResponsibility": number,
+    "dateOfService": "YYYY-MM-DD" | null,
+    "billDate": "YYYY-MM-DD" | null
+  },
+  "lineItems": [
+    {
+      "description": string,
+      "cptCode": string | null,
+      "hcpcsCode": string | null,
+      "revenueCode": string | null,
+      "modifiers": string[] | null,
+      "units": number | null,
+      "chargePerUnit": number | null,
+      "totalCharge": number,
+      "date": "YYYY-MM-DD" | null
+    }
+  ],
+  "detectedIssues": {
+    "hasOutOfNetworkProvider": boolean,
+    "hasDuplicateCharges": boolean,
+    "suspectedUpcoding": string[],
+    "suspectedUnbundling": string[],
+    "mathErrors": string[],
+    "balanceBillingRisk": boolean
+  },
+  "issueCategory": "Emergency Room" | "Lab & Imaging" | "Surgery & Inpatient" | "General Doctor Visit"
+}
+
+EXTRACTION RULES:
+1. Extract up to 30 most significant line items (highest amounts or clearly coded)
+2. All monetary values as numbers only (remove $, commas)
+3. Dates in YYYY-MM-DD format when possible
+4. documentType:
+   - "itemized_bill" if has CPT/HCPCS codes and line items
+   - "summary_bill" if only shows category totals
+   - "eob" if Explanation of Benefits from insurance
+   - "statement" if monthly statement/balance forward
+5. detectedIssues - flag obvious problems:
+   - Duplicate: exact same CPT code billed multiple times same day without modifier
+   - Upcoding: CPT 99285/99291/99205 (high-level codes) for minor conditions
+   - Unbundling: routine supplies (gloves, IV start, vitals) billed separately when facility fee exists
+   - Math: subtotal + adjustments ≠ stated total
+   - Balance Billing: out-of-network provider charges above insurance allowed amount
+6. issueCategory based on primary service type
+
+OUTPUT ONLY VALID JSON. NO EXPLANATIONS.` },
                 { inlineData: { mimeType: fileToProcess.type, data: base64String } }
               ] 
             }],
@@ -6831,13 +6899,29 @@ function setupBillScanning() {
 
           let aiText = data.candidates[0].content.parts[0].text.replace(/```json/gi, '').replace(/```/gi, '').trim();
           const aiResult = JSON.parse(aiText);
-          const isActuallyValid = aiResult.isValid === true || aiResult.isValid === "true" || !!aiResult.facilityName || !!aiResult.totalAmount;
+          
+          // Handle new enhanced JSON structure
+          const facilityName = aiResult.facilityInfo?.name || aiResult.facilityName || null;
+          const totalAmount = aiResult.billSummary?.patientResponsibility || aiResult.billSummary?.totalCharges || aiResult.totalAmount || 0;
+          const isActuallyValid = aiResult.isValid === true || aiResult.isValid === "true" || !!facilityName || !!totalAmount;
 
           if (isActuallyValid) {
             aiResult.isValid = true;
+            
+            // Store enhanced data for downstream use
             localStorage.setItem('medicalAuditData', JSON.stringify(aiResult));
+            
             scanProgressFill.style.width = '100%';
             scanProgressText.textContent = '✅ Analysis complete! Preparing audit... 100%';
+            
+            // Log extracted data quality
+            console.log('[OCR Enhanced] Extracted:', {
+              documentType: aiResult.documentType,
+              lineItems: aiResult.lineItems?.length || 0,
+              detectedIssues: Object.keys(aiResult.detectedIssues || {}),
+              facilityName,
+              totalAmount
+            });
 
             setTimeout(() => {
               if (scanProgress) scanProgress.style.display = 'none';
@@ -6851,7 +6935,7 @@ function setupBillScanning() {
               const category = aiResult.issueCategory || 'General Doctor Visit';
               currentBillCategory = { category: category, route: '/medical-bill-dispute-letter' };
               currentBillText = JSON.stringify(aiResult);
-              detectedAmount = aiResult.totalAmount || "0";
+              detectedAmount = String(totalAmount);
 
               initializeTargetedQuiz(category);
             }, 800);
@@ -6964,59 +7048,101 @@ async function generateAIQuiz(category, extractedText) {
 
     const categoryRules = ReferenceAuditRules[category] || ReferenceAuditRules["General Doctor Visit"];
     const combinedRules = [...categoryRules, ...ReferenceAuditRules["Universal"], ...ReferenceAuditRules["Lab & Imaging"]];
+    
+    // Parse enhanced OCR data
+    let billData = {};
+    try {
+      billData = JSON.parse(extractedText);
+    } catch (e) {
+      console.warn('[Quiz Gen] Could not parse extractedText as JSON, using as string');
+      billData = { rawText: extractedText };
+    }
+    
+    // Extract key data for quiz generation
+    const lineItems = billData.lineItems || [];
+    const detectedIssues = billData.detectedIssues || {};
+    const billSummary = billData.billSummary || {};
+    const facilityName = billData.facilityInfo?.name || 'Unknown Facility';
+    const totalAmount = billSummary.patientResponsibility || billSummary.totalCharges || 0;
+    const documentType = billData.documentType || 'unknown';
+    
+    // Determine dynamic question count based on bill complexity
+    let questionCount = 6;
+    if (totalAmount > 5000 || lineItems.length > 10) {
+      questionCount = 10; // Complex bill: more questions
+    } else if (totalAmount < 1000) {
+      questionCount = 5;  // Simple bill: fewer questions
+    }
 
-    const prompt = `You are an elite Certified Professional Coder (CPC) and Forensic Medical Auditor. Your goal is 99% accuracy in detecting NCCI violations, upcoding, and unbundling.
+    const prompt = `You are an elite Medicare/Medicaid CPC Auditor specializing in US healthcare billing fraud detection.
 
-[EVIDENCE - OCR TEXT FROM BILL]
-"""${extractedText.substring(0, 3000)}"""
+[EXTRACTED BILLING DATA - ENHANCED OCR]
+Facility: ${facilityName}
+Document Type: ${documentType}
+Total Patient Responsibility: $${totalAmount}
+Insurance Paid: $${billSummary.insurancePaid || 'Unknown'}
 
-[EXPERT AUDIT RULES]
-${JSON.stringify(combinedRules)}
+LINE ITEMS (${lineItems.length} items):
+${JSON.stringify(lineItems.slice(0, 10), null, 2)}
+
+PRE-DETECTED ISSUES FROM OCR:
+${JSON.stringify(detectedIssues, null, 2)}
+
+[EXPERT AUDIT RULES FOR ${category}]
+${JSON.stringify(combinedRules, null, 2)}
 
 [YOUR AUDIT PROTOCOL - CHAIN OF THOUGHT]
-Step 1: Evaluate Completeness. Does the bill have specific 5-digit CPT codes and itemized prices? Or is it a summary?
-Step 2: Line-by-Line Cross-Reference. Match every line item against the Expert Audit Rules.
-Step 3: Generate Questions. You MUST inject the EXACT prices, codes, and item names from the OCR text into your questions to prove you are analyzing their specific bill.
+Step 1: Review the ACTUAL line items above with CPT codes and prices
+Step 2: Cross-reference against Expert Audit Rules for common violations
+Step 3: Check pre-detected issues from OCR analysis
+Step 4: Generate ${questionCount} targeted questions referencing SPECIFIC line items
 
-[STRICT QUESTION SEQUENCE REQUIREMENTS]
-You MUST generate EXACTLY 6 to 8 questions. 
-1. Mandatory: "Is your annual household income roughly below $60,000?" (Charity Care check)
-2. Mandatory: "Does this document show specific 5-digit CPT codes, or is it just a summary?"
-3. Target #1: Find the MOST EXPENSIVE item. Inject its name and price. Ask if it matches the reality of the visit.
-4. Target #2: Look for Upcoding (e.g., 99285, 99205, Level 4/5). 
-5. Target #3: Look for Unbundling (supplies, labs, IV starts billed separately).
-6. Target #4: Look for Phantom charges (providers not seen, excessive time billed).
-7/8. Any other specific anomalies. If no more anomalies, ask a standard verification question regarding the duration of the visit.
+[QUESTION GENERATION REQUIREMENTS]
+Generate EXACTLY ${questionCount} questions:
+1. Mandatory: Charity Care eligibility check ($60K household income threshold)
+2. Mandatory: Itemized bill availability (critical for audit capability)
+3-${questionCount}. Target specific line items from the data above:
+   - Reference EXACT descriptions and amounts from line items
+   - Focus on highest charges first
+   - Address pre-detected issues (upcoding, unbundling, duplicates)
+   - For ${category} category, prioritize relevant violations
+   
+CRITICAL RULES:
+- If lineItems exist: inject actual CPT codes, descriptions, and prices into questions
+- If documentType is "summary_bill": ask about itemized bill availability
+- If detectedIssues has flags: generate questions to confirm those issues
+- Each question must have "reasoning" explaining why you generated it
+- Weight values should reflect realistic overcharge potential ($150-$3000 range)
 
 [OUTPUT FORMAT - JSON ONLY]
-Produce ONLY a valid JSON array of objects. No markdown formatting.
-CRITICAL: You MUST include a "reasoning" key in each object. This is your internal Chain of Thought explaining WHY you generated this question based on the OCR data.
+Return ONLY a valid JSON array. No markdown.
 
 [
   {
     "id": "q1",
-    "reasoning": "I noticed the text includes 'Hospital'. IRS 501r mandates charity care screening for non-profits.",
-    "question": "Is your household income roughly below $60,000?",
-    "context": "Non-profit hospitals are legally mandated to forgive or discount bills for lower-income patients.",
+    "reasoning": "Facility is '${facilityName}'. If non-profit, IRS 501(r) requires charity care screening.",
+    "question": "Is your annual household income below $60,000?",
+    "context": "Non-profit hospitals must offer financial assistance to low-income patients. Typical savings: 40-60% of charges.",
     "errorType": "Charity Care Eligibility",
     "options": [
-      { "label": "Yes", "value": "yes", "weight": 800 },
+      { "label": "Yes", "value": "yes", "weight": ${Math.round(totalAmount * 0.5)} },
       { "label": "No", "value": "no", "weight": 0 },
-      { "label": "Not Sure", "value": "not-sure", "weight": 400 }
+      { "label": "Not Sure", "value": "not-sure", "weight": ${Math.round(totalAmount * 0.25)} }
     ]
   },
   {
-    "id": "q3",
-    "reasoning": "OCR shows 'ER VISIT LEVEL 5' (CPT 99285) billed at $3,250. This requires high complexity. I must verify severity.",
-    "question": "I see a charge for 'ER VISIT LEVEL 5' (99285) at $3,250. This code is for life-threatening emergencies. Was your condition truly a severe emergency (like a heart attack or severe trauma)?",
-    "context": "Billing a Level 5 code for minor issues (flu, minor cuts) is illegal upcoding under CMS guidelines.",
-    "errorType": "E/M Severity Upcoding",
+    "id": "q2",
+    "reasoning": "Document type is '${documentType}'. Need to confirm CPT code visibility for line-item audit.",
+    "question": "Does your bill show specific 5-digit CPT codes (like 99285, 70450) for each charge?",
+    "context": "Itemized bills with CPT codes allow precise error detection. Summary bills hide overcharges.",
+    "errorType": "Audit Requirement",
     "options": [
-      { "label": "Yes, it was severe", "value": "no", "weight": 0 },
-      { "label": "No, it was a minor issue", "value": "yes", "weight": 800 },
-      { "label": "Not Sure", "value": "not-sure", "weight": 400 }
+      { "label": "Yes, I see CPT codes", "value": "yes", "weight": 0 },
+      { "label": "No, only category totals", "value": "no", "weight": 0 },
+      { "label": "Not Sure", "value": "not-sure", "weight": 0 }
     ]
   }
+  // Generate ${questionCount - 2} more questions based on actual line items and detected issues
 ]`;
 
     // Call secure backend API
@@ -7030,9 +7156,9 @@ CRITICAL: You MUST include a "reasoning" key in each object. This is your intern
     aiText = aiText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
     
     const aiQuestions = JSON.parse(aiText);
-    if (!Array.isArray(aiQuestions) || aiQuestions.length < 5) throw new Error('Invalid or insufficient AI questions');
+    if (!Array.isArray(aiQuestions) || aiQuestions.length < 4) throw new Error('Invalid or insufficient AI questions');
 
-    console.log('[AI Quiz Generator] ✓ Generated CoT Enforced Questions:', aiQuestions);
+    console.log('[AI Quiz Generator] ✓ Generated', aiQuestions.length, 'CoT Enforced Questions based on', lineItems.length, 'line items');
     return aiQuestions;
 
   } catch (error) {
@@ -7206,37 +7332,69 @@ async function generateAIVerdict(extractedText, auditFindings, detectedAmount, q
       "/medical-credit-report-removal"
     ];
     
-    const prompt = `You are a Senior Medical Billing Auditor.
+    const prompt = `You are a Senior Medical Billing Auditor with 15+ years experience in US healthcare billing compliance.
 
 [INPUT DATA]
 - Bill Total: $${detectedAmount}
 - User Quiz Answers: ${JSON.stringify(quizResponses)}
 - Has Itemized Bill: ${hasItemizedBill}
 - "Not Sure" Count: ${notSureCount}
+- Total Questions: ${quizResponses.length}
 - Audit Findings: ${JSON.stringify(auditFindings)}
 - Detected Violations: Charity Care=${hasCharityCare}, Upcoding=${hasUpcoding}, Phantom Billing=${hasPhantomBilling}, Unbundling=${hasUnbundling}
 
-[LOGIC RULES - STRICT]
-1. CRITICAL: If 'Has Itemized Bill' is FALSE (user answered 'no'), you CANNOT calculate a refund.
-   - Return: { "refundProbability": "Low (Need Evidence)", "estimatedRefund": 0, "auditorNote": "Audit Impossible - Summary Bill Detected. Without an itemized bill showing CPT/HCPCS codes, we cannot verify specific charges or identify billing errors. Request an itemized bill immediately to proceed with a proper audit.", "recommendedTool": "Request Itemized Bill" }
-   
-2. AMBIGUITY: If "Not Sure" count is >= 2, the user lacks information.
-   - Return: { "refundProbability": "Low (Insufficient Evidence)", "estimatedRefund": 0, "auditorNote": "Insufficient Evidence for Dispute. Multiple uncertain responses indicate you need more details about your charges. Request an itemized bill to see exact CPT codes, quantities, and line-item charges before proceeding.", "recommendedTool": "Request Itemized Bill" }
-   
-3. STANDARD: If Itemized Bill = TRUE and Not Sure < 2:
-   - Calculate realistic refund based on detected violations (use Quiz Savings as minimum)
-   - If Charity Care is eligible, refund should be 60-80% of total bill
-   - If Phantom Billing or Upcoding found, use weighted values from quiz
-   - Recommend appropriate dispute tool ("Medical Bill Dispute Letter", "Urgent Care Bill Dispute", etc.)
+[IMPROVED LOGIC RULES]
+1. NOT SURE HANDLING (RELAXED):
+   - Calculate uncertainty ratio: ${notSureCount} / ${quizResponses.length} = ${(notSureCount / quizResponses.length).toFixed(2)}
+   - If ratio > 0.4 (40% uncertain):
+     * Set confidence to "Low"
+     * Reduce refund by 40% (multiply estimatedRefund by 0.6)
+     * Add note: "Audit confidence reduced due to uncertain responses"
+   - If ratio <= 0.4: proceed normally with full refund calculation
 
-[JSON OUTPUT FORMAT - NO MARKDOWN]
-Return strictly valid JSON (no \`\`\`json tags):
-{ 
-  "refundProbability": "Low (Need Evidence)" | "High (85%)", 
-  "estimatedRefund": 0 or Number, 
-  "auditorNote": "Professional 2-3 sentence explanation", 
-  "recommendedTool": "MUST BE EXACTLY ONE OF THESE STRINGS: ${toolRoutesList.join(', ')}" 
-}`;
+2. ITEMIZED BILL HANDLING (RELAXED):
+   - If itemized bill = FALSE:
+     * Can still audit summary-level issues (total amounts, insurance vs patient responsibility)
+     * Reduce precision by 30% (multiply by 0.7)
+     * Add note: "Line-item audit unavailable without detailed bill. Estimate based on summary totals and common billing patterns."
+     * DO NOT automatically return $0
+   - If itemized bill = TRUE: full precision analysis
+
+3. CHARITY CARE (REALISTIC):
+   - If eligible (household income < $60K) AND facility is non-profit:
+     * Discount range: 40-60% of PATIENT RESPONSIBILITY (not total charges)
+     * Requires application - not automatic
+     * Note: "You may qualify for financial assistance. Non-profit hospitals must offer charity care programs."
+
+4. STANDARD REFUND CALCULATION:
+   - Sum confirmed violation weights from quiz
+   - Apply confidence adjustments (steps 1-2 above)
+   - Cap at 100% of patient responsibility (not total charges)
+   - Minimum: $0 (if truly no violations found)
+   - Include confidence level based on data quality
+
+5. TOOL RECOMMENDATION:
+   - If mainly coding/pricing errors: "Medical Bill Dispute Letter"
+   - If insurance denial: "Insurance Claim Denied Appeal"
+   - If out-of-network surprise: "Out-of-Network Billing Dispute"
+   - If need line items: "Request Itemized Bill"
+   - Choose most relevant from: ${toolRoutesList.join(', ')}
+
+[OUTPUT JSON - NO MARKDOWN]
+{
+  "reasoning": {
+    "dataQuality": "Brief assessment of bill data completeness",
+    "violationsFound": "List specific issues detected",
+    "uncertaintyImpact": "How not-sure answers affected estimate"
+  },
+  "refundProbability": "High (85%)" | "Medium (60%)" | "Low (35%)",
+  "estimatedRefund": number,
+  "confidenceLevel": "High" | "Medium" | "Low",
+  "auditorNote": "Professional 2-3 sentence explanation for patient",
+  "recommendedTool": "Exact tool name from list above"
+}
+
+Return ONLY valid JSON. No markdown.`;
     
     // Call secure backend API
     console.log('[Gemini API] Calling backend proxy for AI verdict');
@@ -7539,10 +7697,11 @@ async function initializeTargetedQuiz(category) {
     // Call Gemini AI and wait for response
     (async () => {
       try {
-        // ========== STEP 7: "NOT SURE" PENALTY OVERRIDE ==========
-        // If user answered "Not Sure" too many times, skip AI and route to itemized bill
-        if (notSureCount >= 3 || (notSureCount >= 2 && questions.length <= 4)) {
-          console.log(`[Phase 3] Not Sure penalty triggered: ${notSureCount} uncertain answers out of ${questions.length} questions`);
+        // ========== STEP 7: "NOT SURE" PENALTY OVERRIDE (RELAXED) ==========
+        // Only trigger if user is truly uncertain (>40% of questions)
+        const uncertaintyRatio = notSureCount / questions.length;
+        if (uncertaintyRatio > 0.5 && notSureCount >= 4) {
+          console.log(`[Phase 3] High uncertainty detected: ${notSureCount} uncertain answers out of ${questions.length} questions (${(uncertaintyRatio * 100).toFixed(0)}%)`);  
           
           // Stop analyzing animation
           if (messageInterval) clearInterval(messageInterval);
