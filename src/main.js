@@ -7365,6 +7365,17 @@ function setupBillScanning() {
           scanProgressFill.style.width = '70%';
           scanProgressText.textContent = '🔍 AI analyzing billing codes... 70%';
           
+          // Start smooth progress animation from 70% to 88%
+          let currentProgress = 70;
+          const progressInterval = setInterval(() => {
+            if (currentProgress < 88) {
+              currentProgress += Math.random() * 2; // Random increment 0-2%
+              if (currentProgress > 88) currentProgress = 88;
+              scanProgressFill.style.width = `${Math.floor(currentProgress)}%`;
+              scanProgressText.textContent = `🔍 AI analyzing billing codes... ${Math.floor(currentProgress)}%`;
+            }
+          }, 800); // Update every 0.8 seconds
+          
           const base64String = reader.result.split(',')[1];
           
           // Call secure backend API instead of direct Gemini API
@@ -7463,6 +7474,9 @@ OUTPUT ONLY VALID JSON. NO EXPLANATIONS.` },
             localStorage.setItem('finalVerdict', JSON.stringify(finalVerdict));
           }
           
+          // Stop progress animation and complete
+          clearInterval(progressInterval);
+          
           // Handle new enhanced JSON structure
           const facilityName = aiResult.facilityInfo?.name || aiResult.facilityName || null;
           const totalAmount = aiResult.billSummary?.patientResponsibility || aiResult.billSummary?.totalCharges || aiResult.totalAmount || 0;
@@ -7521,6 +7535,7 @@ OUTPUT ONLY VALID JSON. NO EXPLANATIONS.` },
             }, 800);
           } else { throw new Error("Invalid Data"); }
         } catch (inner) { 
+          clearInterval(progressInterval); // Stop animation on error
           console.error(inner); 
           
           // Handle file size errors
@@ -8082,11 +8097,13 @@ async function initializeTargetedQuiz(category) {
   if (analyzingText) {
     analyzingText.textContent = 'Analyzing your bill with AI...';
     
-    // Animate loading messages
+    // Animate loading messages with progress
     const loadingMessages = [
       'Analyzing your bill with AI...',
       'Cross-referencing Federal guidelines...',
-      'Generating personalized questions...'
+      'Identifying potential overcharges...',
+      'Generating personalized questions...',
+      'Almost ready...'
     ];
     let msgIndex = 0;
     const msgInterval = setInterval(() => {
@@ -8098,10 +8115,10 @@ async function initializeTargetedQuiz(category) {
           analyzingText.style.opacity = '1';
         }, 200);
       }
-    }, 1500);
+    }, 1200); // Faster rotation
     
     // Clear interval after questions are generated
-    setTimeout(() => clearInterval(msgInterval), 4500);
+    setTimeout(() => clearInterval(msgInterval), 6000);
   }
 
   // Generate AI-powered questions
