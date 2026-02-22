@@ -4955,6 +4955,21 @@ function applyAutoFill(form) {
     const auditData = JSON.parse(savedData);
     console.log('[Phase 2 AutoFill] Retrieved audit data:', auditData);
     
+    // Load enhanced data sources
+    const finalVerdictData = localStorage.getItem('finalVerdict');
+    const finalVerdict = finalVerdictData ? JSON.parse(finalVerdictData) : null;
+    
+    const validatedData = localStorage.getItem('medicalAuditValidated');
+    const validated = validatedData ? JSON.parse(validatedData) : null;
+    
+    console.log('[Enhanced AutoFill] finalVerdict:', finalVerdict);
+    console.log('[Enhanced AutoFill] validated:', validated);
+    
+    // Action 3: Show data quality warning if score is low
+    if (validated && validated.dataQualityScore < 55) {
+      showDataQualityWarning(form, validated.dataQualityScore);
+    }
+    
     // Action 2: Map extracted metadata to form inputs
     
     // Helper function to fill field and add visual indicator
@@ -4985,17 +5000,23 @@ function applyAutoFill(form) {
     });
     
     // Fill totalAmount -> billAmount, totalAmount, debtAmount, totalDebtAmount
+    // Enhanced: prefer primaryTotal from validated data if available
     const amountFieldNames = ['billAmount', 'totalAmount', 'totalDebtAmount', 'debtAmount'];
     amountFieldNames.forEach(fieldName => {
       const field = form.querySelector(`input[name="${fieldName}"]`);
-      if (field && auditData.totalAmount) {
-        // Format currency using existing logic
-        const rawAmount = auditData.totalAmount.replace(/[^0-9.]/g, '');
-        const number = parseFloat(rawAmount);
-        if (!isNaN(number)) {
-          const formattedValue = `$${number.toLocaleString('en-US')}`;
-          fillField(field, formattedValue);
-          console.log(`[Phase 2 AutoFill] ✓ Filled ${fieldName}: ${formattedValue}`);
+      if (field) {
+        const amountToUse = (validated && validated.primaryTotal) 
+          ? validated.primaryTotal 
+          : auditData.totalAmount;
+        
+        if (amountToUse) {
+          const rawAmount = String(amountToUse).replace(/[^0-9.]/g, '');
+          const number = parseFloat(rawAmount);
+          if (!isNaN(number)) {
+            const formattedValue = `$${number.toLocaleString('en-US')}`;
+            fillField(field, formattedValue);
+            console.log(`[Enhanced AutoFill] ✓ Filled ${fieldName}: ${formattedValue}`);
+          }
         }
       }
     });
@@ -5021,15 +5042,35 @@ function applyAutoFill(form) {
       console.log(`[Phase 2 AutoFill] ✓ Filled patientName: ${auditData.patientName}`);
     }
     
-    // Fill issueType dropdown based on issueCategory or findings
-    // Smart dropdown selector: covers issueType, requestReason, denialReason
+    // Enhanced: Fill issueType dropdown with finalVerdict topIssues or existing logic
     const issueTypeField = form.querySelector('select[name="issueType"], select[name="requestReason"], select[name="denialReason"]');
-    if (issueTypeField && (auditData.verdict || auditData.issueCategory || (auditData.findings && auditData.findings.length > 0))) {
+    if (issueTypeField) {
       let matchFound = false;
       const options = Array.from(issueTypeField.options);
       
-      // 1. Try to find a reasonable match from options
-      if (auditData.findings && auditData.findings.length > 0) {
+      // Priority 1: Use finalVerdict topIssues if available (simple case)
+      if (finalVerdict && finalVerdict.topIssues && finalVerdict.topIssues.length > 0) {
+        const primaryIssue = finalVerdict.topIssues[0];
+        
+        // Try to match with dropdown options
+        for (const option of options) {
+          if (option.value !== 'Other' && option.value !== '' && !option.value.includes('Write my own')) {
+            const optionTextLower = option.text.toLowerCase();
+            const issueLower = primaryIssue.toLowerCase();
+            
+            if (optionTextLower.includes(issueLower) || issueLower.includes(optionTextLower)) {
+              issueTypeField.value = option.value;
+              issueTypeField.classList.add('is-autofilled');
+              matchFound = true;
+              console.log('[Enhanced AutoFill] ✓ Matched with finalVerdict topIssue:', option.value);
+              break;
+            }
+          }
+        }
+      }
+      
+      // Priority 2: Existing logic - Try to find match from audit findings
+      if (!matchFound && auditData.findings && auditData.findings.length > 0) {
         const primaryError = auditData.findings[0].errorType || '';
         for (const option of options) {
           if (option.value !== 'Other' && option.value !== '' && !option.value.includes('Write my own')) {
@@ -5037,7 +5078,6 @@ function applyAutoFill(form) {
             const optionValueLower = option.value.toLowerCase();
             const primaryErrorLower = primaryError.toLowerCase();
             
-            // Check if option matches error type (bidirectional matching)
             if (optionTextLower.includes(primaryErrorLower) || primaryErrorLower.includes(optionValueLower)) {
               issueTypeField.value = option.value;
               issueTypeField.classList.add('is-autofilled');
@@ -5049,13 +5089,13 @@ function applyAutoFill(form) {
         }
       }
       
-      // 2. If no match, force "Other" and fill custom reason
+      // Priority 3: If no match, force "Other" and fill custom reason
       if (!matchFound) {
         const otherOption = options.find(opt => opt.value === 'Other' || opt.value.includes('Write my own'));
         if (otherOption) {
           issueTypeField.value = otherOption.value;
           issueTypeField.classList.add('is-autofilled');
-          console.log('[Phase 2 AutoFill] No exact match. Using "Other"');
+          console.log('[Enhanced AutoFill] No exact match. Using "Other"');
           
           // Dispatch change event to trigger the UI (Custom Input System)
           issueTypeField.dispatchEvent(new Event('change', { bubbles: true }));
@@ -5064,10 +5104,24 @@ function applyAutoFill(form) {
           setTimeout(() => {
             const customReasonField = form.querySelector('textarea[name="customReason"]');
             if (customReasonField) {
-              // Compile a strong legal reason from AI findings
+              // Enhanced: Compile reason with priority to finalVerdict
               let customContent = '';
               
-              if (auditData.verdict) {
+              if (finalVerdict && finalVerdict.topIssues && finalVerdict.topIssues.length > 0) {
+                // Use local verdict data (simple case)
+                customContent = finalVerdict.reasoningSummary || '';
+                customContent += `\n\nDetected Issues:\n`;
+                finalVerdict.topIssues.forEach((issue, idx) => {
+                  customContent += `${idx + 1}. ${issue}\n`;
+                });
+                
+                if (finalVerdict.estimatedOvercharge > 0) {
+                  customContent += `\nEstimated overcharge: $${finalVerdict.estimatedOvercharge.toLocaleString('en-US')}`;
+                  customContent += `\nConfidence level: ${finalVerdict.confidence}%`;
+                }
+                
+                console.log('[Enhanced AutoFill] ✓ Using finalVerdict for customReason');
+              } else if (auditData.verdict) {
                 customContent = `Based on AI audit: ${auditData.verdict}`;
                 if (auditData.findings && auditData.findings.length > 0) {
                   const findingsText = auditData.findings.map(f => f.issue || f.errorType).join(', ');
@@ -5097,18 +5151,68 @@ function applyAutoFill(form) {
                 };
                 customReasonField.addEventListener('focus', removeIndicator);
                 
-                console.log('[Phase 2 AutoFill] ✓ Filled customReason with AI logic');
+                console.log('[Enhanced AutoFill] ✓ Filled customReason with enhanced logic');
               }
             }
-          }, 150); // Small delay to let CSS transition finish
+          }, 150);
         }
       }
     }
     
-    console.log('[Phase 2 AutoFill] ✓ Auto-fill complete');
+    console.log('[Enhanced AutoFill] ✓ Auto-fill complete');
     
   } catch (error) {
-    console.error('[Phase 2 AutoFill] Error during auto-fill:', error);
+    console.error('[Enhanced AutoFill] Error during auto-fill:', error);
+  }
+}
+
+// Show data quality warning banner
+function showDataQualityWarning(form, qualityScore) {
+  try {
+    // Check if warning already exists
+    const existingWarning = form.querySelector('.data-quality-warning');
+    if (existingWarning) return;
+    
+    const warningBanner = document.createElement('div');
+    warningBanner.className = 'data-quality-warning';
+    warningBanner.style.cssText = `
+      background: linear-gradient(135deg, #FF9500 0%, #FF6B00 100%);
+      color: white;
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      line-height: 1.6;
+      box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
+      animation: slideDown 0.4s ease;
+    `;
+    
+    warningBanner.innerHTML = `
+      <div style="display: flex; align-items: flex-start; gap: 12px;">
+        <div style="font-size: 24px; flex-shrink: 0;">⚠️</div>
+        <div>
+          <div style="font-weight: 700; margin-bottom: 6px;">Low Data Quality Detected (Score: ${qualityScore}/100)</div>
+          <div style="opacity: 0.95;">
+            Your bill appears to lack detailed line items or CPT codes. For the strongest dispute case, we recommend 
+            <strong>requesting an itemized bill with CPT codes</strong> before submitting this letter. 
+            This will give you specific charges to challenge and increase your chance of a successful dispute.
+          </div>
+          <div style="margin-top: 10px;">
+            <a href="/request-itemized-medical-bill" data-route="/request-itemized-medical-bill" 
+               style="color: white; text-decoration: underline; font-weight: 600;">
+              → Request Itemized Bill First
+            </a>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Insert at the top of form
+    form.insertBefore(warningBanner, form.firstChild);
+    console.log('[Enhanced AutoFill] ✓ Data quality warning displayed');
+    
+  } catch (error) {
+    console.error('[Enhanced AutoFill] Failed to show quality warning:', error);
   }
 }
 
@@ -6705,6 +6809,451 @@ function classifyBill(text) {
   };
 }
 
+// ==============================
+// VALIDATION LAYER v1 (Local)
+// ==============================
+
+// --- helpers ---
+function toNumberOrNull(v) {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v !== "string") return null;
+  const cleaned = v.trim().replace(/[$,]/g, "");
+  if (!cleaned) return null;
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : null;
+}
+
+function normalizeMoney(v) {
+  const n = toNumberOrNull(v);
+  if (n === null) return null;
+  // avoid crazy OCR like 3250000 for $3,250: we do NOT auto-fix; just keep value
+  return Math.round(n * 100) / 100;
+}
+
+function normalizeISODate(s) {
+  if (!s || typeof s !== "string") return null;
+  const t = s.trim();
+  // already ISO
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  // common US formats: MM/DD/YYYY or M/D/YYYY
+  const m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    const mm = String(m[1]).padStart(2, "0");
+    const dd = String(m[2]).padStart(2, "0");
+    return `${m[3]}-${mm}-${dd}`;
+  }
+  return null;
+}
+
+function normalizeCptLike(code) {
+  if (!code) return null;
+  const s = String(code).trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  // CPT: 5 digits; HCPCS: 1 letter + 4 digits
+  if (/^\d{5}$/.test(s)) return s;
+  if (/^[A-Z]\d{4}$/.test(s)) return s;
+  return null;
+}
+
+function safeArray(a) {
+  return Array.isArray(a) ? a : [];
+}
+
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
+
+// --- main validator ---
+function validateAndNormalizeBill(raw) {
+  const warnings = [];
+  const normalized = {
+    // carry through the fields you already have (expand as needed)
+    isValidBill: raw?.isValidBill ?? raw?.isValid ?? false,
+    confidence: typeof raw?.confidence === "number" ? raw.confidence : null,
+    documentType: raw?.documentType ?? "unknown",
+
+    facilityName: typeof raw?.facilityName === "string" ? raw.facilityName.trim() : null,
+    providerName: typeof raw?.providerName === "string" ? raw.providerName.trim() : null,
+
+    dateOfService: normalizeISODate(raw?.dateOfService),
+    billDate: normalizeISODate(raw?.billDate),
+
+    totalAmount: normalizeMoney(raw?.totalAmount),
+    amountDue: normalizeMoney(raw?.amountDue),
+
+    currency: raw?.currency === "USD" ? "USD" : "USD", // site is US-only
+
+    isItemized: !!raw?.isItemized,
+    hasCPTCodes: !!raw?.hasCPTCodes,
+
+    lineItems: [],
+    totals: {
+      subtotal: normalizeMoney(raw?.totals?.subtotal),
+      adjustments: normalizeMoney(raw?.totals?.adjustments),
+      insurancePaid: normalizeMoney(raw?.totals?.insurancePaid),
+      patientResponsibility: normalizeMoney(raw?.totals?.patientResponsibility),
+    },
+
+    notes: {
+      outOfNetworkMentioned: !!raw?.notes?.outOfNetworkMentioned,
+      priorAuthMentioned: !!raw?.notes?.priorAuthMentioned,
+      denialMentioned: !!raw?.notes?.denialMentioned,
+      collectionMentioned: !!raw?.notes?.collectionMentioned,
+      keywordsFound: safeArray(raw?.notes?.keywordsFound).slice(0, 30).map(String),
+    },
+  };
+
+  // ---- normalize line items (max 30) ----
+  const rawItems = safeArray(raw?.lineItems).slice(0, 30);
+  for (const it of rawItems) {
+    const desc = typeof it?.desc === "string" ? it.desc.trim() : null;
+    const amount = normalizeMoney(it?.amount);
+    const unitPrice = normalizeMoney(it?.unitPrice);
+    const units = toNumberOrNull(it?.units);
+
+    const cpt = normalizeCptLike(it?.cpt);
+    const hcpcs = normalizeCptLike(it?.hcpcs);
+
+    const modifiers = Array.isArray(it?.modifiers)
+      ? it.modifiers.map(m => String(m).trim().toUpperCase()).filter(Boolean).slice(0, 6)
+      : null;
+
+    const date = normalizeISODate(it?.date);
+
+    // Keep item if it has at least description or amount or code (avoid empty junk rows)
+    const hasSignal = !!desc || amount !== null || !!cpt || !!hcpcs;
+    if (!hasSignal) continue;
+
+    normalized.lineItems.push({
+      desc,
+      cpt,
+      hcpcs,
+      revenueCode: typeof it?.revenueCode === "string" ? it.revenueCode.trim() : null,
+      modifiers,
+      units: units !== null ? units : null,
+      unitPrice,
+      amount,
+      date,
+    });
+  }
+
+  // ---- data sanity checks ----
+  if (!normalized.facilityName) warnings.push({ code: "MISSING_FACILITY", level: "medium" });
+  if (!normalized.totalAmount && !normalized.amountDue) warnings.push({ code: "MISSING_TOTALS", level: "high" });
+
+  // determine the "primary total"
+  const primaryTotal = normalized.amountDue ?? normalized.totalAmount ?? null;
+
+  // itemization quality
+  if (normalized.lineItems.length === 0) {
+    warnings.push({ code: "NO_LINE_ITEMS", level: "high" });
+    normalized.isItemized = false;
+  } else if (normalized.lineItems.length < 3) {
+    warnings.push({ code: "TOO_FEW_LINE_ITEMS", level: "medium" });
+  }
+
+  // CPT presence check (actual)
+  const hasAnyCode = normalized.lineItems.some(x => !!x.cpt || !!x.hcpcs);
+  if (normalized.hasCPTCodes && !hasAnyCode) {
+    warnings.push({ code: "CPT_FLAG_TRUE_BUT_NONE_FOUND", level: "medium" });
+    normalized.hasCPTCodes = false;
+  }
+  if (!normalized.hasCPTCodes && hasAnyCode) normalized.hasCPTCodes = true;
+
+  // totals consistency (do not "fix", just warn)
+  const sumLineItems = normalized.lineItems
+    .map(x => x.amount)
+    .filter(v => typeof v === "number")
+    .reduce((a, b) => a + b, 0);
+
+  if (primaryTotal !== null && sumLineItems > 0) {
+    const ratio = sumLineItems / primaryTotal;
+    // allow wide range due to adjustments, insurance, partial statements
+    if (ratio < 0.5) warnings.push({ code: "LINEITEM_SUM_MUCH_LOWER_THAN_TOTAL", level: "medium", meta: { ratio: Number(ratio.toFixed(2)) } });
+    if (ratio > 1.6) warnings.push({ code: "LINEITEM_SUM_MUCH_HIGHER_THAN_TOTAL", level: "high", meta: { ratio: Number(ratio.toFixed(2)) } });
+  }
+
+  // document-type guardrail (if clearly not a bill/eob)
+  const looksLikeNonMedical = normalized.notes.keywordsFound.length === 0 && !normalized.facilityName && normalized.lineItems.length === 0;
+  if (looksLikeNonMedical) warnings.push({ code: "LOW_MEDICAL_SIGNAL", level: "high" });
+
+  // ---- compute Data Quality Score (0-100) ----
+  let score = 0;
+
+  // base signals
+  if (normalized.facilityName) score += 15;
+  if (normalized.dateOfService) score += 10;
+  if (primaryTotal !== null) score += 15;
+
+  // line items
+  if (normalized.lineItems.length >= 3) score += 20;
+  else if (normalized.lineItems.length >= 1) score += 10;
+
+  // codes
+  if (normalized.hasCPTCodes) score += 15;
+
+  // penalties
+  for (const w of warnings) {
+    if (w.level === "high") score -= 12;
+    if (w.level === "medium") score -= 6;
+  }
+
+  score = clamp(score, 0, 100);
+
+  // classify audit readiness
+  const auditReady = score >= 55 && normalized.lineItems.length >= 1 && primaryTotal !== null;
+
+  return {
+    normalizedBill: normalized,
+    dataQualityScore: score,
+    auditReady,
+    primaryTotal,
+    sumLineItems: Math.round(sumLineItems * 100) / 100,
+    warnings,
+  };
+}
+
+// ==================================
+// RULE-BASED AUDIT ENGINE v1
+// ==================================
+
+function runAuditEngine(validationResult) {
+  const { normalizedBill, dataQualityScore, primaryTotal } = validationResult;
+
+  const flags = [];
+  let ruleScore = 0;
+
+  const items = normalizedBill.lineItems || [];
+
+  if (!items.length) {
+    return {
+      flags: [],
+      ruleScore: 0,
+      caseType: "limited",
+      confidence: Math.max(20, dataQualityScore * 0.5)
+    };
+  }
+
+  // ----------------------------------
+  // 1. Duplicate Charge Detection
+  // ----------------------------------
+  const seen = new Map();
+
+  for (const item of items) {
+    const key = (item.desc || "").toLowerCase().trim();
+    if (!key || item.amount == null) continue;
+
+    if (!seen.has(key)) {
+      seen.set(key, []);
+    }
+    seen.get(key).push(item);
+  }
+
+  for (const [desc, group] of seen.entries()) {
+    if (group.length > 1) {
+      const amounts = group.map(g => g.amount).filter(Boolean);
+      if (amounts.length >= 2) {
+        flags.push({
+          type: "DUPLICATE_CHARGE",
+          severity: "high",
+          evidence: group.slice(0, 3)
+        });
+        ruleScore += 25;
+      }
+    }
+  }
+
+  // ----------------------------------
+  // 2. High Single Item Ratio
+  // ----------------------------------
+  if (primaryTotal && primaryTotal > 0) {
+    const sorted = [...items]
+      .filter(i => i.amount != null)
+      .sort((a, b) => b.amount - a.amount);
+
+    if (sorted.length) {
+      const top = sorted[0];
+      const ratio = top.amount / primaryTotal;
+
+      if (ratio >= 0.6) {
+        flags.push({
+          type: "HIGH_SINGLE_ITEM",
+          severity: "high",
+          evidence: [top]
+        });
+        ruleScore += 20;
+      } else if (ratio >= 0.4) {
+        flags.push({
+          type: "HIGH_SINGLE_ITEM",
+          severity: "medium",
+          evidence: [top]
+        });
+        ruleScore += 10;
+      }
+    }
+  }
+
+  // ----------------------------------
+  // 3. ER Level 5 Detection (99285)
+  // ----------------------------------
+  for (const item of items) {
+    if (item.cpt === "99285" || (item.desc && item.desc.toLowerCase().includes("level 5"))) {
+      flags.push({
+        type: "HIGH_ER_LEVEL",
+        severity: "medium",
+        evidence: [item]
+      });
+      ruleScore += 15;
+      break;
+    }
+  }
+
+  // ----------------------------------
+  // 4. Possible Out-of-Network Specialist
+  // ----------------------------------
+  const oonKeywords = ["anesthesia", "radiology", "pathology", "laboratory", "lab"];
+
+  for (const item of items) {
+    if (item.desc) {
+      const d = item.desc.toLowerCase();
+      if (oonKeywords.some(k => d.includes(k))) {
+        flags.push({
+          type: "POSSIBLE_OON_SPECIALIST",
+          severity: "medium",
+          evidence: [item]
+        });
+        ruleScore += 10;
+        break;
+      }
+    }
+  }
+
+  // ----------------------------------
+  // 5. Unbundling Suspicion
+  // ----------------------------------
+  const descList = items.map(i => (i.desc || "").toLowerCase());
+  if (descList.some(d => d.includes("comprehensive metabolic")) &&
+      descList.some(d => d.includes("glucose"))) {
+    flags.push({
+      type: "UNBUNDLING_SUSPECTED",
+      severity: "medium",
+      evidence: items.slice(0, 3)
+    });
+    ruleScore += 15;
+  }
+
+  // ----------------------------------
+  // Case Type Decision
+  // ----------------------------------
+  let caseType = "simple";
+
+  if (
+    ruleScore >= 50 ||
+    dataQualityScore < 50 ||
+    flags.length >= 3
+  ) {
+    caseType = "complex";
+  }
+
+  // ----------------------------------
+  // Confidence Calculation
+  // ----------------------------------
+  let confidence =
+    0.6 * (100 - Math.min(ruleScore, 100)) +
+    0.4 * dataQualityScore;
+
+  confidence = Math.max(20, Math.min(95, Math.round(confidence)));
+
+  return {
+    flags,
+    ruleScore,
+    caseType,
+    confidence
+  };
+}
+
+// =======================================
+// SIMPLE CASE LOCAL VERDICT ENGINE v1
+// =======================================
+
+function runSimpleVerdict(validationResult, auditResult) {
+  const { normalizedBill, primaryTotal } = validationResult;
+  const { flags, ruleScore, confidence } = auditResult;
+
+  if (!primaryTotal || primaryTotal <= 0) {
+    return {
+      verdictLevel: "low",
+      estimatedOvercharge: 0,
+      reasoningSummary: "Insufficient total amount data to estimate overcharge.",
+      topIssues: [],
+      confidence: Math.max(30, confidence),
+      recommendedAction: "Request itemized bill for more accurate review."
+    };
+  }
+
+  let estimated = 0;
+  const issues = [];
+
+  for (const flag of flags) {
+    switch (flag.type) {
+
+      case "DUPLICATE_CHARGE":
+        for (const item of flag.evidence) {
+          if (item.amount) estimated += item.amount;
+        }
+        issues.push("Duplicate charge detected.");
+        break;
+
+      case "HIGH_SINGLE_ITEM":
+        const highItem = flag.evidence[0];
+        if (highItem?.amount) {
+          estimated += highItem.amount * 0.3;
+        }
+        issues.push("Single high-cost line item appears disproportionate.");
+        break;
+
+      case "HIGH_ER_LEVEL":
+        estimated += primaryTotal * 0.15;
+        issues.push("Emergency Level 5 coding may be excessive.");
+        break;
+
+      case "POSSIBLE_OON_SPECIALIST":
+        estimated += primaryTotal * 0.25;
+        issues.push("Out-of-network specialist billing suspected.");
+        break;
+
+      case "UNBUNDLING_SUSPECTED":
+        estimated += primaryTotal * 0.2;
+        issues.push("Possible unbundling of lab services.");
+        break;
+    }
+  }
+
+  // Cap to avoid unrealistic estimate
+  estimated = Math.min(estimated, primaryTotal * 0.5);
+  estimated = Math.round(estimated);
+
+  let verdictLevel = "low";
+
+  if (ruleScore > 30) verdictLevel = "high";
+  else if (ruleScore > 10) verdictLevel = "moderate";
+
+  return {
+    verdictLevel,
+    estimatedOvercharge: estimated,
+    reasoningSummary:
+      estimated > 0
+        ? "Based on structured billing patterns, certain charges may be disputable."
+        : "No strong overcharge indicators detected in structured review.",
+    topIssues: issues.slice(0, 3),
+    confidence,
+    recommendedAction:
+      estimated > 0
+        ? "Consider disputing flagged charges using a formal dispute letter."
+        : "Request clarification or itemized billing from provider."
+  };
+}
+
 // ========== OCR BILL SCANNING LOGIC ==========
 
 function setupBillScanning() {
@@ -6765,6 +7314,7 @@ function setupBillScanning() {
       const amount = document.getElementById('manual-amount').value.trim().replace(/[$,]/g, '') || "0";
       
       localStorage.setItem('medicalAuditData', JSON.stringify({ isValid: true, facilityName: facility, totalAmount: amount, issueCategory: "General Doctor Visit" }));
+      localStorage.setItem('auditMode', 'limited'); // Manual entry always limited
       detectedAmount = amount;
       currentBillCategory = { category: "General Doctor Visit", route: '/medical-bill-dispute-letter' };
       currentBillText = "Manual Entry: " + facility;
@@ -6900,6 +7450,19 @@ OUTPUT ONLY VALID JSON. NO EXPLANATIONS.` },
           let aiText = data.candidates[0].content.parts[0].text.replace(/```json/gi, '').replace(/```/gi, '').trim();
           const aiResult = JSON.parse(aiText);
           
+          // Run validation layer
+          const v = validateAndNormalizeBill(aiResult);
+          
+          // Run audit engine
+          const auditResult = runAuditEngine(v);
+          
+          // Run simple verdict if applicable
+          let finalVerdict;
+          if (auditResult.caseType === "simple") {
+            finalVerdict = runSimpleVerdict(v, auditResult);
+            localStorage.setItem('finalVerdict', JSON.stringify(finalVerdict));
+          }
+          
           // Handle new enhanced JSON structure
           const facilityName = aiResult.facilityInfo?.name || aiResult.facilityName || null;
           const totalAmount = aiResult.billSummary?.patientResponsibility || aiResult.billSummary?.totalCharges || aiResult.totalAmount || 0;
@@ -6910,6 +7473,14 @@ OUTPUT ONLY VALID JSON. NO EXPLANATIONS.` },
             
             // Store enhanced data for downstream use
             localStorage.setItem('medicalAuditData', JSON.stringify(aiResult));
+            // Store validated + normalized data
+            localStorage.setItem('medicalAuditValidated', JSON.stringify(v));
+            // Store audit engine results
+            localStorage.setItem('medicalAuditEngine', JSON.stringify(auditResult));
+            // Store key audit metrics
+            localStorage.setItem('caseType', auditResult.caseType);
+            localStorage.setItem('ruleScore', auditResult.ruleScore);
+            localStorage.setItem('confidenceScore', auditResult.confidence);
             
             scanProgressFill.style.width = '100%';
             scanProgressText.textContent = '✅ Analysis complete! Preparing audit... 100%';
@@ -6932,10 +7503,19 @@ OUTPUT ONLY VALID JSON. NO EXPLANATIONS.` },
               const quizWrapper = document.getElementById('auditor-quiz-wrapper');
               if (quizWrapper) quizWrapper.style.display = 'block';
 
-              const category = aiResult.issueCategory || 'General Doctor Visit';
+              // Determine audit mode based on data quality
+              let category;
+              if (v.auditReady) {
+                localStorage.setItem('auditMode', 'full');
+                category = aiResult.issueCategory || 'General Doctor Visit';
+              } else {
+                localStorage.setItem('auditMode', 'limited');
+                category = 'General Doctor Visit'; // Force to general category for limited data
+              }
+              
               currentBillCategory = { category: category, route: '/medical-bill-dispute-letter' };
               currentBillText = JSON.stringify(aiResult);
-              detectedAmount = String(totalAmount);
+              detectedAmount = (v.primaryTotal ?? totalAmount ?? 0).toString();
 
               initializeTargetedQuiz(category);
             }, 800);
@@ -7804,38 +8384,68 @@ async function initializeTargetedQuiz(category) {
         
         // ========== GEMINI AI VERDICT ==========
         
-        // Call Gemini API for AI-generated verdict with quiz savings context
-        const aiVerdict = await generateAIVerdict(
-          currentBillText || 'No text extracted',
-          auditFindings,
-          detectedAmount || '0',
-          Math.round(calculatedRefund),
-          quizResponses // ========== PHASE 3: Pass quiz responses ==========
-        );
+        // Check case type to determine if AI verdict is needed
+        const storedCaseType = localStorage.getItem('caseType');
+        let aiVerdict;
+        
+        if (storedCaseType === 'complex') {
+          // Call Gemini API for AI-generated verdict with quiz savings context (complex cases only)
+          aiVerdict = await generateAIVerdict(
+            currentBillText || 'No text extracted',
+            auditFindings,
+            detectedAmount || '0',
+            Math.round(calculatedRefund),
+            quizResponses // ========== PHASE 3: Pass quiz responses ==========
+          );
+          console.log('[AI Verdict] Complex case - Received AI verdict:', aiVerdict);
+        } else {
+          // Skip AI call for simple cases - use local verdict
+          console.log('[AI Verdict] Simple case - Skipping AI call, using local verdict');
+          aiVerdict = null; // Will use local verdict stored earlier
+        }
         
         console.log('[AI Verdict] Received:', aiVerdict);
         
-        // ========== UPGRADED LOGIC: Trust AI's judgment, cap at 100% of bill ==========
+        // Load finalVerdict for simple cases
+        const storedFinalVerdict = localStorage.getItem('finalVerdict');
+        const finalVerdictData = storedFinalVerdict ? JSON.parse(storedFinalVerdict) : null;
+        
+        // ========== UPGRADED LOGIC: Use finalVerdict for simple, AI for complex ==========
         let finalRefund = 0;
         
-        if (aiVerdict && aiVerdict.estimatedRefund && aiVerdict.estimatedRefund > 0) {
-          // Cap at 100% of bill (total forgiveness), not 40%
+        if (storedCaseType === 'simple' && finalVerdictData && finalVerdictData.estimatedOvercharge > 0) {
+          // Use local verdict for simple cases
+          finalRefund = Math.min(finalVerdictData.estimatedOvercharge, billTotal);
+          console.log('[Local Verdict] Using local refund estimate:', finalRefund);
+        } else if (aiVerdict && aiVerdict.estimatedRefund && aiVerdict.estimatedRefund > 0) {
+          // Use AI verdict for complex cases
           finalRefund = Math.min(aiVerdict.estimatedRefund, billTotal);
           console.log('[AI Verdict] Using AI refund estimate:', finalRefund);
         } else {
-          // Fallback if AI fails - cap at 100% of bill
+          // Fallback if both fail - cap at 100% of bill
           finalRefund = Math.min(Math.round(calculatedRefund), billTotal);
-          console.log('[AI Verdict] ⚠️ AI refund invalid or 0. Using calculatedRefund:', finalRefund);
+          console.log('[Verdict] ⚠️ Using calculatedRefund fallback:', finalRefund);
         }
         
-        console.log('[AI Verdict] Final Refund Amount:', finalRefund);
+        console.log('[Verdict] Final Refund Amount:', finalRefund);
         
         // Calculate error probability (0-100%)
         const violationCount = detectedFlags.length + quizResponses.filter(r => r.answer === 'yes').length;
         const errorProbability = Math.min(Math.round((violationCount / (questions.length + 4)) * 100), 95);
         
-        // Generate final verdict (use AI note if available)
-        let verdict = aiVerdict.auditorNote || '';
+        // Generate final verdict (prioritize finalVerdict for simple, AI for complex)
+        let verdict = '';
+        
+        if (storedCaseType === 'simple' && finalVerdictData) {
+          verdict = finalVerdictData.reasoningSummary || '';
+          if (finalVerdictData.topIssues && finalVerdictData.topIssues.length > 0) {
+            verdict += ` Issues detected: ${finalVerdictData.topIssues.join(', ')}.`;
+          }
+          console.log('[Local Verdict] Using local verdict text');
+        } else if (aiVerdict && aiVerdict.auditorNote) {
+          verdict = aiVerdict.auditorNote;
+          console.log('[AI Verdict] Using AI verdict text');
+        }
         
         if (!verdict) {
           if (detectedFlags.length > 0) {
@@ -7879,9 +8489,21 @@ async function initializeTargetedQuiz(category) {
         const resultDescription = document.querySelector('.result-description');
         
         if (resultBadge) {
-          // Use AI refundProbability if available
-          const probabilityText = aiVerdict.refundProbability || `${errorProbability}% Likelihood of Refund`;
-          const probabilityClass = (aiVerdict.refundProbability && aiVerdict.refundProbability.includes('High')) || errorProbability >= 70 ? 'high-probability' : 'moderate-probability';
+          // Use finalVerdict confidence for simple, AI for complex
+          let probabilityText;
+          let probabilityClass;
+          
+          if (storedCaseType === 'simple' && finalVerdictData) {
+            probabilityText = `${finalVerdictData.confidence}% Confidence`;
+            probabilityClass = finalVerdictData.confidence >= 70 ? 'high-probability' : 'moderate-probability';
+          } else if (aiVerdict && aiVerdict.refundProbability) {
+            probabilityText = aiVerdict.refundProbability;
+            probabilityClass = aiVerdict.refundProbability.includes('High') ? 'high-probability' : 'moderate-probability';
+          } else {
+            probabilityText = `${errorProbability}% Likelihood of Refund`;
+            probabilityClass = errorProbability >= 70 ? 'high-probability' : 'moderate-probability';
+          }
+          
           resultBadge.innerHTML = `
             <span class="probability-badge ${probabilityClass}">Auditor's Verdict: ${probabilityText}</span>
           `;
@@ -7890,8 +8512,14 @@ async function initializeTargetedQuiz(category) {
         if (resultDescription) {
           let breakdownHtml = '<div class="audit-breakdown">';
           
-          // AI Auditor's Note (NEW)
-          if (aiVerdict.auditorNote) {
+          // Auditor's Note (prioritize finalVerdict for simple, AI for complex)
+          if (storedCaseType === 'simple' && finalVerdictData && finalVerdictData.reasoningSummary) {
+            breakdownHtml += `
+              <div class="auditor-note">
+                <p>${finalVerdictData.reasoningSummary}</p>
+              </div>
+            `;
+          } else if (aiVerdict && aiVerdict.auditorNote) {
             breakdownHtml += `
               <div class="auditor-note">
                 <p>${aiVerdict.auditorNote}</p>
@@ -7935,7 +8563,7 @@ async function initializeTargetedQuiz(category) {
         
         // ========== PHASE 3: HANDLE $0 REFUND FOR INVESTIGATIVE PIVOT ==========
         // If AI recommends "Request Itemized Bill", allow $0 refund
-        if (aiVerdict.recommendedTool === 'Request Itemized Bill' && aiVerdict.estimatedRefund === 0) {
+        if (aiVerdict && aiVerdict.recommendedTool === 'Request Itemized Bill' && aiVerdict.estimatedRefund === 0) {
           finalRefund = 0;
           console.log('[Phase 3] Investigative Pivot: Refund set to $0 (audit impossible without itemized bill)');
         } else if (!finalRefund || finalRefund <= 0) {

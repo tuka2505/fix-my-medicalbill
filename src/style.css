@@ -4253,3 +4253,24 @@ html, body { overflow-x: hidden !important; width: 100% !important; }
   background-color: #D1D1D6 !important;
   transform: scale(0.98);
 }
+
+/* Data Quality Warning Banner Animation */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Data Quality Warning Styling */
+.data-quality-warning a {
+  transition: opacity 0.2s ease;
+}
+
+.data-quality-warning a:hover {
+  opacity: 0.85;
+}
