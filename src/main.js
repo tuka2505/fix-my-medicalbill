@@ -8483,7 +8483,7 @@ async function initializeTargetedQuiz(category) {
   }
 
   let currentQuestion = 0;
-  let confirmedRedFlags = []; // Track confirmed red flags
+  let confirmedRedFlags = []; // Track confirmed red flags with confidence
   let highestRisk = 'NONE'; // Track highest risk level detected
   let blockerDetected = false; // Track if audit blocker found
   quizResponses = []; // Reset quiz responses
@@ -8516,8 +8516,34 @@ async function initializeTargetedQuiz(category) {
               </svg>
             </button>
           `).join('')}
+          </div>
+          
+          <!-- NEW: Confidence Slider (Phase 1 Enhancement) -->
+          <div id="confidence-container" style="display: none; margin-top: 24px; padding: 20px; background: #F5F5F7; border-radius: 12px;">
+            <label style="display: block; font-weight: 600; color: #1D1D1F; margin-bottom: 12px; font-size: 15px;">
+              How confident are you in this answer?
+            </label>
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <span style="font-size: 13px; color: #86868B; white-space: nowrap;">Not Sure</span>
+              <input 
+                type="range" 
+                id="confidence-slider" 
+                min="0" 
+                max="100" 
+                value="70" 
+                style="flex: 1; height: 8px; border-radius: 4px; background: linear-gradient(to right, #FF9500 0%, #34C759 100%); appearance: none; cursor: pointer;"
+              />
+              <span style="font-size: 13px; color: #86868B; white-space: nowrap;">Very Sure</span>
+            </div>
+            <div style="text-align: center; margin-top: 12px;">
+              <span id="confidence-value" style="font-size: 20px; font-weight: 700; color: #0071E3;">70%</span>
+              <span style="font-size: 13px; color: #86868B; margin-left: 8px;">confident</span>
+            </div>
+            <button id="confirm-answer-btn" class="btn" style="margin-top: 16px; width: 100%; background: #0071E3; color: white;">
+              Continue →
+            </button>
+          </div>
         </div>
-      </div>
       `;
       
       // Fade in animation
@@ -8529,63 +8555,123 @@ async function initializeTargetedQuiz(category) {
     // Wait for animation before attaching handlers
     setTimeout(() => {
       const optionButtons = quizContainer.querySelectorAll('.quiz-option-btn');
+      const confidenceContainer = document.getElementById('confidence-container');
+      const confidenceSlider = document.getElementById('confidence-slider');
+      const confidenceValue = document.getElementById('confidence-value');
+      const confirmBtn = document.getElementById('confirm-answer-btn');
+      
+      let selectedAnswer = null;
+      let selectedRisk = null;
+      let selectedFlag = null;
+      let selectedButton = null;
+      
+      // Update confidence display
+      if (confidenceSlider) {
+        confidenceSlider.addEventListener('input', (e) => {
+          const value = e.target.value;
+          confidenceValue.textContent = `${value}%`;
+          
+          // Dynamic color based on confidence
+          if (value < 40) {
+            confidenceValue.style.color = '#FF3B30'; // Red for low confidence
+          } else if (value < 70) {
+            confidenceValue.style.color = '#FF9500'; // Orange for medium
+          } else {
+            confidenceValue.style.color = '#34C759'; // Green for high
+          }
+        });
+      }
+      
       optionButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-          const answer = btn.dataset.value;
-          const risk = btn.dataset.risk;
-          const flagText = btn.dataset.flag;
+          selectedAnswer = btn.dataset.value;
+          selectedRisk = btn.dataset.risk;
+          selectedFlag = btn.dataset.flag;
+          selectedButton = btn;
           
-          // ========== RISK TRACKING (NO DOLLAR CALCULATIONS) ==========
-          
-          // Update highest risk level
-          const riskHierarchy = { 'BLOCKER': 4, 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1, 'NONE': 0 };
-          if (riskHierarchy[risk] > riskHierarchy[highestRisk]) {
-            highestRisk = risk;
-          }
-          
-          // Track blocker detection
-          if (risk === 'BLOCKER' || answer === 'flag') {
-            blockerDetected = true;
-          }
-          
-          // Collect confirmed red flags
-          if (answer === 'flag' && flagText) {
-            confirmedRedFlags.push({
-              riskLevel: risk,
-              description: flagText,
-              question: q.question
-            });
-          }
-          
-          // Store response for analysis
-          quizResponses.push({
-            id: q.id,
-            question: q.question,
-            answer: answer,
-            riskLevel: risk,
-            flagText: flagText
-          });
-          
-          console.log(`[Risk Quiz] ${q.id}: ${answer} (Risk: ${risk})`);
-          
+          // Mark selected
+          optionButtons.forEach(b => b.classList.remove('selected'));
           btn.classList.add('selected');
           
-          // Move to next question
-          if (currentQuestion < questions.length - 1) {
-            setTimeout(() => {
-              currentQuestion++;
-              renderQuestion(currentQuestion);
-            }, 400);
+          // Show confidence slider for definitive answers (not "unsure")
+          if (selectedAnswer === 'flag' || selectedAnswer === 'safe') {
+            confidenceContainer.style.display = 'block';
+            confidenceContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           } else {
-            quizProgressText.textContent = 'Analyzing risk level...';
-            setTimeout(() => {
-              console.log(`[Risk Audit Complete] Flags: ${confirmedRedFlags.length}, Highest Risk: ${highestRisk}`);
-              showResults();
-            }, 600);
+            // For "unsure" answers, proceed immediately without confidence slider
+            processAnswer(selectedAnswer, selectedRisk, selectedFlag, 50); // Default 50% confidence for unsure
           }
         });
       });
+      
+      // Confirm button handler
+      if (confirmBtn) {
+        confirmBtn.addEventListener('click', () => {
+          const confidence = parseInt(confidenceSlider.value);
+          processAnswer(selectedAnswer, selectedRisk, selectedFlag, confidence);
+        });
+      }
     }, 100);
+  }
+  
+  // NEW: Process answer with confidence weighting (Phase 1)
+  function processAnswer(answer, risk, flagText, confidence) {
+    // ========== RISK TRACKING WITH CONFIDENCE (NO DOLLAR CALCULATIONS) ==========
+    
+    // Update highest risk level
+    const riskHierarchy = { 'BLOCKER': 4, 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1, 'NONE': 0 };
+    if (riskHierarchy[risk] > riskHierarchy[highestRisk]) {
+      highestRisk = risk;
+    }
+    
+    // Track blocker detection
+    if (risk === 'BLOCKER' || answer === 'flag') {
+      blockerDetected = true;
+    }
+    
+    // Collect confirmed red flags with confidence weighting
+    if (answer === 'flag' && flagText) {
+      // Calculate evidence strength (baseWeight × confidence)
+      const riskWeights = { 'BLOCKER': 100, 'HIGH': 80, 'MEDIUM': 50, 'LOW': 30, 'NONE': 0 };
+      const baseWeight = riskWeights[risk] || 0;
+      const evidenceStrength = (baseWeight * confidence) / 100;
+      
+      confirmedRedFlags.push({
+        riskLevel: risk,
+        description: flagText,
+        question: questions[currentQuestion].question,
+        confidence: confidence,
+        evidenceStrength: evidenceStrength
+      });
+      
+      console.log(`[Risk Quiz] Flag detected - Confidence: ${confidence}%, Evidence Strength: ${evidenceStrength.toFixed(1)}`);
+    }
+    
+    // Store response for analysis with confidence
+    quizResponses.push({
+      id: questions[currentQuestion].id,
+      question: questions[currentQuestion].question,
+      answer: answer,
+      riskLevel: risk,
+      flagText: flagText,
+      confidence: confidence
+    });
+    
+    console.log(`[Risk Quiz] ${questions[currentQuestion].id}: ${answer} (Risk: ${risk}, Confidence: ${confidence}%)`);
+    
+    // Move to next question
+    if (currentQuestion < questions.length - 1) {
+      setTimeout(() => {
+        currentQuestion++;
+        renderQuestion(currentQuestion);
+      }, 400);
+    } else {
+      quizProgressText.textContent = 'Analyzing risk level...';
+      setTimeout(() => {
+        console.log(`[Risk Audit Complete] Flags: ${confirmedRedFlags.length}, Highest Risk: ${highestRisk}`);
+        showResults();
+      }, 600);
+    }
   }
 
   // Animate analyzing messages during AI processing
@@ -8731,12 +8817,26 @@ async function initializeTargetedQuiz(category) {
       }
       
       if (quizVerdict) {
+        // NEW: Separate high-confidence vs low-confidence flags (Phase 1)
+        const highConfidenceFlags = confirmedRedFlags.filter(f => f.confidence >= 70);
+        const lowConfidenceFlags = confirmedRedFlags.filter(f => f.confidence < 70);
+        
         let flagsHtml = '<ul style="margin: 0; padding-left: 20px; color: #1D1D1F;">';
         confirmedRedFlags.forEach(flag => {
           const riskColor = flag.riskLevel === 'HIGH' ? '#FF3B30' : '#FF9500';
-          flagsHtml += `<li style="margin: 12px 0;"><strong style="color: ${riskColor};">[${flag.riskLevel}]</strong> ${flag.description}</li>`;
+          const confidenceIcon = flag.confidence >= 70 ? '✓' : '?';
+          const confidenceColor = flag.confidence >= 70 ? '#34C759' : '#FF9500';
+          flagsHtml += `<li style="margin: 12px 0;">
+            <strong style="color: ${riskColor};">[${flag.riskLevel}]</strong> ${flag.description}
+            <span style="color: ${confidenceColor}; font-size: 12px; margin-left: 8px;">${confidenceIcon} ${flag.confidence}% confident</span>
+          </li>`;
         });
         flagsHtml += '</ul>';
+        
+        // Calculate average confidence score
+        const avgConfidence = confirmedRedFlags.length > 0 
+          ? Math.round(confirmedRedFlags.reduce((sum, f) => sum + f.confidence, 0) / confirmedRedFlags.length)
+          : 0;
         
         quizVerdict.innerHTML = `
           <div style="padding: 24px;">
@@ -8744,8 +8844,13 @@ async function initializeTargetedQuiz(category) {
             <p style="font-size: 17px; line-height: 1.6; color: #1D1D1F; margin-bottom: 20px;">
               We detected <strong>${confirmedRedFlags.length}</strong> factual discrepancies where the CPT codes billed do not match the services you described receiving. These are strong indicators of billing fraud.
             </p>
+            ${lowConfidenceFlags.length > 0 ? `
+            <div style="background: #FFF9F0; border-left: 4px solid #FF9500; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+              <strong style="color: #FF9500; font-size: 14px;">⚠️ Note:</strong>
+              <span style="color: #1D1D1F; font-size: 14px;"> ${lowConfidenceFlags.length} finding(s) marked as low confidence may need additional documentation.</span>
+            </div>` : ''}
             <div style="background: #FFF3F0; border-left: 4px solid #FF3B30; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-              <strong style="display: block; margin-bottom: 12px; color: #FF3B30;">Confirmed Red Flags:</strong>
+              <strong style="display: block; margin-bottom: 12px; color: #FF3B30;">Confirmed Red Flags (Average Confidence: ${avgConfidence}%):</strong>
               ${flagsHtml}
             </div>
             
@@ -8822,18 +8927,27 @@ async function initializeTargetedQuiz(category) {
       let verdictText = '';
       
       if (overallRisk === 'MEDIUM' && confirmedRedFlags.length > 0) {
+        // Calculate average confidence for MEDIUM risk
+        const avgConfidence = confirmedRedFlags.length > 0 
+          ? Math.round(confirmedRedFlags.reduce((sum, f) => sum + f.confidence, 0) / confirmedRedFlags.length)
+          : 0;
+          
         verdictText = `<p style="font-size: 17px; line-height: 1.6; color: #1D1D1F; margin-bottom: 20px;">
           We found <strong>${confirmedRedFlags.length}</strong> potential coding discrepanc${confirmedRedFlags.length > 1 ? 'ies' : 'y'} that may warrant investigation. Further documentation could strengthen your case.
         </p>`;
         
         let flagsHtml = '<ul style="margin: 0; padding-left: 20px; color: #1D1D1F;">';
         confirmedRedFlags.forEach(flag => {
-          flagsHtml += `<li style="margin: 8px 0;">${flag.description}</li>`;
+          const confidenceIcon = flag.confidence >= 70 ? '✓' : '?';
+          const confidenceColor = flag.confidence >= 70 ? '#34C759' : '#FF9500';
+          flagsHtml += `<li style="margin: 8px 0;">${flag.description} 
+            <span style="color: ${confidenceColor}; font-size: 12px;">${confidenceIcon} ${flag.confidence}%</span>
+          </li>`;
         });
         flagsHtml += '</ul>';
         
         verdictText += `<div style="background: #FFF9F0; border-left: 4px solid #FF9500; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-          <strong style="display: block; margin-bottom: 12px; color: #FF9500;">Potential Issues:</strong>
+          <strong style="display: block; margin-bottom: 12px; color: #FF9500;">Potential Issues (Avg. Confidence: ${avgConfidence}%):</strong>
           ${flagsHtml}
         </div>`;
       } else {
