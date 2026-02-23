@@ -7652,16 +7652,41 @@ function setupBillScanning() {
           scanProgressFill.style.width = '70%';
           scanProgressText.textContent = '🔍 AI analyzing billing codes... 70%';
           
-          // Start smooth progress animation from 70% to 88%
+          // Start smooth progress animation from 70% to 95% with helpful tips
           let currentProgress = 70;
+          const helpfulTips = [
+            '🔍 Checking CPT/HCPCS billing codes...',
+            '💰 Analyzing charge amounts vs Federal rates...',
+            '🏥 Verifying facility charges and fees...',
+            '📋 Reviewing line items for duplicates...',
+            '⚠️ Detecting potential upcoding patterns...',
+            '✅ Cross-referencing with Medicare guidelines...',
+            '🔬 Analyzing diagnostic codes (ICD-10)...',
+            '💊 Checking medication and supply charges...',
+            '🩺 Validating procedure bundling rules...',
+            '📊 Finalizing audit analysis...'
+          ];
+          let tipIndex = 0;
+          
           progressInterval = setInterval(() => {
-            if (currentProgress < 88) {
-              currentProgress += Math.random() * 2; // Random increment 0-2%
-              if (currentProgress > 88) currentProgress = 88;
-              scanProgressFill.style.width = `${Math.floor(currentProgress)}%`;
-              scanProgressText.textContent = `🔍 AI analyzing billing codes... ${Math.floor(currentProgress)}%`;
+            if (currentProgress < 95) {
+              // Slower increment: 0-0.6% every 1.5 seconds = ~60 seconds to reach 95%
+              currentProgress += Math.random() * 0.6;
+              if (currentProgress > 95) currentProgress = 95;
+              
+              const progressPercent = Math.floor(currentProgress);
+              scanProgressFill.style.width = `${progressPercent}%`;
+              
+              // Rotate through helpful tips
+              const currentTip = helpfulTips[tipIndex % helpfulTips.length];
+              scanProgressText.textContent = `${currentTip} ${progressPercent}%`;
+              
+              // Change tip every ~6 seconds (4 intervals)
+              if (Math.floor(currentProgress) % 6 === 0) {
+                tipIndex++;
+              }
             }
-          }, 800); // Update every 0.8 seconds
+          }, 1500); // Update every 1.5 seconds (slower, more realistic)
           
           const base64String = reader.result.split(',')[1];
           
@@ -8539,35 +8564,41 @@ async function initializeTargetedQuiz(category) {
   quizFinal.style.display = 'none';
   
   const analyzingText = document.querySelector('.analyzing-text');
+  let msgInterval;
   if (analyzingText) {
     analyzingText.textContent = 'Analyzing your bill with AI...';
     
-    // Animate loading messages with progress
+    // Animate loading messages with progress (keep running until AI responds)
     const loadingMessages = [
       'Analyzing your bill with AI...',
-      'Cross-referencing Federal guidelines...',
+      'Understanding your specific billing issues...',
+      'Cross-referencing Federal Medicare guidelines...',
       'Identifying potential overcharges...',
+      'Reviewing CPT code compliance...',
+      'Checking for unbundling violations...',
       'Generating personalized questions...',
+      'Preparing your risk assessment...',
+      'Tailoring questions to your bill...',
       'Almost ready...'
     ];
     let msgIndex = 0;
-    const msgInterval = setInterval(() => {
+    msgInterval = setInterval(() => {
       msgIndex++;
-      if (msgIndex < loadingMessages.length) {
-        analyzingText.style.opacity = '0.5';
-        setTimeout(() => {
-          analyzingText.textContent = loadingMessages[msgIndex];
-          analyzingText.style.opacity = '1';
-        }, 200);
-      }
-    }, 1200); // Faster rotation
-    
-    // Clear interval after questions are generated
-    setTimeout(() => clearInterval(msgInterval), 6000);
+      if (msgIndex >= loadingMessages.length) msgIndex = 6; // Loop from "Generating" onwards
+      
+      analyzingText.style.opacity = '0.5';
+      setTimeout(() => {
+        analyzingText.textContent = loadingMessages[msgIndex];
+        analyzingText.style.opacity = '1';
+      }, 200);
+    }, 1800); // Slower rotation for better readability
   }
 
   // Generate AI-powered questions
   const questions = await generateAIQuiz(category, currentBillText || '');
+  
+  // Clear message interval when AI responds
+  if (msgInterval) clearInterval(msgInterval);
   
   console.log(`[Phase 2] AI generated ${questions.length} questions for ${category}`);
   console.log('[Phase 2] Question IDs:', questions.map(q => q.id).join(', '));
