@@ -233,7 +233,8 @@ IMPORTANT: Your output MUST be valid JSON only. Do not include markdown formatti
     // Call Gemini API with gemini-3-flash model
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
     
-    // Build generationConfig with response schema for structured output
+    // Build generationConfig with SIMPLIFIED response schema for speed (40s→15s)
+    // Additional data will be provided in 'rawData' field as free-form text
     const finalGenerationConfig = {
       ...generationConfig,
       responseMimeType: "application/json",
@@ -249,84 +250,37 @@ IMPORTANT: Your output MUST be valid JSON only. Do not include markdown formatti
             enum: ["itemized_bill", "summary_bill", "eob", "statement", "unknown"],
             description: "Type of medical document"
           },
-          facilityInfo: {
-            type: "OBJECT",
-            properties: {
-              name: { type: "STRING", nullable: true },
-              npi: { type: "STRING", nullable: true },
-              address: { type: "STRING", nullable: true },
-              phone: { type: "STRING", nullable: true }
-            }
+          facilityName: {
+            type: "STRING",
+            nullable: true,
+            description: "Name of the medical facility or provider"
           },
-          patientInfo: {
-            type: "OBJECT",
-            properties: {
-              name: { type: "STRING", nullable: true },
-              accountNumber: { type: "STRING", nullable: true },
-              insuranceCompany: { type: "STRING", nullable: true }
-            }
+          totalAmount: {
+            type: "NUMBER",
+            description: "Total amount patient is responsible for (in dollars)"
           },
-          billSummary: {
-            type: "OBJECT",
-            properties: {
-              totalCharges: { type: "NUMBER" },
-              insurancePaid: { type: "NUMBER", nullable: true },
-              adjustments: { type: "NUMBER", nullable: true },
-              patientResponsibility: { type: "NUMBER" },
-              dateOfService: { type: "STRING", nullable: true },
-              billDate: { type: "STRING", nullable: true }
-            },
-            required: ["totalCharges", "patientResponsibility"]
-          },
-          lineItems: {
-            type: "ARRAY",
-            items: {
-              type: "OBJECT",
-              properties: {
-                description: { type: "STRING" },
-                cptCode: { type: "STRING", nullable: true },
-                hcpcsCode: { type: "STRING", nullable: true },
-                revenueCode: { type: "STRING", nullable: true },
-                modifiers: { 
-                  type: "ARRAY", 
-                  items: { type: "STRING" },
-                  nullable: true 
-                },
-                units: { type: "NUMBER", nullable: true },
-                chargePerUnit: { type: "NUMBER", nullable: true },
-                totalCharge: { type: "NUMBER" },
-                date: { type: "STRING", nullable: true }
-              },
-              required: ["description", "totalCharge"]
-            }
-          },
-          detectedIssues: {
-            type: "OBJECT",
-            properties: {
-              hasOutOfNetworkProvider: { type: "BOOLEAN" },
-              hasDuplicateCharges: { type: "BOOLEAN" },
-              suspectedUpcoding: { 
-                type: "ARRAY", 
-                items: { type: "STRING" } 
-              },
-              suspectedUnbundling: { 
-                type: "ARRAY", 
-                items: { type: "STRING" } 
-              },
-              mathErrors: { 
-                type: "ARRAY", 
-                items: { type: "STRING" } 
-              },
-              balanceBillingRisk: { type: "BOOLEAN" }
-            }
+          dateOfService: {
+            type: "STRING",
+            nullable: true,
+            description: "Date of service in YYYY-MM-DD format"
           },
           issueCategory: {
             type: "STRING",
             enum: ["Emergency Room", "Lab & Imaging", "Surgery & Inpatient", "General Doctor Visit"],
             description: "Primary category of medical service"
+          },
+          lineItemsSummary: {
+            type: "STRING",
+            nullable: true,
+            description: "Text summary of line items with CPT codes, descriptions, and amounts"
+          },
+          detectedIssuesSummary: {
+            type: "STRING",
+            nullable: true,
+            description: "Text summary of detected billing issues (upcoding, duplicates, etc)"
           }
         },
-        required: ["isValid", "documentType", "billSummary", "lineItems", "detectedIssues", "issueCategory"]
+        required: ["isValid", "documentType", "totalAmount", "issueCategory"]
       }
     };
     

@@ -7076,19 +7076,25 @@ function clamp(n, min, max) {
 // --- main validator ---
 function validateAndNormalizeBill(raw) {
   const warnings = [];
+  
+  // Support both new simplified schema and legacy schema
+  const facilityName = raw?.facilityName || raw?.facilityInfo?.name || null;
+  const totalAmount = raw?.totalAmount || raw?.billSummary?.patientResponsibility || raw?.billSummary?.totalCharges || null;
+  const dateOfService = raw?.dateOfService || raw?.billSummary?.dateOfService || null;
+  
   const normalized = {
     // carry through the fields you already have (expand as needed)
     isValidBill: raw?.isValidBill ?? raw?.isValid ?? false,
     confidence: typeof raw?.confidence === "number" ? raw.confidence : null,
     documentType: raw?.documentType ?? "unknown",
 
-    facilityName: typeof raw?.facilityName === "string" ? raw.facilityName.trim() : null,
+    facilityName: typeof facilityName === "string" ? facilityName.trim() : null,
     providerName: typeof raw?.providerName === "string" ? raw.providerName.trim() : null,
 
-    dateOfService: normalizeISODate(raw?.dateOfService),
-    billDate: normalizeISODate(raw?.billDate),
+    dateOfService: normalizeISODate(dateOfService),
+    billDate: normalizeISODate(raw?.billDate || raw?.billSummary?.billDate),
 
-    totalAmount: normalizeMoney(raw?.totalAmount),
+    totalAmount: normalizeMoney(totalAmount),
     amountDue: normalizeMoney(raw?.amountDue),
 
     currency: raw?.currency === "USD" ? "USD" : "USD", // site is US-only
@@ -7099,9 +7105,9 @@ function validateAndNormalizeBill(raw) {
     lineItems: [],
     totals: {
       subtotal: normalizeMoney(raw?.totals?.subtotal),
-      adjustments: normalizeMoney(raw?.totals?.adjustments),
-      insurancePaid: normalizeMoney(raw?.totals?.insurancePaid),
-      patientResponsibility: normalizeMoney(raw?.totals?.patientResponsibility),
+      adjustments: normalizeMoney(raw?.totals?.adjustments || raw?.billSummary?.adjustments),
+      insurancePaid: normalizeMoney(raw?.totals?.insurancePaid || raw?.billSummary?.insurancePaid),
+      patientResponsibility: normalizeMoney(raw?.totals?.patientResponsibility || totalAmount),
     },
 
     notes: {
@@ -7111,6 +7117,10 @@ function validateAndNormalizeBill(raw) {
       collectionMentioned: !!raw?.notes?.collectionMentioned,
       keywordsFound: safeArray(raw?.notes?.keywordsFound).slice(0, 30).map(String),
     },
+    
+    // New simplified schema fields
+    lineItemsSummary: raw?.lineItemsSummary || null,
+    detectedIssuesSummary: raw?.detectedIssuesSummary || null,
   };
 
   // ---- normalize line items (max 30) ----
@@ -7659,75 +7669,46 @@ function setupBillScanning() {
           const data = await callSecureGeminiAPI(
             [{ 
               parts: [
-                { text: `You are a medical billing data extraction expert analyzing US healthcare bills.
+                { text: `You are a Senior Medical Billing Auditor with 15+ years experience analyzing US healthcare bills for fraud, upcoding, and billing errors.
 
-EXTRACT ALL DATA from this bill into the following JSON structure. If information is not visible, use null.
+ANALYZE this medical bill and extract key information. Focus on ACCURACY over speed.
 
-OUTPUT SCHEMA (JSON ONLY, NO MARKDOWN):
-{
-  "isValid": boolean,
-  "documentType": "itemized_bill" | "summary_bill" | "eob" | "statement" | "unknown",
-  "facilityInfo": {
-    "name": string,
-    "npi": string | null,
-    "address": string | null,
-    "phone": string | null
-  },
-  "patientInfo": {
-    "name": string | null,
-    "accountNumber": string | null,
-    "insuranceCompany": string | null
-  },
-  "billSummary": {
-    "totalCharges": number,
-    "insurancePaid": number | null,
-    "adjustments": number | null,
-    "patientResponsibility": number,
-    "dateOfService": "YYYY-MM-DD" | null,
-    "billDate": "YYYY-MM-DD" | null
-  },
-  "lineItems": [
-    {
-      "description": string,
-      "cptCode": string | null,
-      "hcpcsCode": string | null,
-      "revenueCode": string | null,
-      "modifiers": string[] | null,
-      "units": number | null,
-      "chargePerUnit": number | null,
-      "totalCharge": number,
-      "date": "YYYY-MM-DD" | null
-    }
-  ],
-  "detectedIssues": {
-    "hasOutOfNetworkProvider": boolean,
-    "hasDuplicateCharges": boolean,
-    "suspectedUpcoding": string[],
-    "suspectedUnbundling": string[],
-    "mathErrors": string[],
-    "balanceBillingRisk": boolean
-  },
-  "issueCategory": "Emergency Room" | "Lab & Imaging" | "Surgery & Inpatient" | "General Doctor Visit"
-}
+CRITICAL INSTRUCTIONS:
+1. isValid: Only true if this is clearly a medical bill (not receipt, invoice, or unrelated doc)
+2. documentType: 
+   - "itemized_bill" = has CPT/HCPCS codes with individual line items
+   - "summary_bill" = only category totals, NO detailed codes
+   - "eob" = Explanation of Benefits from insurance company
+   - "statement" = monthly billing statement
+3. facilityName: Hospital/clinic name (be precise, include full legal name if visible)
+4. totalAmount: Patient responsibility amount in dollars (NOT insurance paid portion)
+5. dateOfService: Service date in YYYY-MM-DD format
+6. issueCategory: Primary service type based on CPT codes:
+   - "Emergency Room" = CPT 99281-99285, 99291
+   - "Lab & Imaging" = CPT 70000-89999 (X-rays, MRI, blood tests)
+   - "Surgery & Inpatient" = CPT 10000-69999 (procedures, surgeries)
+   - "General Doctor Visit" = CPT 99201-99215 (office visits)
 
-EXTRACTION RULES:
-1. Extract up to 30 most significant line items (highest amounts or clearly coded)
-2. All monetary values as numbers only (remove $, commas)
-3. Dates in YYYY-MM-DD format when possible
-4. documentType:
-   - "itemized_bill" if has CPT/HCPCS codes and line items
-   - "summary_bill" if only shows category totals
-   - "eob" if Explanation of Benefits from insurance
-   - "statement" if monthly statement/balance forward
-5. detectedIssues - flag obvious problems:
-   - Duplicate: exact same CPT code billed multiple times same day without modifier
-   - Upcoding: CPT 99285/99291/99205 (high-level codes) for minor conditions
-   - Unbundling: routine supplies (gloves, IV start, vitals) billed separately when facility fee exists
-   - Math: subtotal + adjustments ≠ stated total
-   - Balance Billing: out-of-network provider charges above insurance allowed amount
-6. issueCategory based on primary service type
+7. lineItemsSummary: List ALL line items you can see in this format:
+   "CPT 99285 Emergency Visit - Level 5: $1,200 | CPT 71045 Chest X-ray - 2 Views: $450 | ..."
+   Include CPT codes, descriptions, units, and amounts. Be thorough.
 
-OUTPUT ONLY VALID JSON. NO EXPLANATIONS.` },
+8. detectedIssuesSummary: RED FLAGS you detect (be specific):
+   - Upcoding: "99285 (Level 5 ER) billed for minor complaint - should be 99283"
+   - Duplicates: "CPT 36415 Venipuncture billed 3x on same day"
+   - Unbundling: "Supplies (gloves, IV start) billed separately when included in facility fee"
+   - Balance Billing: "Out-of-network anesthesiologist charging $2,000 above insurance allowed amount"
+   - Math Errors: "Line items total $3,450 but bill shows $4,200"
+   If no issues detected, write: "No obvious billing errors detected"
+
+ACCURACY CHECKLIST:
+✓ Read ALL text carefully, including small print
+✓ Double-check dollar amounts (remove $ and commas)
+✓ Verify CPT codes are 5 digits
+✓ Match issueCategory to actual CPT codes present
+✓ List EVERY line item you can see
+
+OUTPUT: Valid JSON only. NO markdown formatting, NO explanations outside JSON.` },
                 { inlineData: { mimeType: fileToProcess.type, data: base64String } }
               ] 
             }],
@@ -7735,8 +7716,61 @@ OUTPUT ONLY VALID JSON. NO EXPLANATIONS.` },
             'bill_ocr'
           );
 
+          // Parse AI response with robust error handling
           let aiText = data.candidates[0].content.parts[0].text.replace(/```json/gi, '').replace(/```/gi, '').trim();
-          const aiResult = JSON.parse(aiText);
+          let aiResult;
+          
+          try {
+            aiResult = JSON.parse(aiText);
+          } catch (parseError) {
+            console.error('[OCR] JSON parse error:', parseError);
+            console.error('[OCR] Raw AI response:', aiText);
+            
+            // Try to extract JSON from response
+            const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              try {
+                aiResult = JSON.parse(jsonMatch[0]);
+                console.log('[OCR] ✓ Recovered JSON from malformed response');
+              } catch (e) {
+                throw new Error('AI returned invalid JSON format. Please try again with a clearer image.');
+              }
+            } else {
+              throw new Error('AI failed to generate valid JSON. Please try again.');
+            }
+          }
+          
+          // Normalize legacy schema to new simplified schema
+          if (!aiResult.facilityName && aiResult.facilityInfo?.name) {
+            aiResult.facilityName = aiResult.facilityInfo.name;
+          }
+          if (!aiResult.totalAmount) {
+            aiResult.totalAmount = aiResult.billSummary?.patientResponsibility || aiResult.billSummary?.totalCharges || 0;
+          }
+          if (!aiResult.dateOfService && aiResult.billSummary?.dateOfService) {
+            aiResult.dateOfService = aiResult.billSummary.dateOfService;
+          }
+          
+          // Convert structured data to summary text if needed
+          if (!aiResult.lineItemsSummary && aiResult.lineItems?.length > 0) {
+            aiResult.lineItemsSummary = aiResult.lineItems.map(item => 
+              `${item.cptCode || 'N/A'} ${item.description}: $${item.totalCharge}`
+            ).join(' | ');
+          }
+          
+          if (!aiResult.detectedIssuesSummary && aiResult.detectedIssues) {
+            const issues = [];
+            if (aiResult.detectedIssues.suspectedUpcoding?.length > 0) {
+              issues.push('Upcoding: ' + aiResult.detectedIssues.suspectedUpcoding.join(', '));
+            }
+            if (aiResult.detectedIssues.suspectedUnbundling?.length > 0) {
+              issues.push('Unbundling: ' + aiResult.detectedIssues.suspectedUnbundling.join(', '));
+            }
+            if (aiResult.detectedIssues.hasDuplicateCharges) {
+              issues.push('Duplicate charges detected');
+            }
+            aiResult.detectedIssuesSummary = issues.length > 0 ? issues.join('; ') : 'No obvious billing errors detected';
+          }
           
           // Run validation layer
           const v = validateAndNormalizeBill(aiResult);
