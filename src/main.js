@@ -7813,33 +7813,89 @@ OUTPUT ONLY VALID JSON. NO EXPLANATIONS.` },
   dropZone.addEventListener('drop', async (e) => { if (e.dataTransfer.files.length > 0) await processFile(e.dataTransfer.files[0]); });
 }
 
-// ========== SMART QUESTION ENGINE - EXPERT QUESTION BANK ==========
-
-// ========== PHASE 2: CPC KNOWLEDGE BASE (CERTIFIED PROFESSIONAL CODER) ==========
+// ========== PHASE 2: CLINICAL RISK DETECTION MATRIX (NO DOLLAR ESTIMATES) ==========
 const ReferenceAuditRules = {
   Universal: [
-    { id: 'u_itemized', issue: "Summary Bill / Hidden Codes", trigger: ["summary", "balance forward", "total due", "previous balance"], questionContext: "Summary bills conceal upcoding and unbundling. HIPAA (45 CFR § 164.524) guarantees the right to an unbundled bill with CPT codes.", weight: 0 },
-    { id: 'u_charity', issue: "IRS 501(r) Charity Care", trigger: ["hospital", "medical center", "health system"], questionContext: "Non-profit hospitals are legally mandated to forgive or discount bills for households earning under 300-400% of the Federal Poverty Level.", weight: 1000 },
-    { id: 'u_duplicate', issue: "Duplicate Phantom Charge", trigger: ["x2", "quantity 2", "duplicate"], questionContext: "Billing exactly the same CPT code twice on the same date without a valid modifier (like -76) is a classic NCCI violation.", weight: 500 }
+    { 
+      id: 'u_itemized_gatekeeper', 
+      targetCPT: null,
+      issue: "Summary Bill Blocker", 
+      question: "Does your bill show specific 5-digit CPT codes (like 99285, 70450, 80053)?",
+      context: "Summary bills hide billing errors. We need CPT codes for clinical audit.",
+      flagText: "AUDIT BLOCKED: Summary bill detected. Cannot verify CPT codes without itemized billing details."
+    },
+    { 
+      id: 'u_charity', 
+      targetCPT: null,
+      issue: "IRS 501(r) Charity Care Violation", 
+      question: "Is your household income below $60,000 AND is this a non-profit hospital?",
+      context: "Non-profit hospitals legally must offer charity care (IRS 501(r)).",
+      flagText: "Non-profit hospital failed charity care screening. Federal law mandates financial assistance for qualifying patients."
+    },
+    { 
+      id: 'u_duplicate', 
+      targetCPT: null,
+      issue: "Duplicate Charge", 
+      question: "Do you see the exact same service/procedure billed twice on the same date?",
+      context: "Billing identical CPT codes twice without medical justification violates NCCI.",
+      flagText: "Duplicate charge: Same service billed multiple times on same date without clinical justification."
+    }
   ],
   "Emergency Room": [
-    { id: 'er_upcoding', issue: "E/M Severity Upcoding (99284-99285)", trigger: ["99284", "99285", "level 4", "level 5", "high severity"], questionContext: "Code 99285 requires high-complexity medical decision-making (e.g., heart attack, severe trauma). If treated for a minor cut, flu, or simple sprain, this is fraudulent upcoding.", weight: 800 },
-    { id: 'er_facility', issue: "Invalid POS 20 Facility Fee", trigger: ["0450", "facility fee", "freestanding"], questionContext: "Freestanding urgent care centers (POS 20) legally cannot charge hospital-grade (POS 22) facility fees.", weight: 600 },
-    { id: 'er_supplies', issue: "Routine Supply Unbundling", trigger: ["gloves", "gown", "iv start", "pulse oximetry", "tylenol", "99070"], questionContext: "Under NCCI edits, basic supplies (gloves, oral meds) are bundled into the main E/M visit fee. Separate line items for these are illegal.", weight: 150 }
-  ],
-  "Surgery & Inpatient": [
-    { id: 'surg_timings', issue: "Anesthesia/OR Time Padding", trigger: ["operating room", "anesthesia", "minutes", "time", "01999"], questionContext: "Anesthesia is billed in strict 15-minute increments. Hospitals frequently round up aggressively. Compare billed time vs. actual time under the knife.", weight: 1500 },
-    { id: 'surg_implant', issue: "Implant/Device Price Gouging", trigger: ["implant", "screw", "plate", "device", "mesh"], questionContext: "Hospitals often mark up surgical hardware by 300%+. Patients have the right to request the manufacturer's original invoice to dispute the markup.", weight: 2000 },
-    { id: 'surg_obs', issue: "Observation Status Trick", trigger: ["observation", "short stay", "0110", "0120"], questionContext: "Staying overnight but classified as 'Observation' means Medicare/Insurance denies rehab coverage. A stay spanning two midnights should be 'Inpatient'.", weight: 3000 },
-    { id: 'surg_assistant', issue: "Phantom Assistant Surgeon", trigger: ["assistant", "surgeon", "80", "81", "82", "asst"], questionContext: "Billed for an out-of-network assistant surgeon the patient never met. Highly disputable under the No Surprises Act.", weight: 800 }
-  ],
-  "General Doctor Visit": [
-    { id: 'gen_new', issue: "New Patient Upcoding (99203-99205)", trigger: ["99203", "99204", "99205", "new patient"], questionContext: "If seen by ANY provider in the same practice within 3 years, the patient is 'Established' (9921x). 'New' patient codes pay 30% more and are highly audited.", weight: 200 },
-    { id: 'gen_mod25', issue: "Modifier 25 Double-Dipping", trigger: ["25", "modifier 25", "office visit"], questionContext: "Modifier 25 allows an office visit and a minor procedure (e.g., injection) on the same day, BUT only if the visit was a 'significant, separately identifiable' service.", weight: 300 }
+    { 
+      id: 'er_level5_upcoding', 
+      targetCPT: ['99284', '99285'],
+      issue: "Level 5 ER Upcoding", 
+      question: "Did you receive life-saving interventions (multiple IVs, CT/MRI, severe trauma care)?",
+      context: "CPT 99285 requires life-threatening emergencies. Minor conditions should be Level 2-3.",
+      flagText: "ER Level 5 Upcoding: Billed highest severity code but patient reports routine care. Clinical documentation mismatch."
+    },
+    { 
+      id: 'er_facility_unbundling', 
+      targetCPT: ['0450'],
+      issue: "Facility Fee Unbundling", 
+      question: "Are routine supplies (gloves, gauze, basic meds) billed separately despite a Facility Fee?",
+      context: "Facility fees already cover routine supplies. Separate billing is unbundling fraud.",
+      flagText: "Unbundling Violation: Routine supplies billed separately while facility fee exists."
+    },
+    { 
+      id: 'er_phantom_provider', 
+      targetCPT: null,
+      issue: "Phantom Out-of-Network Provider", 
+      question: "Does your bill list providers (radiologist, pathologist) you never met?",
+      context: "Surprise out-of-network bills violate No Surprises Act (2022).",
+      flagText: "No Surprises Act Violation: Out-of-network provider billed without consent."
+    }
   ],
   "Lab & Imaging": [
-    { id: 'lab_panel', issue: "Lab Panel Unbundling", trigger: ["80053", "metabolic", "lipid", "cbc", "85025", "venipuncture", "36415"], questionContext: "Routine blood tests must be bundled into a panel (e.g., 80053). Unbundling into individual chemical tests is an NCCI violation.", weight: 400 },
-    { id: 'img_read', issue: "Duplicate Interpretation (Modifier 26/TC)", trigger: ["radiology", "reading", "interpretation", "26", "tc"], questionContext: "Billing the Technical Component (the machine) and the Professional Component (doctor reading it) twice by different entities for the same scan.", weight: 500 }
+    { 
+      id: 'lab_unbundling', 
+      targetCPT: ['80053', '82947'],
+      issue: "Lab Panel Unbundling", 
+      question: "If you had a Comprehensive Metabolic Panel (CMP), were individual tests also billed separately?",
+      context: "CMP includes 14 tests. Billing components separately is unbundling fraud.",
+      flagText: "Unbundling: Panel billed alongside individual component tests (NCCI violation)."
+    }
+  ],
+  "Surgery & Inpatient": [
+    { 
+      id: 'surg_assistant_phantom', 
+      targetCPT: ['80', '81', '82'],
+      issue: "Phantom Assistant Surgeon", 
+      question: "Were you billed for an Assistant Surgeon you never met or authorized?",
+      context: "Out-of-network assistants require consent. Surprise bills violate NSA.",
+      flagText: "No Surprises Act Violation: Assistant surgeon billed out-of-network without consent."
+    }
+  ],
+  "General Doctor Visit": [
+    { 
+      id: 'gen_new_patient_fraud', 
+      targetCPT: ['99203', '99204', '99205'],
+      issue: "New Patient Fraud", 
+      question: "Were you billed as 'New Patient' despite seeing this practice within 3 years?",
+      context: "CMS rules: If seen by ANY provider in practice within 36 months, you're Established.",
+      flagText: "New Patient Fraud: Billed as new despite prior visits. CMS 3-year rule violated."
+    }
   ]
 };
 
@@ -7879,103 +7935,186 @@ async function generateAIQuiz(category, extractedText) {
       questionCount = 5;  // Simple bill: fewer questions
     }
 
-    const prompt = `You are an elite Medicare/Medicaid CPC Auditor specializing in US healthcare billing fraud detection.
+    const prompt = `You are a Medicare/Medicaid Compliance Auditor detecting FACTUAL clinical discrepancies.
 
-[EXTRACTED BILLING DATA - ENHANCED OCR]
+[CRITICAL INSTRUCTION]
+Your ONLY job is to detect VERIFIABLE discrepancies between CPT codes billed vs. actual care received.
+DO NOT estimate dollar amounts. Output riskLevel only: HIGH, MEDIUM, LOW, NONE.
+
+[EXTRACTED BILLING DATA]
 Facility: ${facilityName}
 Document Type: ${documentType}
-Total Patient Responsibility: $${totalAmount}
-Insurance Paid: $${billSummary.insurancePaid || 'Unknown'}
-
 LINE ITEMS (${lineItems.length} items):
-${JSON.stringify(lineItems.slice(0, 10), null, 2)}
+${JSON.stringify(lineItems.slice(0, 8), null, 2)}
 
-PRE-DETECTED ISSUES FROM OCR:
+PRE-DETECTED ISSUES:
 ${JSON.stringify(detectedIssues, null, 2)}
 
-[EXPERT AUDIT RULES FOR ${category}]
+[CLINICAL AUDIT RULES FOR ${category}]
 ${JSON.stringify(combinedRules, null, 2)}
 
-[YOUR AUDIT PROTOCOL - CHAIN OF THOUGHT]
-Step 1: Review the ACTUAL line items above with CPT codes and prices
-Step 2: Cross-reference against Expert Audit Rules for common violations
-Step 3: Check pre-detected issues from OCR analysis
-Step 4: Generate ${questionCount} targeted questions referencing SPECIFIC line items
+[YOUR TASK]
+Generate EXACTLY ${questionCount} questions to PROVE or DISPROVE the CPT codes in the bill.
 
-[QUESTION GENERATION REQUIREMENTS]
-Generate EXACTLY ${questionCount} questions:
-1. Mandatory: Charity Care eligibility check ($60K household income threshold)
-2. Mandatory: Itemized bill availability (critical for audit capability)
-3-${questionCount}. Target specific line items from the data above:
-   - Reference EXACT descriptions and amounts from line items
-   - Focus on highest charges first
-   - Address pre-detected issues (upcoding, unbundling, duplicates)
-   - For ${category} category, prioritize relevant violations
-   
-CRITICAL RULES:
-- If lineItems exist: inject actual CPT codes, descriptions, and prices into questions
-- If documentType is "summary_bill": ask about itemized bill availability
-- If detectedIssues has flags: generate questions to confirm those issues
-- Each question must have "reasoning" explaining why you generated it
-- Weight values should reflect realistic overcharge potential ($150-$3000 range)
+RULES:
+1. FIRST QUESTION: Check for Summary Bill blocker (gatekeeper)
+2. If "summary_bill" detected: Generate blocker question about itemized bill
+3. Target SPECIFIC CPT codes from lineItems (e.g., "You were billed CPT 99285. Did you...")
+4. Each question has:
+   - Options with "value": "flag" (triggers red flag) or "safe" (no issue)
+   - riskLevel: "HIGH", "MEDIUM", "LOW", or "NONE"
+   - flagText: Specific clinical violation description (only for flag options)
 
-[OUTPUT FORMAT - JSON ONLY]
-Return ONLY a valid JSON array. No markdown.
+[STRICT OUTPUT SCHEMA - JSON ONLY]
+Return ONLY valid JSON array. No markdown. No explanations.
 
 [
   {
     "id": "q1",
-    "reasoning": "Facility is '${facilityName}'. If non-profit, IRS 501(r) requires charity care screening.",
-    "question": "Is your annual household income below $60,000?",
-    "context": "Non-profit hospitals must offer financial assistance to low-income patients. Typical savings: 40-60% of charges.",
-    "errorType": "Charity Care Eligibility",
+    "question": "Does your bill show specific 5-digit CPT codes (like 99285, 70450)?",
+    "context": "Summary bills hide errors. CPT codes required for clinical audit.",
     "options": [
-      { "label": "Yes", "value": "yes", "weight": ${Math.round(totalAmount * 0.5)} },
-      { "label": "No", "value": "no", "weight": 0 },
-      { "label": "Not Sure", "value": "not-sure", "weight": ${Math.round(totalAmount * 0.25)} }
+      { 
+        "label": "Yes, I see CPT codes", 
+        "value": "safe", 
+        "riskLevel": "NONE", 
+        "flagText": null 
+      },
+      { 
+        "label": "No, only totals shown", 
+        "value": "flag", 
+        "riskLevel": "BLOCKER", 
+        "flagText": "AUDIT BLOCKED: Summary bill detected. Cannot verify CPT codes without itemized billing."
+      },
+      { 
+        "label": "Not Sure", 
+        "value": "unsure", 
+        "riskLevel": "LOW", 
+        "flagText": null 
+      }
     ]
   },
   {
     "id": "q2",
-    "reasoning": "Document type is '${documentType}'. Need to confirm CPT code visibility for line-item audit.",
-    "question": "Does your bill show specific 5-digit CPT codes (like 99285, 70450) for each charge?",
-    "context": "Itemized bills with CPT codes allow precise error detection. Summary bills hide overcharges.",
-    "errorType": "Audit Requirement",
+    "question": "If you see CPT 99285 (Level 5 ER), did you receive intensive care (multiple IVs, CT/MRI, life-threatening condition)?",
+    "context": "Level 5 ER requires high medical complexity. Minor conditions should be Level 2-3.",
     "options": [
-      { "label": "Yes, I see CPT codes", "value": "yes", "weight": 0 },
-      { "label": "No, only category totals", "value": "no", "weight": 0 },
-      { "label": "Not Sure", "value": "not-sure", "weight": 0 }
+      { 
+        "label": "Yes, intensive care received", 
+        "value": "safe", 
+        "riskLevel": "NONE", 
+        "flagText": null
+      },
+      { 
+        "label": "No, routine care only", 
+        "value": "flag", 
+        "riskLevel": "HIGH", 
+        "flagText": "ER Level 5 Upcoding: Billed CPT 99285 (highest severity) but patient reports routine care. Clinical documentation mismatch."
+      },
+      { 
+        "label": "Not Sure / Didn't see this code", 
+        "value": "unsure", 
+        "riskLevel": "NONE", 
+        "flagText": null
+      }
     ]
   }
-  // Generate ${questionCount - 2} more questions based on actual line items and detected issues
+]
 ]`;
 
-    // Call secure backend API
+    // Call secure backend API with strict response schema
     const data = await callSecureGeminiAPI(
       [{ parts: [{ text: prompt }] }],
-      { response_mime_type: "application/json" },
+      { 
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              id: { type: "STRING" },
+              question: { type: "STRING" },
+              context: { type: "STRING" },
+              options: {
+                type: "ARRAY",
+                items: {
+                  type: "OBJECT",
+                  properties: {
+                    label: { type: "STRING" },
+                    value: { type: "STRING", enum: ["flag", "safe", "unsure"] },
+                    riskLevel: { type: "STRING", enum: ["HIGH", "MEDIUM", "LOW", "NONE", "BLOCKER"] },
+                    flagText: { type: "STRING", nullable: true }
+                  },
+                  required: ["label", "value", "riskLevel"]
+                }
+              }
+            },
+            required: ["id", "question", "context", "options"]
+          }
+        }
+      },
       'quiz_generation'
     );
 
-    let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    aiText = aiText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+    const aiQuestions = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || '[]');
     
-    const aiQuestions = JSON.parse(aiText);
-    if (!Array.isArray(aiQuestions) || aiQuestions.length < 4) throw new Error('Invalid or insufficient AI questions');
+    if (!Array.isArray(aiQuestions) || aiQuestions.length < 2) {
+      throw new Error('AI returned invalid or insufficient questions');
+    }
 
-    console.log('[AI Quiz Generator] ✓ Generated', aiQuestions.length, 'CoT Enforced Questions based on', lineItems.length, 'line items');
+    console.log('[Risk Quiz] Generated', aiQuestions.length, 'questions based on', lineItems.length, 'line items');
     return aiQuestions;
 
   } catch (error) {
-    console.error('[AI Quiz Generator] Error:', error);
+    console.error('[Risk Quiz] Error generating AI questions:', error);
     
-    // Handle file size errors
+    // Handle errors with user-friendly messages
     if (error.message.includes('FILE_TOO_LARGE:')) {
       const msg = error.message.replace('FILE_TOO_LARGE:', '');
       alert(`File Too Large: ${msg}`);
+    } else if (error.message.includes('RATE_LIMIT:')) {
+      const msg = error.message.replace('RATE_LIMIT:', '');
+      alert(`Rate Limit: ${msg}`);
+    } else if (error.message.includes('BOT_DETECTED:')) {
+      alert('Security check failed. Please try again.');
     }
-    // Handle security and rate limiting errors
-    else if (error.message.includes('RATE_LIMIT:')) {
+    
+    // Fallback: Return standard gatekeeper questions
+    console.log('[Risk Quiz] Using fallback questions');
+    return [
+      { 
+        id: 'f1_blocker', 
+        question: 'Does your bill show specific 5-digit CPT codes (like 99285, 70450)?',
+        context: 'Summary bills hide errors. CPT codes are required for clinical audit.',
+        options: [
+          { label: 'Yes, I see CPT codes', value: 'safe', riskLevel: 'NONE', flagText: null },
+          { label: 'No, only totals shown', value: 'flag', riskLevel: 'BLOCKER', flagText: 'AUDIT BLOCKED: Summary bill detected. Cannot verify CPT codes without itemized billing.' },
+          { label: 'Not Sure', value: 'unsure', riskLevel: 'LOW', flagText: null }
+        ]
+      },
+      { 
+        id: 'f2_charity', 
+        question: 'Is your household income below $60,000 AND is this a non-profit hospital?',
+        context: 'Non-profit hospitals must offer charity care under IRS 501(r).',
+        options: [
+          { label: 'Yes, both apply', value: 'flag', riskLevel: 'HIGH', flagText: 'Charity care eligibility not screened. IRS 501(r) potential violation.' },
+          { label: 'No', value: 'safe', riskLevel: 'NONE', flagText: null },
+          { label: 'Not Sure', value: 'unsure', riskLevel: 'LOW', flagText: null }
+        ]
+      },
+      { 
+        id: 'f3_duplicate', 
+        question: 'Do you see the exact same service billed twice on the same date?',
+        context: 'Duplicate charges without medical justification violate NCCI guidelines.',
+        options: [
+          { label: 'Yes, I see duplicates', value: 'flag', riskLevel: 'HIGH', flagText: 'Duplicate charge detected: Same service billed multiple times without clinical justification.' },
+          { label: 'No', value: 'safe', riskLevel: 'NONE', flagText: null },
+          { label: 'Not Sure', value: 'unsure', riskLevel: 'LOW', flagText: null }
+        ]
+      }
+    ];
+  }
+}
       const msg = error.message.replace('RATE_LIMIT:', '');
       alert(`Rate Limit: ${msg}`);
     } else if (error.message.includes('BOT_DETECTED:')) {
@@ -8352,10 +8491,9 @@ async function initializeTargetedQuiz(category) {
   }
 
   let currentQuestion = 0;
-  let totalPotentialSavings = 0;
-  let totalEstimatedSavings = 0; // Track estimated savings from "Yes" answers
-  let auditFindings = []; // Track error types and questions for AI analysis
-  let notSureCount = 0; // ========== STEP 7: Track "Not Sure" answers ==========
+  let confirmedRedFlags = []; // Track confirmed red flags
+  let highestRisk = 'NONE'; // Track highest risk level detected
+  let blockerDetected = false; // Track if audit blocker found
   quizResponses = []; // Reset quiz responses
 
   function renderQuestion(index) {
@@ -8376,7 +8514,10 @@ async function initializeTargetedQuiz(category) {
           <p class="question-context">${q.context}</p>
           <div class="quiz-options">
           ${q.options.map(option => `
-            <button class="quiz-option-btn" data-value="${option.value}" data-weight="${option.weight}">
+            <button class="quiz-option-btn" 
+              data-value="${option.value}" 
+              data-risk="${option.riskLevel}"
+              data-flag="${option.flagText || ''}">
               <span class="option-label">${option.label}</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M5 12h14m-7-7l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -8398,51 +8539,55 @@ async function initializeTargetedQuiz(category) {
       const optionButtons = quizContainer.querySelectorAll('.quiz-option-btn');
       optionButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-          const weight = parseInt(btn.dataset.weight);
           const answer = btn.dataset.value;
-          totalPotentialSavings += weight;
+          const risk = btn.dataset.risk;
+          const flagText = btn.dataset.flag;
           
-          // ========== STEP 7: Track "Not Sure" answers ==========
-          if (answer === 'not-sure') {
-            notSureCount++;
-            console.log(`[Phase 3] Not Sure count: ${notSureCount}`);
+          // ========== RISK TRACKING (NO DOLLAR CALCULATIONS) ==========
+          
+          // Update highest risk level
+          const riskHierarchy = { 'BLOCKER': 4, 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1, 'NONE': 0 };
+          if (riskHierarchy[risk] > riskHierarchy[highestRisk]) {
+            highestRisk = risk;
           }
           
-          // Track audit findings for "Yes" answers
-          if (answer === 'yes' && weight > 0) {
-            totalEstimatedSavings += weight;
-            auditFindings.push({
-              errorType: q.errorType,
-              question: q.question,
-              reasoning: q.reasoning, // CRITICAL: Save the CoT reasoning containing codes/prices
-              weight: weight
+          // Track blocker detection
+          if (risk === 'BLOCKER' || answer === 'flag') {
+            blockerDetected = true;
+          }
+          
+          // Collect confirmed red flags
+          if (answer === 'flag' && flagText) {
+            confirmedRedFlags.push({
+              riskLevel: risk,
+              description: flagText,
+              question: q.question
             });
           }
           
-          // Store response for audit analysis
+          // Store response for analysis
           quizResponses.push({
             id: q.id,
             question: q.question,
             answer: answer,
-            weight: weight,
-            errorType: q.errorType
+            riskLevel: risk,
+            flagText: flagText
           });
           
-          console.log(`[Quiz Response] ${q.id}: ${answer} (weight: ${weight}, errorType: ${q.errorType})`);
+          console.log(`[Risk Quiz] ${q.id}: ${answer} (Risk: ${risk})`);
           
           btn.classList.add('selected');
           
-          // Show loading state during transition
+          // Move to next question
           if (currentQuestion < questions.length - 1) {
             setTimeout(() => {
               currentQuestion++;
               renderQuestion(currentQuestion);
             }, 400);
           } else {
-            // Show analyzing state
-            quizProgressText.textContent = 'Analyzing your responses...';
+            quizProgressText.textContent = 'Analyzing risk level...';
             setTimeout(() => {
-              console.log(`[Quiz Complete] Total findings: ${auditFindings.length}, Estimated savings: $${totalEstimatedSavings}`);
+              console.log(`[Risk Audit Complete] Flags: ${confirmedRedFlags.length}, Highest Risk: ${highestRisk}`);
               showResults();
             }, 600);
           }
@@ -8495,11 +8640,240 @@ async function initializeTargetedQuiz(category) {
   function showResults() {
     quizContainer.style.display = 'none';
     quizResult.style.display = 'flex';
-    quizAnalyzing.style.display = 'flex';
     quizFinal.style.display = 'none';
 
-    // Start animating analyzing messages
-    const messageInterval = animateAnalyzingMessages();
+    // Stop any previous animation
+    quizAnalyzing.style.display = 'none';
+
+    const resultBadge = document.getElementById('result-badge');
+    const quizRefundAmount = document.getElementById('result-amount');
+    const quizVerdict = document.getElementById('result-description');
+
+    // ========== GATEKEEPER: CHECK FOR SUMMARY BILL BLOCKER ==========
+    if (blockerDetected) {
+      console.log('[Gatekeeper] 🚫 BLOCKER DETECTED - Summary bill, routing to itemized bill tool');
+      
+      quizFinal.style.display = 'flex';
+      
+      if (resultBadge) {
+        resultBadge.innerHTML = `<span style="color: #FF3B30; font-weight: 600;">⚠️ Action Required</span>`;
+      }
+      
+      if (quizRefundAmount) {
+        quizRefundAmount.textContent = 'Hidden Charges';
+        quizRefundAmount.style.fontSize = '36px';
+        quizRefundAmount.style.color = '#FF3B30';
+      }
+      
+      if (quizVerdict) {
+        quizVerdict.innerHTML = `
+          <div style="padding: 24px; text-align: center;">
+            <h3 style="font-size: 20px; font-weight: 600; color: #1D1D1F; margin-bottom: 16px;">Summary Bill Detected</h3>
+            <p style="font-size: 17px; line-height: 1.6; color: #1D1D1F; margin-bottom: 24px;">
+              Your bill lacks CPT codes (5-digit medical service codes). Without detailed line items, we cannot perform a clinical audit to verify if charges match services received.
+            </p>
+            <div style="background: #F5F5F7; border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: left;">
+              <strong style="color: #FF3B30; display: block; margin-bottom: 8px;">🚩 Red Flag Detected:</strong>
+              <ul style="margin: 0; padding-left: 20px; color: #1D1D1F;">
+                <li style="margin: 8px 0;">Summary bill provided - CPT codes hidden</li>
+                <li style="margin: 8px 0;">Cannot verify clinical coding accuracy</li>
+                <li style="margin: 8px 0;">Prevents detection of upcoding, unbundling, phantom billing</li>
+              </ul>
+            </div>
+            <p style="font-size: 15px; line-height: 1.6; color: #86868B;">
+              <strong>Federal law (HIPAA 45 CFR § 164.524)</strong> guarantees your right to an itemized bill with CPT codes, descriptions, quantities, and individual prices.
+            </p>
+          </div>
+        `;
+      }
+      
+      if (quizCtaBtn) {
+        quizCtaBtn.textContent = 'Get Free Itemized Bill Request Letter →';
+        quizCtaBtn.onclick = () => {
+          // Save audit data
+          try {
+            const medicalAuditData = {
+              amount: detectedAmount || '0',
+              category: currentBillCategory?.category || 'General',
+              verdict: 'Summary bill detected. Must request itemized bill for audit.',
+              findings: confirmedRedFlags
+            };
+            localStorage.setItem('medicalAuditData', JSON.stringify(medicalAuditData));
+          } catch (err) {
+            console.error('[Gatekeeper] Failed to save data:', err);
+          }
+          
+          navigate('/request-itemized-medical-bill');
+        };
+      }
+      
+      return; // Stop execution - blocker detected
+    }
+
+    // ========== RISK EVALUATION (ITEMIZED BILL PATH) ==========
+    
+    const highRiskCount = confirmedRedFlags.filter(f => f.riskLevel === 'HIGH').length;
+    const mediumRiskCount = confirmedRedFlags.filter(f => f.riskLevel === 'MEDIUM').length;
+    
+    let overallRisk = 'LOW';
+    if (highRiskCount > 0) {
+      overallRisk = 'HIGH';
+    } else if (mediumRiskCount >= 2 || highestRisk === 'MEDIUM') {
+      overallRisk = 'MEDIUM';
+    }
+    
+    console.log(`[Risk Assessment] Overall: ${overallRisk}, High: ${highRiskCount}, Medium: ${mediumRiskCount}, Total Flags: ${confirmedRedFlags.length}`);
+    
+    quizFinal.style.display = 'flex';
+    
+    // ========== HIGH RISK PATH (FREEMIUM MODEL) ==========
+    if (overallRisk === 'HIGH') {
+      if (resultBadge) {
+        resultBadge.innerHTML = `<span style="color: #FF3B30; font-weight: 600;">🚨 HIGH RISK</span>`;
+      }
+      
+      if (quizRefundAmount) {
+        quizRefundAmount.textContent = `${confirmedRedFlags.length} Billing Anomalies`;
+        quizRefundAmount.style.fontSize = '36px';
+        quizRefundAmount.style.color = '#FF3B30';
+      }
+      
+      if (quizVerdict) {
+        let flagsHtml = '<ul style="margin: 0; padding-left: 20px; color: #1D1D1F;">';
+        confirmedRedFlags.forEach(flag => {
+          const riskColor = flag.riskLevel === 'HIGH' ? '#FF3B30' : '#FF9500';
+          flagsHtml += `<li style="margin: 12px 0;"><strong style="color: ${riskColor};">[${flag.riskLevel}]</strong> ${flag.description}</li>`;
+        });
+        flagsHtml += '</ul>';
+        
+        quizVerdict.innerHTML = `
+          <div style="padding: 24px;">
+            <h3 style="font-size: 20px; font-weight: 600; color: #1D1D1F; margin-bottom: 16px;">High-Risk Billing Violations Detected</h3>
+            <p style="font-size: 17px; line-height: 1.6; color: #1D1D1F; margin-bottom: 20px;">
+              We detected <strong>${confirmedRedFlags.length}</strong> factual discrepancies where the CPT codes billed do not match the services you described receiving. These are strong indicators of billing fraud.
+            </p>
+            <div style="background: #FFF3F0; border-left: 4px solid #FF3B30; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+              <strong style="display: block; margin-bottom: 12px; color: #FF3B30;">Confirmed Red Flags:</strong>
+              ${flagsHtml}
+            </div>
+            
+            <div style="display: grid; gap: 16px; margin-top: 24px;">
+              <div style="background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%); border-radius: 16px; padding: 24px; color: white; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.3); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px;">PREMIUM</div>
+                <h4 style="font-size: 18px; font-weight: 600; margin: 0 0 8px 0;">🔍 Deep Clinical Audit + Legal Letter</h4>
+                <p style="font-size: 14px; margin: 0 0 16px 0; opacity: 0.9;">CPT-level analysis with Medicare benchmark pricing, NCCI edit verification, and attorney-reviewed demand letter.</p>
+                <button id="premium-waitlist-btn" class="btn" style="background: white; color: #667EEA; width: 100%; font-weight: 600;">Coming Soon - Join Waitlist</button>
+              </div>
+              
+              <div style="background: #F5F5F7; border-radius: 16px; padding: 24px;">
+                <h4 style="font-size: 18px; font-weight: 600; margin: 0 0 8px 0; color: #1D1D1F;">📄 Free Basic Audit Request</h4>
+                <p style="font-size: 14px; margin: 0; color: #86868B;">Generate a professional dispute letter citing the violations detected above.</p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      // Attach premium waitlist handler
+      setTimeout(() => {
+        const premiumBtn = document.getElementById('premium-waitlist-btn');
+        if (premiumBtn) {
+          premiumBtn.onclick = () => {
+            const email = prompt('Enter your email for 50% early-bird discount when we launch Premium Audit:');
+            if (email && email.includes('@')) {
+              alert('Thank you! You\'re on the waitlist. We\'ll notify you when Premium launches with your exclusive 50% discount code.');
+              // TODO: Send email to backend waitlist API
+            }
+          };
+        }
+      }, 100);
+      
+      if (quizCtaBtn) {
+        quizCtaBtn.textContent = 'Generate Free Basic Audit Request →';
+        quizCtaBtn.onclick = () => {
+          // Save audit data
+          try {
+            const medicalAuditData = {
+              amount: detectedAmount || '0',
+              category: currentBillCategory?.category || 'General',
+              verdict: `HIGH RISK: ${confirmedRedFlags.length} billing violations detected.`,
+              findings: confirmedRedFlags
+            };
+            localStorage.setItem('medicalAuditData', JSON.stringify(medicalAuditData));
+          } catch (err) {
+            console.error('[Risk Audit] Failed to save data:', err);
+          }
+          
+          const targetRoute = currentBillCategory?.route || '/medical-bill-dispute-letter';
+          navigate(targetRoute);
+        };
+      }
+      
+      return; // HIGH RISK path complete
+    }
+    
+    // ========== MEDIUM/LOW RISK PATH ==========
+    if (resultBadge) {
+      const riskColor = overallRisk === 'MEDIUM' ? '#FF9500' : '#34C759';
+      const riskEmoji = overallRisk === 'MEDIUM' ? '⚠️' : '✓';
+      resultBadge.innerHTML = `<span style="color: ${riskColor}; font-weight: 600;">${riskEmoji} ${overallRisk} RISK</span>`;
+    }
+    
+    if (quizRefundAmount) {
+      const displayText = confirmedRedFlags.length > 0 ? `${confirmedRedFlags.length} Minor Issues` : 'No Major Anomalies';
+      quizRefundAmount.textContent = displayText;
+      quizRefundAmount.style.fontSize = '32px';
+      quizRefundAmount.style.color = overallRisk === 'MEDIUM' ? '#FF9500' : '#34C759';
+    }
+    
+    if (quizVerdict) {
+      let verdictText = '';
+      
+      if (overallRisk === 'MEDIUM' && confirmedRedFlags.length > 0) {
+        verdictText = `<p style="font-size: 17px; line-height: 1.6; color: #1D1D1F; margin-bottom: 20px;">
+          We found <strong>${confirmedRedFlags.length}</strong> potential coding discrepanc${confirmedRedFlags.length > 1 ? 'ies' : 'y'} that may warrant investigation. Further documentation could strengthen your case.
+        </p>`;
+        
+        let flagsHtml = '<ul style="margin: 0; padding-left: 20px; color: #1D1D1F;">';
+        confirmedRedFlags.forEach(flag => {
+          flagsHtml += `<li style="margin: 8px 0;">${flag.description}</li>`;
+        });
+        flagsHtml += '</ul>';
+        
+        verdictText += `<div style="background: #FFF9F0; border-left: 4px solid #FF9500; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+          <strong style="display: block; margin-bottom: 12px; color: #FF9500;">Potential Issues:</strong>
+          ${flagsHtml}
+        </div>`;
+      } else {
+        verdictText = `<p style="font-size: 17px; line-height: 1.6; color: #1D1D1F; margin-bottom: 20px;">
+          Based on your responses, the CPT codes appear to generally match the services received. No major red flags detected at this time.
+        </p>`;
+      }
+      
+      quizVerdict.innerHTML = `<div style="padding: 24px; text-align: center;">${verdictText}</div>`;
+    }
+    
+    if (quizCtaBtn) {
+      quizCtaBtn.textContent = 'Generate Free Basic Audit Request →';
+      quizCtaBtn.onclick = () => {
+        // Save audit data
+        try {
+          const medicalAuditData = {
+            amount: detectedAmount || '0',
+            category: currentBillCategory?.category || 'General',
+            verdict: `${overallRisk} RISK: ${confirmedRedFlags.length} issues detected.`,
+            findings: confirmedRedFlags
+          };
+          localStorage.setItem('medicalAuditData', JSON.stringify(medicalAuditData));
+        } catch (err) {
+          console.error('[Risk Audit] Failed to save data:', err);
+        }
+        
+        const targetRoute = currentBillCategory?.route || '/medical-bill-dispute-letter';
+        navigate(targetRoute);
+      };
+    }
+  }
 
     // Call Gemini AI and wait for response
     (async () => {
