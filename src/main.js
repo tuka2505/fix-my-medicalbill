@@ -7483,13 +7483,17 @@ function setupBillScanning() {
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       const page = await pdf.getPage(1);
-      const viewport = page.getViewport({ scale: 2.0 });
+      
+      // Reduce scale to 1.2 for faster processing (was 2.0)
+      const viewport = page.getViewport({ scale: 1.2 });
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       await page.render({ canvasContext: context, viewport: viewport }).promise;
-      return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      
+      // Compress to JPEG with 0.8 quality for smaller file size
+      return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.8));
     } catch (error) {
       console.error('PDF conversion error:', error);
       throw new Error('Failed to convert PDF to image');
@@ -7543,10 +7547,66 @@ function setupBillScanning() {
     });
   }
 
+  // NEW: Compress large images before sending to API
+  async function compressImage(file) {
+    // Skip compression for small files (<500KB)
+    if (file.size < 500 * 1024) return file;
+    
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Max dimension 2000px for large images
+          const maxDim = 2000;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = (height / width) * maxDim;
+              width = maxDim;
+            } else {
+              width = (width / height) * maxDim;
+              height = maxDim;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+          }, 'image/jpeg', 0.85);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  
   async function processFile(file) {
     if (!file) return;
     const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp', 'application/pdf'];
     if (!validTypes.includes(file.type)) { alert('Please upload a valid image file or PDF.'); return; }
+    
+    // Check file size before processing (10MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+      alert(`파일이 너무 큽니다 (${sizeMB}MB). 10MB 이하의 파일만 업로드 가능합니다.\n\n💡 팁:\n- 이미지를 압축하거나\n- 스크린샷을 다시 찍거나\n- 불필요한 부분을 잘라내세요.`);
+      return;
+    }
+    
+    // Warn about large files (>3MB)
+    if (file.size > 3 * 1024 * 1024) {
+      const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+      const proceed = confirm(`파일 크기가 큽니다 (${sizeMB}MB). 분석이 느릴 수 있습니다.\n\n더 빠른 분석을 원하시면 '취소'를 눌러 이미지를 압축한 후 다시 업로드하세요.\n\n계속하시겠습니까?`);
+      if (!proceed) return;
+    }
 
     if (quickAuditorSection) {
       quickAuditorSection.style.display = 'block';
@@ -7566,7 +7626,12 @@ function setupBillScanning() {
         scanProgressFill.style.width = '50%';
         scanProgressText.textContent = '📑 Converting PDF... 50%';
         const imageBlob = await convertPDFToImage(file);
-        fileToProcess = new File([imageBlob], file.name.replace('.pdf', '.png'), { type: 'image/png' });
+        fileToProcess = new File([imageBlob], file.name.replace('.pdf', '.jpg'), { type: 'image/jpeg' });
+      } else {
+        // Compress large images
+        scanProgressFill.style.width = '55%';
+        scanProgressText.textContent = '🗜️ Optimizing image... 55%';
+        fileToProcess = await compressImage(file);
       }
 
       const reader = new FileReader();
@@ -8189,6 +8254,11 @@ async function callSecureGeminiAPI(contents, generationConfig = {}, action = 'un
     // Handle different error types
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      
+      // Timeout (504 Gateway Timeout)
+      if (response.status === 504) {
+        throw new Error('504:분석 시간이 초과되었습니다. 이미지 파일이 너무 크거나 복잡합니다. 파일 크기를 2MB 이하로 줄이거나, 불필요한 부분을 제거한 후 다시 시도해주세요.');
+      }
       
       // File too large (10MB limit)
       if (response.status === 413) {
