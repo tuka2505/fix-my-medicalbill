@@ -12,6 +12,7 @@ const routes = [
   '/medical-bill',
   '/insurance-claim',
   '/medical-debt',
+  '/dashboard',
   '/medical-bill-dispute-letter',
   '/insurance-claim-denied-appeal',
   '/urgent-care-bill-dispute',

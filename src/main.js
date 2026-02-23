@@ -1795,6 +1795,7 @@ function renderHeader() {
         <button class="mobile-menu-btn" aria-label="Toggle menu" aria-expanded="false">☰</button>
         <nav class="nav desktop-nav">
           <a href="/#tools-section">Tools</a>
+          <a href="/dashboard" data-route="/dashboard">My Dashboard</a>
           <a href="/#resources">Resources</a>
           <a href="/faq" data-route="/faq">FAQ</a>
           <a href="/terms-of-service" data-route="/terms-of-service">Disclaimer</a>
@@ -1802,6 +1803,7 @@ function renderHeader() {
         </nav>
         <nav class="nav mobile-nav">
           <a href="/#tools-section">Tools</a>
+          <a href="/dashboard" data-route="/dashboard">My Dashboard</a>
           <a href="/#resources">Resources</a>
           <a href="/faq" data-route="/faq">FAQ</a>
           <a href="/terms-of-service" data-route="/terms-of-service">Disclaimer</a>
@@ -5331,6 +5333,35 @@ function setupTool(options) {
     letterOutput.classList.remove("is-empty");
     scriptOutput.classList.remove("is-empty");
 
+    // ========== SAVE TO HISTORY (NEW) ==========
+    try {
+      const history = JSON.parse(localStorage.getItem('fixMyMedicalBill_History') || '[]');
+      
+      const newEntry = {
+        id: Date.now(),
+        date: new Date().toISOString(),
+        toolName: options.pdfHeader.replace('FixMyMedicalBill — ', ''),
+        letter: result.letter,
+        script: result.script,
+        facilityName: data.facilityName || data.providerName || data.hospitalName || data.collectionAgency || 'N/A',
+        amount: data.billAmount || data.totalAmount || data.claimAmount || data.debtAmount || 'N/A'
+      };
+      
+      // Add to beginning of array
+      history.unshift(newEntry);
+      
+      // Keep only last 10 entries
+      if (history.length > 10) {
+        history.splice(10);
+      }
+      
+      localStorage.setItem('fixMyMedicalBill_History', JSON.stringify(history));
+      console.log('[Dashboard] Saved letter to history:', newEntry.toolName);
+    } catch (error) {
+      console.error('[Dashboard] Failed to save history:', error);
+    }
+    // ========================================
+
     actionButtons.forEach((button) => {
       button.disabled = false;
     });
@@ -6206,6 +6237,179 @@ ${patientEmail}`;
 // -------------------------------------------------------------------------
 
 
+// ========== DASHBOARD PAGE ==========
+function renderDashboardPage() {
+  let history = [];
+  try {
+    history = JSON.parse(localStorage.getItem('fixMyMedicalBill_History') || '[]');
+  } catch (error) {
+    console.error('[Dashboard] Failed to load history:', error);
+  }
+
+  let contentHTML;
+
+  if (history.length === 0) {
+    contentHTML = `
+      <div style="text-align: center; padding: 80px 24px;">
+        <div style="font-size: 64px; margin-bottom: 24px; opacity: 0.3;">📋</div>
+        <h2 style="font-size: 28px; font-weight: 700; color: #1D1D1F; margin-bottom: 12px;">No Dispute Letters Yet</h2>
+        <p style="font-size: 17px; color: #86868B; margin-bottom: 32px; max-width: 480px; margin-left: auto; margin-right: auto;">
+          Once you generate dispute letters using our tools, they'll appear here for easy access.
+        </p>
+        <a href="/" class="btn" data-route="/" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 12px 24px;">
+          Browse Tools
+          <span>→</span>
+        </a>
+      </div>
+    `;
+  } else {
+    const historyCards = history.map((entry) => {
+      const date = new Date(entry.date);
+      const formattedDate = date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      return `
+        <div class="dashboard-card" style="background: white; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 16px; padding: 24px; transition: all 0.2s ease;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+            <div>
+              <div style="font-size: 13px; color: #86868B; margin-bottom: 4px;">${formattedDate}</div>
+              <h3 style="font-size: 20px; font-weight: 600; color: #1D1D1F; margin: 0;">${entry.toolName}</h3>
+            </div>
+            <button 
+              class="dashboard-delete-btn"
+              data-id="${entry.id}"
+              style="background: transparent; border: none; color: #86868B; cursor: pointer; font-size: 20px; padding: 4px 8px; transition: color 0.2s ease;"
+              title="Delete this letter"
+              onmouseover="this.style.color='#FF3B30'"
+              onmouseout="this.style.color='#86868B'">
+              ×
+            </button>
+          </div>
+          
+          <div style="display: flex; gap: 12px; margin-bottom: 16px; font-size: 14px; flex-wrap: wrap;">
+            <div style="color: #86868B;">
+              <strong style="color: #1D1D1F;">Facility:</strong> ${entry.facilityName}
+            </div>
+            ${entry.amount !== 'N/A' ? `
+              <div style="color: #86868B;">
+                <strong style="color: #1D1D1F;">Amount:</strong> $${entry.amount}
+              </div>
+            ` : ''}
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 16px;">
+            <button 
+              class="btn dashboard-copy-btn" 
+              data-content="${entry.letter.replace(/"/g, '&quot;').replace(/\n/g, '\\n')}"
+              style="flex: 1; font-size: 14px; padding: 10px 16px;">
+              Copy Letter
+            </button>
+            <button 
+              class="btn neutral dashboard-copy-script-btn" 
+              data-content="${entry.script.replace(/"/g, '&quot;').replace(/\n/g, '\\n')}"
+              style="flex: 1; font-size: 14px; padding: 10px 16px;">
+              Copy Script
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    contentHTML = `
+      <div style="margin-bottom: 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <h2 style="font-size: 32px; font-weight: 700; color: #1D1D1F; margin: 0 0 8px 0;">My Dashboard</h2>
+            <p style="font-size: 17px; color: #86868B; margin: 0;">
+              ${history.length} saved ${history.length === 1 ? 'letter' : 'letters'} • Last 10 entries
+            </p>
+          </div>
+          <button 
+            id="clear-all-history"
+            class="btn neutral"
+            style="font-size: 14px; padding: 10px 20px;">
+            Clear All
+          </button>
+        </div>
+        
+        <div style="display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));">
+          ${historyCards}
+        </div>
+      </div>
+    `;
+  }
+
+  document.querySelector("#app").innerHTML = `
+    <div class="wrap">
+      ${renderHeader()}
+      <main class="main" style="max-width: 1200px; margin: 0 auto; padding: 40px 24px;">
+        ${contentHTML}
+      </main>
+      ${renderFooter()}
+    </div>
+  `;
+
+  bindNavigation();
+
+  // Copy button handlers
+  document.querySelectorAll('.dashboard-copy-btn, .dashboard-copy-script-btn').forEach(button => {
+    button.addEventListener('click', async () => {
+      const content = button.getAttribute('data-content')
+        .replace(/&quot;/g, '"')
+        .replace(/\\n/g, '\n');
+      
+      const originalText = button.textContent;
+      try {
+        await navigator.clipboard.writeText(content);
+        button.textContent = '✓ Copied';
+        button.classList.add('is-success');
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.classList.remove('is-success');
+        }, 1200);
+      } catch (error) {
+        button.textContent = 'Copy failed';
+        setTimeout(() => {
+          button.textContent = originalText;
+        }, 1600);
+      }
+    });
+  });
+
+  // Delete button handlers
+  document.querySelectorAll('.dashboard-delete-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      const id = parseInt(button.getAttribute('data-id'));
+      if (confirm('Are you sure you want to delete this letter?')) {
+        try {
+          let history = JSON.parse(localStorage.getItem('fixMyMedicalBill_History') || '[]');
+          history = history.filter(entry => entry.id !== id);
+          localStorage.setItem('fixMyMedicalBill_History', JSON.stringify(history));
+          renderDashboardPage(); // Re-render
+        } catch (error) {
+          console.error('[Dashboard] Failed to delete entry:', error);
+        }
+      }
+    });
+  });
+
+  // Clear all handler
+  const clearAllBtn = document.getElementById('clear-all-history');
+  if (clearAllBtn) {
+    clearAllBtn.addEventListener('click', () => {
+      if (confirm(`Are you sure you want to delete all ${history.length} saved letters? This cannot be undone.`)) {
+        localStorage.removeItem('fixMyMedicalBill_History');
+        renderDashboardPage(); // Re-render
+      }
+    });
+  }
+}
+
 function router() {
   const normalizedPath = window.location.pathname.replace(/\/+$/, "") || "/";
   
@@ -6231,6 +6435,12 @@ function router() {
     bindNavigation();
     setupBillScanning(); // Initialize OCR
     setupQuizLogic(); // Initialize quiz
+    return;
+  }
+  
+  // Handle Dashboard route
+  if (normalizedPath === "/dashboard") {
+    renderDashboardPage();
     return;
   }
   

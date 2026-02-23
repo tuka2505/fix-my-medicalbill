@@ -1,11 +1,16 @@
 // Vercel Serverless Function - Secure Gemini API Proxy
 // Features: reCAPTCHA v3, Rate Limiting (1 req/3 sec), Budget Protection ($37/month)
 
+import { Redis } from '@upstash/redis';
+
 const RATE_LIMIT_WINDOW = 3 * 1000; // 3 seconds
 const RECAPTCHA_THRESHOLD = 0.5; // Score threshold for bot detection
 
-// In-memory store for rate limiting (for production, use Vercel KV or Redis)
-const requestStore = new Map();
+// Initialize Redis client for global rate limiting
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL,
+  token: process.env.KV_REST_API_TOKEN
+});
 
 // Verify reCAPTCHA token
 async function verifyRecaptcha(token) {
@@ -63,35 +68,31 @@ async function verifyRecaptcha(token) {
   }
 }
 
-// Rate limiting: 1 request per 3 seconds per IP
-function checkRateLimit(ip) {
-  const now = Date.now();
-  const lastRequest = requestStore.get(ip);
+// Rate limiting: 1 request per 3 seconds per IP using Redis
+async function checkRateLimit(ip) {
+  const key = `rate_limit:${ip}`;
   
-  if (lastRequest) {
-    const timeSinceLastRequest = now - lastRequest;
+  try {
+    const exists = await redis.get(key);
     
-    if (timeSinceLastRequest < RATE_LIMIT_WINDOW) {
-      const waitTime = Math.ceil((RATE_LIMIT_WINDOW - timeSinceLastRequest) / 1000);
+    if (exists) {
+      // User already made a request within the last 3 seconds
       return { 
         allowed: false, 
-        waitTime: waitTime
+        waitTime: 3
       };
     }
+    
+    // Set key with 3-second expiration
+    await redis.set(key, '1', { ex: 3 });
+    
+    return { allowed: true };
+    
+  } catch (error) {
+    console.error('[Rate Limit] Redis error:', error);
+    // Fail open - allow request if Redis is unavailable
+    return { allowed: true };
   }
-  
-  // Update last request time
-  requestStore.set(ip, now);
-  
-  // Clean up old entries (older than 1 hour)
-  const oneHourAgo = now - (60 * 60 * 1000);
-  for (const [key, timestamp] of requestStore.entries()) {
-    if (timestamp < oneHourAgo) {
-      requestStore.delete(key);
-    }
-  }
-  
-  return { allowed: true };
 }
 
 export default async function handler(req, res) {
@@ -144,8 +145,8 @@ export default async function handler(req, res) {
   
   console.log(`[Security] Request from IP: ${ip}`);
   
-  // Rate limiting check (1 request per 3 seconds)
-  const rateLimit = checkRateLimit(ip);
+  // Rate limiting check (1 request per 3 seconds) - NOW ASYNC
+  const rateLimit = await checkRateLimit(ip);
   
   if (!rateLimit.allowed) {
     console.log(`[Rate Limit] Blocked IP ${ip} - Wait ${rateLimit.waitTime}s`);
@@ -227,6 +228,103 @@ IMPORTANT: Your output MUST be valid JSON only. Do not include markdown formatti
     // Call Gemini API with gemini-3-flash model
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
     
+    // Build generationConfig with response schema for structured output
+    const finalGenerationConfig = {
+      ...generationConfig,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "OBJECT",
+        properties: {
+          isValid: {
+            type: "BOOLEAN",
+            description: "Whether this is a valid medical bill"
+          },
+          documentType: {
+            type: "STRING",
+            enum: ["itemized_bill", "summary_bill", "eob", "statement", "unknown"],
+            description: "Type of medical document"
+          },
+          facilityInfo: {
+            type: "OBJECT",
+            properties: {
+              name: { type: "STRING", nullable: true },
+              npi: { type: "STRING", nullable: true },
+              address: { type: "STRING", nullable: true },
+              phone: { type: "STRING", nullable: true }
+            }
+          },
+          patientInfo: {
+            type: "OBJECT",
+            properties: {
+              name: { type: "STRING", nullable: true },
+              accountNumber: { type: "STRING", nullable: true },
+              insuranceCompany: { type: "STRING", nullable: true }
+            }
+          },
+          billSummary: {
+            type: "OBJECT",
+            properties: {
+              totalCharges: { type: "NUMBER" },
+              insurancePaid: { type: "NUMBER", nullable: true },
+              adjustments: { type: "NUMBER", nullable: true },
+              patientResponsibility: { type: "NUMBER" },
+              dateOfService: { type: "STRING", nullable: true },
+              billDate: { type: "STRING", nullable: true }
+            },
+            required: ["totalCharges", "patientResponsibility"]
+          },
+          lineItems: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                description: { type: "STRING" },
+                cptCode: { type: "STRING", nullable: true },
+                hcpcsCode: { type: "STRING", nullable: true },
+                revenueCode: { type: "STRING", nullable: true },
+                modifiers: { 
+                  type: "ARRAY", 
+                  items: { type: "STRING" },
+                  nullable: true 
+                },
+                units: { type: "NUMBER", nullable: true },
+                chargePerUnit: { type: "NUMBER", nullable: true },
+                totalCharge: { type: "NUMBER" },
+                date: { type: "STRING", nullable: true }
+              },
+              required: ["description", "totalCharge"]
+            }
+          },
+          detectedIssues: {
+            type: "OBJECT",
+            properties: {
+              hasOutOfNetworkProvider: { type: "BOOLEAN" },
+              hasDuplicateCharges: { type: "BOOLEAN" },
+              suspectedUpcoding: { 
+                type: "ARRAY", 
+                items: { type: "STRING" } 
+              },
+              suspectedUnbundling: { 
+                type: "ARRAY", 
+                items: { type: "STRING" } 
+              },
+              mathErrors: { 
+                type: "ARRAY", 
+                items: { type: "STRING" } 
+              },
+              balanceBillingRisk: { type: "BOOLEAN" }
+            }
+          },
+          issueCategory: {
+            type: "STRING",
+            enum: ["Emergency Room", "Lab & Imaging", "Surgery & Inpatient", "General Doctor Visit"],
+            description: "Primary category of medical service"
+          }
+        },
+        required: ["isValid", "documentType", "billSummary", "lineItems", "detectedIssues", "issueCategory"]
+      }
+    };
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -234,7 +332,7 @@ IMPORTANT: Your output MUST be valid JSON only. Do not include markdown formatti
       },
       body: JSON.stringify({
         contents: enhancedContents,
-        generationConfig: generationConfig || {}
+        generationConfig: finalGenerationConfig
       })
     });
     
