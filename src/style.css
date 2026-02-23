@@ -1385,6 +1385,36 @@ a{ color:inherit; }
   padding: 40px 20px;
   text-align: center;
   animation: fadeInUp 0.6s ease;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95), 
+    rgba(255, 255, 255, 0.88)
+  );
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 
+    0 30px 60px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+  min-height: 400px;
+}
+
+/* Apple-style glow effect */
+.quiz-final-result::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgba(0, 113, 227, 0.12),
+    transparent
+  );
+  pointer-events: none;
 }
 
 .result-badge{
@@ -1400,14 +1430,17 @@ a{ color:inherit; }
 }
 
 .result-amount{
-  font-size: 64px;
+  font-size: clamp(42px, 8vw, 64px); /* Responsive font size */
   font-weight: 900;
   letter-spacing: -0.03em;
   background: linear-gradient(135deg, #0071e3, #00a8ff);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  line-height: 1;
+  line-height: 1.1; /* Increased from 1 to prevent clipping */
+  word-break: break-word; /* Prevent text overflow */
+  max-width: 100%;
+  padding: 0 16px; /* Add horizontal padding */
 }
 
 .result-description{
