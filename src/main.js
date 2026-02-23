@@ -6481,7 +6481,7 @@ function router() {
     setupQuizLogic();
   }
 
-  // 기존 setupTool 호출부 유지
+  // Maintain existing setupTool call structure
   setupTool({
     formId: "dispute-letter-form",
     letterOutputId: "letter-output",
@@ -7607,14 +7607,14 @@ function setupBillScanning() {
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
       const sizeMB = (file.size / 1024 / 1024).toFixed(2);
-      alert(`파일이 너무 큽니다 (${sizeMB}MB). 10MB 이하의 파일만 업로드 가능합니다.\n\n💡 팁:\n- 이미지를 압축하거나\n- 스크린샷을 다시 찍거나\n- 불필요한 부분을 잘라내세요.`);
+      alert(`File Too Large (${sizeMB}MB)\n\nMaximum file size is 10MB. Please compress your image and try again.\n\n💡 Tips:\n• Use online image compressors (e.g., TinyPNG, Compressor.io)\n• Reduce image resolution before uploading\n• Crop unnecessary sections of the document`);
       return;
     }
     
     // Warn about large files (>3MB)
     if (file.size > 3 * 1024 * 1024) {
       const sizeMB = (file.size / 1024 / 1024).toFixed(2);
-      const proceed = confirm(`파일 크기가 큽니다 (${sizeMB}MB). 분석이 느릴 수 있습니다.\n\n더 빠른 분석을 원하시면 '취소'를 눌러 이미지를 압축한 후 다시 업로드하세요.\n\n계속하시겠습니까?`);
+      const proceed = confirm(`Large File Warning (${sizeMB}MB)\n\nAnalysis may take longer with large files.\n\nFor faster results, click 'Cancel' to compress your image first, then re-upload.\n\nProceed with current file?`);
       if (!proceed) return;
     }
 
@@ -7852,7 +7852,7 @@ OUTPUT: Valid JSON only. NO markdown formatting, NO explanations outside JSON.` 
           
           // Handle timeout errors
           if (inner.message.includes('504') || inner.message.includes('timeout')) {
-            alert('분석 시간이 초과되었습니다. 이미지 파일 크기를 줄이거나 선명하지 않은 부분을 잘라내고 다시 시도해주세요.');
+            alert('Analysis Timeout\n\nThe file took too long to process (over 60 seconds). Please try:\n\n• Compress your image file (recommended: under 2MB)\n• Use a clearer/higher quality scan\n• Crop to show only the relevant bill sections\n\nIf the issue persists, contact support.');
             if (scanProgress) {
               scanProgressText.textContent = 'Analysis timeout. Please compress your file and try again.';
               setTimeout(() => { if (scanProgress) scanProgress.style.display = 'none'; }, 3000);
@@ -8291,7 +8291,7 @@ async function callSecureGeminiAPI(contents, generationConfig = {}, action = 'un
       
       // Timeout (504 Gateway Timeout)
       if (response.status === 504) {
-        throw new Error('504:분석 시간이 초과되었습니다. 이미지 파일이 너무 크거나 복잡합니다. 파일 크기를 2MB 이하로 줄이거나, 불필요한 부분을 제거한 후 다시 시도해주세요.');
+        throw new Error('504:Analysis timeout. File too large or complex. Please reduce file size to under 2MB or crop unnecessary sections and try again.');
       }
       
       // File too large (10MB limit)
