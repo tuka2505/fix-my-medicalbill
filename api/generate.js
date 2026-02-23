@@ -3,6 +3,11 @@
 
 import { Redis } from '@upstash/redis';
 
+// Vercel function configuration - increase timeout for large image processing
+export const config = {
+  maxDuration: 60 // 60 seconds (max for Pro plan, 10s for Hobby plan)
+};
+
 const RATE_LIMIT_WINDOW = 3 * 1000; // 3 seconds
 const RECAPTCHA_THRESHOLD = 0.5; // Score threshold for bot detection
 
@@ -325,40 +330,63 @@ IMPORTANT: Your output MUST be valid JSON only. Do not include markdown formatti
       }
     };
     
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: enhancedContents,
-        generationConfig: finalGenerationConfig
-      })
-    });
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 second timeout
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[Gemini API] Error:', response.status, errorText);
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: enhancedContents,
+          generationConfig: finalGenerationConfig
+        }),
+        signal: controller.signal
+      });
       
-      if (response.status === 429) {
-        return res.status(429).json({ 
-          error: 'API temporarily busy',
-          message: 'Our service is experiencing high demand. Please try again in a moment.'
+      clearTimeout(timeoutId);
+    
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[Gemini API] Error:', response.status, errorText);
+        
+        if (response.status === 429) {
+          return res.status(429).json({ 
+            error: 'API temporarily busy',
+            message: 'Our service is experiencing high demand. Please try again in a moment.'
+          });
+        }
+        
+        return res.status(response.status).json({ 
+          error: 'API error',
+          message: `Service returned status ${response.status}`
         });
       }
       
-      return res.status(response.status).json({ 
-        error: 'API error',
-        message: `Service returned status ${response.status}`
-      });
+      const data = await response.json();
+      
+        console.log(`[Backend] ✓ Successfully processed ${action} request`);
+      
+      // Return successful response
+      return res.status(200).json(data);
+      
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      // Handle abort/timeout errors
+      if (fetchError.name === 'AbortError') {
+        console.error('[Gemini API] Request timeout after 55 seconds');
+        return res.status(504).json({ 
+          error: 'Request timeout',
+          message: 'Analysis took too long. Please compress your image file (under 2MB recommended) and try again.'
+        });
+      }
+      
+      throw fetchError; // Re-throw other fetch errors
     }
-    
-    const data = await response.json();
-    
-    console.log(`[Backend] ✓ Successfully processed ${action} request`);
-    
-    // Return successful response
-    return res.status(200).json(data);
     
   } catch (error) {
     console.error('[Backend] Error:', error);

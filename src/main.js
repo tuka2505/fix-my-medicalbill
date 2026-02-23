@@ -7571,13 +7571,15 @@ function setupBillScanning() {
 
       const reader = new FileReader();
       reader.onloadend = async () => {
+        // Declare progressInterval outside try block so it's accessible in catch
+        let progressInterval;
         try {
           scanProgressFill.style.width = '70%';
           scanProgressText.textContent = '🔍 AI analyzing billing codes... 70%';
           
           // Start smooth progress animation from 70% to 88%
           let currentProgress = 70;
-          const progressInterval = setInterval(() => {
+          progressInterval = setInterval(() => {
             if (currentProgress < 88) {
               currentProgress += Math.random() * 2; // Random increment 0-2%
               if (currentProgress > 88) currentProgress = 88;
@@ -7745,8 +7747,19 @@ OUTPUT ONLY VALID JSON. NO EXPLANATIONS.` },
             }, 800);
           } else { throw new Error("Invalid Data"); }
         } catch (inner) { 
-          clearInterval(progressInterval); // Stop animation on error
+          // Stop animation on error (only if progressInterval was initialized)
+          if (progressInterval) clearInterval(progressInterval);
           console.error(inner); 
+          
+          // Handle timeout errors
+          if (inner.message.includes('504') || inner.message.includes('timeout')) {
+            alert('분석 시간이 초과되었습니다. 이미지 파일 크기를 줄이거나 선명하지 않은 부분을 잘라내고 다시 시도해주세요.');
+            if (scanProgress) {
+              scanProgressText.textContent = 'Analysis timeout. Please compress your file and try again.';
+              setTimeout(() => { if (scanProgress) scanProgress.style.display = 'none'; }, 3000);
+            }
+            return;
+          }
           
           // Handle file size errors
           if (inner.message.includes('FILE_TOO_LARGE:')) {
