@@ -8250,77 +8250,25 @@ Document Type: ${documentType}
 LINE ITEMS (${lineItems.length} items):
 ${JSON.stringify(lineItems.slice(0, 8), null, 2)}
 
-PRE-DETECTED ISSUES:
-${JSON.stringify(detectedIssues, null, 2)}
-
-[CLINICAL AUDIT RULES FOR ${validatedCategory}]
-${JSON.stringify(combinedRules, null, 2)}
-
 [YOUR TASK]
-Generate EXACTLY ${questionCount} questions to PROVE or DISPROVE the CPT codes in the bill.
+Generate EXACTLY ${questionCount} questions to verify CPT codes in the bill.
 
 ${documentType === 'itemized_bill' 
-  ? `CRITICAL RULES - ITEMIZED BILL DETECTED:
-1. ⚠️ SKIP GATEKEEPER: This bill already has CPT codes. DO NOT ask if CPT codes exist.
-2. START DIRECTLY with CPT-specific verification questions (e.g., "CPT 99285 is billed. Did you receive intensive care?")
-3. Target SPECIFIC CPT codes from lineItems array above
-4. Each question verifies if the billed CPT code matches actual care received`
-  : `CRITICAL RULES - SUMMARY BILL SUSPECTED:
-1. ⚠️ FIRST QUESTION MUST BE GATEKEEPER: "Does your bill show specific 5-digit CPT codes?"
-2. If user answers "No CPT codes" → riskLevel: "BLOCKER" with flagText: "AUDIT BLOCKED: Summary bill"
-3. Subsequent questions should be general (no specific CPT codes since we don't have them)`
+  ? `ITEMIZED BILL RULES:
+1. SKIP gatekeeper (CPT codes already present)
+2. Ask CPT-specific verification questions
+3. Each question checks if billed CPT matches actual care
+4. Example: "CPT 99285 billed - did you receive intensive/life-threatening care?"`
+  : `SUMMARY BILL RULES:
+1. FIRST question must be: "Does your bill show CPT codes?"
+2. If "No" → riskLevel: "BLOCKER", flagText: "AUDIT BLOCKED: Summary bill"
+3. Other questions should be general (no specific CPTs)`
 }
 
-ALWAYS INCLUDE:
-- Options with "value": "flag" (triggers red flag) or "safe" (no issue)
-- riskLevel: "HIGH", "MEDIUM", "LOW", "BLOCKER", or "NONE"
-- flagText: Specific clinical violation description (only for flag options)
-
-[STRICT OUTPUT SCHEMA - JSON ONLY]
-Return ONLY valid JSON array. No markdown. No explanations.
-
-${documentType === 'itemized_bill' ? `EXAMPLE FOR ITEMIZED BILL (NO GATEKEEPER):
-[
-  {
-    "id": "q1",
-    "question": "CPT 99285 (Level 5 Emergency Visit) is billed. Did you receive intensive care (multiple IVs, CT/MRI, life-threatening condition)?",
-    "context": "Level 5 ER requires high medical complexity. Minor conditions should be Level 2-3.",
-    "options": [
-      { "label": "Yes, intensive care received", "value": "safe", "riskLevel": "NONE", "flagText": null },
-      { "label": "No, routine care only", "value": "flag", "riskLevel": "HIGH", "flagText": "ER Level 5 Upcoding: CPT 99285 billed but patient reports routine care." },
-      { "label": "Not Sure", "value": "unsure", "riskLevel": "NONE", "flagText": null }
-    ]
-  },
-  {
-    "id": "q2",
-    "question": "CPT 70450 (CT Scan Head) is billed for $2,400. Did you receive this scan?",
-    "context": "Verify you actually received this expensive imaging service.",
-    "options": [
-      { "label": "Yes, I had CT scan", "value": "safe", "riskLevel": "NONE", "flagText": null },
-      { "label": "No, never had CT scan", "value": "flag", "riskLevel": "HIGH", "flagText": "Service Not Rendered: CT scan billed but patient never received it." }
-    ]
-  }
-]` : `EXAMPLE FOR SUMMARY BILL (WITH GATEKEEPER):
-[
-  {
-    "id": "q1_gatekeeper",
-    "question": "Does your bill show specific 5-digit CPT codes (like 99285, 70450)?",
-    "context": "Summary bills hide errors. CPT codes required for audit.",
-    "options": [
-      { "label": "Yes, I see CPT codes", "value": "safe", "riskLevel": "NONE", "flagText": null },
-      { "label": "No, only totals shown", "value": "flag", "riskLevel": "BLOCKER", "flagText": "AUDIT BLOCKED: Summary bill detected." }
-    ]
-  },
-  {
-    "id": "q2",
-    "question": "Did you have an overnight hospital stay?",
-    "context": "Multi-day stays often have duplicate charges.",
-    "options": [
-      { "label": "Yes, overnight stay", "value": "safe", "riskLevel": "NONE", "flagText": null },
-      { "label": "No, same-day only", "value": "safe", "riskLevel": "NONE", "flagText": null }
-    ]
-  }
-]`}
+OUTPUT FORMAT:
+JSON array only. Each question has:
+- id, question, context
+- options: label, value (flag/safe/unsure), riskLevel (HIGH/MEDIUM/LOW/NONE/BLOCKER), flagText
 `;
 
     // Call secure backend API with strict response schema
@@ -8328,7 +8276,7 @@ ${documentType === 'itemized_bill' ? `EXAMPLE FOR ITEMIZED BILL (NO GATEKEEPER):
       [{ parts: [{ text: prompt }] }],
       { 
         responseMimeType: "application/json",
-        maxOutputTokens: 2500,
+        maxOutputTokens: 4000,
         responseSchema: {
           type: "ARRAY",
           items: {
