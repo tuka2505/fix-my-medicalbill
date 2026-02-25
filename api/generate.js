@@ -11,11 +11,23 @@ export const config = {
 const RATE_LIMIT_WINDOW = 3 * 1000; // 3 seconds
 const RECAPTCHA_THRESHOLD = 0.5; // Score threshold for bot detection
 
-// Initialize Redis client for global rate limiting
+// Initialize Redis client for global rate limiting + quiz caching
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
   token: process.env.KV_REST_API_TOKEN
 });
+
+// Simple hash for cache keys (avoids storing full prompts as keys)
+function simpleHash(str) {
+  let hash = 0;
+  const sample = str.substring(0, 600);
+  for (let i = 0; i < sample.length; i++) {
+    const char = sample.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(36);
+}
 
 // Verify reCAPTCHA token
 async function verifyRecaptcha(token) {
@@ -233,12 +245,32 @@ IMPORTANT: Your output MUST be valid JSON only. Do not include markdown formatti
     // Call Gemini API with gemini-3-flash model
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
     
-    // Build generationConfig with SIMPLIFIED response schema for speed (40s→15s)
-    // Additional data will be provided in 'rawData' field as free-form text
+    // Quiz generation caching: check Redis before calling Gemini (saves 5-15s on cache hits)
+    const isQuizRequest = action === 'quiz_generation';
+    let cacheKey = null;
+    if (isQuizRequest) {
+      const contentHash = simpleHash(JSON.stringify(contents));
+      cacheKey = `quiz_cache:${contentHash}`;
+      try {
+        const cached = await redis.get(cacheKey);
+        if (cached) {
+          console.log('[Cache] \u2713 Quiz cache hit:', cacheKey);
+          return res.status(200).json(cached);
+        }
+        console.log('[Cache] Quiz cache miss - generating fresh:', cacheKey);
+      } catch (cacheErr) {
+        console.warn('[Cache] Read error (non-fatal):', cacheErr.message);
+      }
+    }
+
+    // Build generationConfig:
+    // - Quiz generation uses its own ARRAY schema (passed from client)
+    // - Bill analysis uses the default simplified OBJECT schema
+    const hasCustomSchema = generationConfig?.responseSchema != null;
     const finalGenerationConfig = {
       ...generationConfig,
       responseMimeType: "application/json",
-      responseSchema: {
+      responseSchema: hasCustomSchema ? generationConfig.responseSchema : {
         type: "OBJECT",
         properties: {
           isValid: {
@@ -283,7 +315,7 @@ IMPORTANT: Your output MUST be valid JSON only. Do not include markdown formatti
         required: ["isValid", "documentType", "totalAmount", "issueCategory"]
       }
     };
-    
+
     // Create abort controller for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 85000); // 85 second timeout (allow time for complex bills)
@@ -321,9 +353,19 @@ IMPORTANT: Your output MUST be valid JSON only. Do not include markdown formatti
       }
       
       const data = await response.json();
-      
-        console.log(`[Backend] ✓ Successfully processed ${action} request`);
-      
+
+      console.log(`[Backend] \u2713 Successfully processed ${action} request`);
+
+      // Store quiz responses in Redis cache (24h TTL) for instant future hits
+      if (isQuizRequest && cacheKey) {
+        try {
+          await redis.set(cacheKey, data, { ex: 86400 }); // 24 hours
+          console.log('[Cache] \u2713 Quiz stored in cache:', cacheKey);
+        } catch (cacheErr) {
+          console.warn('[Cache] Write error (non-fatal):', cacheErr.message);
+        }
+      }
+
       // Return successful response
       return res.status(200).json(data);
       

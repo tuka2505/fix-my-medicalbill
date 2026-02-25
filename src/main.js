@@ -7573,8 +7573,8 @@ function setupBillScanning() {
           
           // More aggressive compression for large files
           const isVeryLarge = file.size > 2 * 1024 * 1024; // > 2MB
-          const maxDim = isVeryLarge ? 1600 : 2000; // Smaller max for large files
-          const quality = isVeryLarge ? 0.7 : 0.85; // Lower quality for large files
+          const maxDim = isVeryLarge ? 1200 : 1600; // Reduced: 44% smaller payload, maintains text readability
+          const quality = isVeryLarge ? 0.7 : 0.82; // Slightly lower quality for faster API processing
           
           if (width > maxDim || height > maxDim) {
             if (width > height) {
@@ -7883,6 +7883,26 @@ OUTPUT: Valid JSON only. NO markdown formatting, NO explanations outside JSON.` 
               totalAmount
             });
 
+            // Pre-determine category and set global state BEFORE the 800ms UI transition
+            // This lets quiz generation start immediately (overlaps with transition time)
+            let _bgCategory;
+            if (v.auditReady) {
+              localStorage.setItem('auditMode', 'full');
+              _bgCategory = aiResult.issueCategory || 'General Doctor Visit';
+            } else {
+              localStorage.setItem('auditMode', 'limited');
+              _bgCategory = 'General Doctor Visit';
+            }
+            currentBillCategory = { category: _bgCategory, route: '/medical-bill-dispute-letter' };
+            currentBillText = JSON.stringify(aiResult);
+            detectedAmount = (v.primaryTotal ?? totalAmount ?? 0).toString();
+
+            // START quiz generation in background (runs while 800ms UI transitions play)
+            // On Redis cache hit: quiz is ready before loading screen even appears (0s wait)
+            // On cache miss: quiz generates in parallel with transition, saving 800ms+
+            console.log('[BG Quiz] Starting background quiz prefetch for:', _bgCategory);
+            window._preloadedQuizPromise = generateAIQuiz(_bgCategory, currentBillText);
+
             setTimeout(() => {
               if (scanProgress) scanProgress.style.display = 'none';
               
@@ -7892,21 +7912,7 @@ OUTPUT: Valid JSON only. NO markdown formatting, NO explanations outside JSON.` 
               const quizWrapper = document.getElementById('auditor-quiz-wrapper');
               if (quizWrapper) quizWrapper.style.display = 'block';
 
-              // Determine audit mode based on data quality
-              let category;
-              if (v.auditReady) {
-                localStorage.setItem('auditMode', 'full');
-                category = aiResult.issueCategory || 'General Doctor Visit';
-              } else {
-                localStorage.setItem('auditMode', 'limited');
-                category = 'General Doctor Visit'; // Force to general category for limited data
-              }
-              
-              currentBillCategory = { category: category, route: '/medical-bill-dispute-letter' };
-              currentBillText = JSON.stringify(aiResult);
-              detectedAmount = (v.primaryTotal ?? totalAmount ?? 0).toString();
-
-              initializeTargetedQuiz(category);
+              initializeTargetedQuiz(_bgCategory);
             }, 800);
           } else { throw new Error("Invalid Data"); }
         } catch (inner) { 
@@ -8641,9 +8647,14 @@ async function initializeTargetedQuiz(category) {
     }, 1800); // Slower rotation for better readability
   }
 
-  // Generate AI-powered questions
-  const questions = await generateAIQuiz(category, currentBillText || '');
-  
+  // Use pre-loaded quiz if available (started during bill analysis completion)
+  // Cache hit path: quiz already done → loading screen shows ~0 seconds
+  // Cache miss path: quiz started 800ms+ earlier → loading screen shows less
+  const questions = window._preloadedQuizPromise
+    ? await window._preloadedQuizPromise
+    : await generateAIQuiz(category, currentBillText || '');
+  window._preloadedQuizPromise = null; // Clear after use
+
   // Clear message interval when AI responds
   if (msgInterval) clearInterval(msgInterval);
   
