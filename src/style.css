@@ -1492,12 +1492,13 @@ a{ color:inherit; }
 
 /* Premium card */
 .rr-premium-card       { border-radius: 18px; padding: 22px; margin-top: 22px; }
-.rr-premium-card--dark { background: linear-gradient(135deg,#2C2C2E,#3A3A3C); }
 .rr-premium-label      { font-size: 11px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px; color: #FF9F0A; }
-.rr-premium-card--dark h4 { font-size: 16px; font-weight: 800; color: white; margin: 0 0 8px; line-height: 1.3; }
-.rr-premium-card--dark p  { font-size: 13px; color: rgba(255,255,255,0.72); line-height: 1.6; margin: 0 0 14px; }
 .rr-premium-card h4 { font-size: 16px; font-weight: 800; margin: 0 0 8px; line-height: 1.3; color: #1D1D1F; }
 .rr-premium-card p  { font-size: 13px; color: #3A3A3C; line-height: 1.6; margin: 0 0 14px; }
+/* Dark variant - must come after generic styles to override */
+.rr-premium-card--dark { background: linear-gradient(135deg,#2C2C2E,#3A3A3C); }
+.rr-premium-card--dark h4 { font-size: 16px; font-weight: 800; color: white !important; margin: 0 0 8px; line-height: 1.3; }
+.rr-premium-card--dark p  { font-size: 13px; color: rgba(255,255,255,0.72) !important; line-height: 1.6; margin: 0 0 14px; }
 
 /* Low-risk clean card */
 .rr-clean-card       { background: linear-gradient(135deg,#E8F5E9,#F1F8E9); border-radius: 16px; padding: 20px; margin-bottom: 18px; }
