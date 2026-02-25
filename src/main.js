@@ -7744,10 +7744,12 @@ ANALYZE this medical bill and extract key information. Focus on ACCURACY over sp
 CRITICAL INSTRUCTIONS:
 1. isValid: Only true if this is clearly a medical bill (not receipt, invoice, or unrelated doc)
 2. documentType: 
-   - "itemized_bill" = has CPT/HCPCS codes with individual line items
-   - "summary_bill" = only category totals, NO detailed codes
+   - "itemized_bill" = has 5-digit CPT/HCPCS codes (e.g., 99285, 70450) listed next to charges for EACH service
+   - "summary_bill" = ONLY shows category totals (e.g., "Emergency Dept: $5,000") with NO individual CPT codes
    - "eob" = Explanation of Benefits from insurance company
    - "statement" = monthly billing statement
+   
+   CRITICAL: If you see ANY 5-digit CPT codes (99285, 70450, etc.), this is "itemized_bill" regardless of format.
 3. facilityName: Hospital/clinic name (be precise, include full legal name if visible)
 4. totalAmount: Patient responsibility amount in dollars (NOT insurance paid portion)
 5. dateOfService: Service date in YYYY-MM-DD format
@@ -8014,8 +8016,8 @@ const ReferenceAuditRules = {
       id: 'u_itemized_gatekeeper', 
       targetCPT: null,
       issue: "Summary Bill Blocker", 
-      question: "Does your bill show specific 5-digit CPT codes (like 99285, 70450, 80053)?",
-      context: "Summary bills hide billing errors. We need CPT codes for clinical audit.",
+      question: "Look at your bill right now. Do you see a table or list with 5-digit CPT codes next to charges (like the example below)?\n\nCPT 99285 | Emergency Visit | $2,150\nCPT 70450 | CT Scan | $2,400",
+      context: "Summary bills only show category totals (\"Emergency Dept: $5,000\"). Itemized bills show CPT codes for each service. We need CPT codes to verify charges.",
       flagText: "AUDIT BLOCKED: Summary bill detected. Cannot verify CPT codes without itemized billing details."
     },
     { 
@@ -8119,7 +8121,16 @@ async function generateAIQuiz(category, extractedText) {
     const billSummary = billData.billSummary || {};
     const facilityName = billData.facilityInfo?.name || 'Unknown Facility';
     const totalAmount = billSummary.patientResponsibility || billSummary.totalCharges || 0;
-    const documentType = billData.documentType || 'unknown';
+    let documentType = billData.documentType || 'unknown';
+    
+    // Critical fix: If we have CPT codes in lineItems, this is DEFINITELY an itemized bill
+    const hasCPTCodes = lineItems.some(item => 
+      item.cptCode && /^\d{5}$/.test(String(item.cptCode))
+    );
+    if (hasCPTCodes && documentType === 'summary_bill') {
+      console.log('[Quiz Gen] ⚠️ Override: OCR said summary_bill but CPT codes found → forcing itemized_bill');
+      documentType = 'itemized_bill';
+    }
     
     // Determine dynamic question count based on bill complexity (increased for thorough analysis)
     let questionCount = 8; // Default: 8 questions (more professional)
