@@ -261,12 +261,19 @@ export default async function handler(req, res) {
 
     // Build generationConfig:
     // - Quiz generation uses its own ARRAY schema (passed from client)
-    // - Bill analysis uses the default simplified OBJECT schema
+    // - Bill OCR: NO SCHEMA (faster, prevents 504 timeout on large images)
+    // - Other: Default simplified OBJECT schema
     const hasCustomSchema = generationConfig?.responseSchema != null;
+    const isBillOCR = action === 'bill_ocr';
+    
     const finalGenerationConfig = {
       ...generationConfig,
-      responseMimeType: "application/json",
-      responseSchema: hasCustomSchema ? generationConfig.responseSchema : {
+      responseMimeType: "application/json"
+    };
+    
+    // Skip schema for bill_ocr to prevent timeout (use prompt-based JSON output instead)
+    if (!isBillOCR) {
+      finalGenerationConfig.responseSchema = hasCustomSchema ? generationConfig.responseSchema : {
         type: "OBJECT",
         properties: {
           isValid: {
@@ -312,8 +319,8 @@ export default async function handler(req, res) {
           }
         },
         required: ["isValid", "documentType", "totalAmount", "issueCategory", "lineItems"]
-      }
-    };
+      };
+    }
 
     // Create abort controller for timeout (75s gives ~12s buffer before Vercel's 90s hard limit)
     const controller = new AbortController();

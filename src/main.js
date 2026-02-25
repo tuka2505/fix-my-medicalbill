@@ -7758,7 +7758,7 @@ Extract ALL line items. Numbers only (no $ or commas). Return ONLY this JSON - n
             }],
             { 
               response_mime_type: "application/json",
-              maxOutputTokens: 3000
+              maxOutputTokens: 4000
             },
             'bill_ocr'
           );
