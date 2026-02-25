@@ -7077,6 +7077,90 @@ function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
+// ==================================
+// CATEGORY AUTO-DETECTION FROM CPT CODES
+// ==================================
+
+function determineCategoryFromCPT(lineItems) {
+  if (!lineItems || lineItems.length === 0) return null;
+  
+  const cpts = lineItems
+    .map(item => String(item.cptCode || item.cpt || '').trim())
+    .filter(c => /^\d{5}$/.test(c)); // Valid 5-digit CPT codes only
+  
+  if (cpts.length === 0) return null;
+  
+  // Emergency Room: 99281-99285 (ER visit levels 1-5)
+  if (cpts.some(c => /^9928[1-5]$/.test(c))) {
+    console.log('[Category Auto-Detect] Emergency Room CPT found:', cpts.filter(c => /^9928[1-5]$/.test(c)));
+    return 'Emergency Room';
+  }
+  
+  // Hospital Stay: 99221-99239 (inpatient care)
+  if (cpts.some(c => /^9922[1-9]$|^9923[0-9]$/.test(c))) {
+    console.log('[Category Auto-Detect] Hospital Stay CPT found:', cpts.filter(c => /^9922[1-9]$|^9923[0-9]$/.test(c)));
+    return 'Hospital Stay';
+  }
+  
+  // Surgery: 10000-69999
+  if (cpts.some(c => /^[1-6]\d{4}$/.test(c))) {
+    console.log('[Category Auto-Detect] Surgery CPT found:', cpts.filter(c => /^[1-6]\d{4}$/.test(c)));
+    return 'Surgery';
+  }
+  
+  // Imaging/Radiology: 70000-79999
+  if (cpts.some(c => /^7[0-9]\d{3}$/.test(c))) {
+    console.log('[Category Auto-Detect] Imaging/Radiology CPT found:', cpts.filter(c => /^7[0-9]\d{3}$/.test(c)));
+    return 'Imaging/Radiology';
+  }
+  
+  // Lab Work: 80000-89999
+  if (cpts.some(c => /^8[0-9]\d{3}$/.test(c))) {
+    console.log('[Category Auto-Detect] Lab Work CPT found:', cpts.filter(c => /^8[0-9]\d{3}$/.test(c)));
+    return 'Lab Work';
+  }
+  
+  // General Doctor Visit: 99201-99215 (office visits)
+  if (cpts.some(c => /^9920[1-5]$|^9921[0-5]$/.test(c))) {
+    console.log('[Category Auto-Detect] General Doctor Visit CPT found:', cpts.filter(c => /^9920[1-5]$|^9921[0-5]$/.test(c)));
+    return 'General Doctor Visit';
+  }
+  
+  // Unknown CPT range → use first CPT
+  console.log('[Category Auto-Detect] Unknown CPT range, first code:', cpts[0]);
+  return null;
+}
+
+function validateAndNormalizeCategory(rawCategory, lineItems) {
+  const validCategories = [
+    'Emergency Room',
+    'Surgery',
+    'Lab Work',
+    'Imaging/Radiology',
+    'Hospital Stay',
+    'General Doctor Visit',
+    'Specialist Visit',
+    'Diagnostic Testing'
+  ];
+  
+  // Step 1: Check if OCR category is valid
+  if (rawCategory && validCategories.includes(rawCategory)) {
+    console.log('[Category Validation] ✓ OCR category valid:', rawCategory);
+    return rawCategory;
+  }
+  
+  // Step 2: Try CPT-based auto-detection
+  const autoCategory = determineCategoryFromCPT(lineItems);
+  if (autoCategory) {
+    console.log('[Category Validation] ⚠️ OCR category invalid/missing, using CPT auto-detect:', autoCategory);
+    return autoCategory;
+  }
+  
+  // Step 3: Fallback to default
+  console.log('[Category Validation] ⚠️ No valid category found, using fallback: General Doctor Visit');
+  return 'General Doctor Visit';
+}
+
 // --- main validator ---
 function validateAndNormalizeBill(raw) {
   const warnings = [];
@@ -7235,6 +7319,90 @@ function validateAndNormalizeBill(raw) {
     sumLineItems: Math.round(sumLineItems * 100) / 100,
     warnings,
   };
+}
+
+// ==================================
+// CATEGORY AUTO-DETECTION FROM CPT CODES
+// ==================================
+
+function determineCategoryFromCPT(lineItems) {
+  if (!lineItems || lineItems.length === 0) return null;
+  
+  const cpts = lineItems
+    .map(item => String(item.cptCode || item.cpt || '').trim())
+    .filter(c => /^\d{5}$/.test(c)); // Valid 5-digit CPT codes only
+  
+  if (cpts.length === 0) return null;
+  
+  // Emergency Room: 99281-99285 (ER visit levels 1-5)
+  if (cpts.some(c => /^9928[1-5]$/.test(c))) {
+    console.log('[Category Auto-Detect] Emergency Room CPT found:', cpts.filter(c => /^9928[1-5]$/.test(c)));
+    return 'Emergency Room';
+  }
+  
+  // Hospital Stay: 99221-99239 (inpatient care)
+  if (cpts.some(c => /^9922[1-9]$|^9923[0-9]$/.test(c))) {
+    console.log('[Category Auto-Detect] Hospital Stay CPT found:', cpts.filter(c => /^9922[1-9]$|^9923[0-9]$/.test(c)));
+    return 'Hospital Stay';
+  }
+  
+  // Surgery: 10000-69999
+  if (cpts.some(c => /^[1-6]\d{4}$/.test(c))) {
+    console.log('[Category Auto-Detect] Surgery CPT found:', cpts.filter(c => /^[1-6]\d{4}$/.test(c)));
+    return 'Surgery';
+  }
+  
+  // Imaging/Radiology: 70000-79999
+  if (cpts.some(c => /^7[0-9]\d{3}$/.test(c))) {
+    console.log('[Category Auto-Detect] Imaging/Radiology CPT found:', cpts.filter(c => /^7[0-9]\d{3}$/.test(c)));
+    return 'Imaging/Radiology';
+  }
+  
+  // Lab Work: 80000-89999
+  if (cpts.some(c => /^8[0-9]\d{3}$/.test(c))) {
+    console.log('[Category Auto-Detect] Lab Work CPT found:', cpts.filter(c => /^8[0-9]\d{3}$/.test(c)));
+    return 'Lab Work';
+  }
+  
+  // General Doctor Visit: 99201-99215 (office visits)
+  if (cpts.some(c => /^9920[1-5]$|^9921[0-5]$/.test(c))) {
+    console.log('[Category Auto-Detect] General Doctor Visit CPT found:', cpts.filter(c => /^9920[1-5]$|^9921[0-5]$/.test(c)));
+    return 'General Doctor Visit';
+  }
+  
+  // Unknown CPT range → use first CPT
+  console.log('[Category Auto-Detect] Unknown CPT range, first code:', cpts[0]);
+  return null;
+}
+
+function validateAndNormalizeCategory(rawCategory, lineItems) {
+  const validCategories = [
+    'Emergency Room',
+    'Surgery',
+    'Lab Work',
+    'Imaging/Radiology',
+    'Hospital Stay',
+    'General Doctor Visit',
+    'Specialist Visit',
+    'Diagnostic Testing'
+  ];
+  
+  // Step 1: Check if OCR category is valid
+  if (rawCategory && validCategories.includes(rawCategory)) {
+    console.log('[Category Validation] ✓ OCR category valid:', rawCategory);
+    return rawCategory;
+  }
+  
+  // Step 2: Try CPT-based auto-detection
+  const autoCategory = determineCategoryFromCPT(lineItems);
+  if (autoCategory) {
+    console.log('[Category Validation] ⚠️ OCR category invalid/missing, using CPT auto-detect:', autoCategory);
+    return autoCategory;
+  }
+  
+  // Step 3: Fallback to default
+  console.log('[Category Validation] ⚠️ No valid category found, using fallback: General Doctor Visit');
+  return 'General Doctor Visit';
 }
 
 // ==================================
@@ -7746,7 +7914,9 @@ function setupBillScanning() {
   "dateOfService": "2026-02-12",
   "issueCategory": "Emergency Room",
   "lineItems": [{"cptCode": "99285", "description": "ER Visit", "charge": 2150.00}]
-}` },
+}
+
+IMPORTANT: issueCategory must be ONE of: "Emergency Room", "Surgery", "Lab Work", "Imaging/Radiology", "Hospital Stay", "General Doctor Visit", "Specialist Visit", "Diagnostic Testing". Use CPT codes to determine: 99281-99285=ER, 99221-99239=Hospital Stay, 10000-69999=Surgery, 70000-79999=Imaging, 80000-89999=Lab, 99201-99215=General Visit.` },
                 { inlineData: { mimeType: fileToProcess.type, data: base64String } }
               ] 
             }],
@@ -7870,13 +8040,25 @@ function setupBillScanning() {
 
             // Pre-determine category and set global state BEFORE the 800ms UI transition
             // This lets quiz generation start immediately (overlaps with transition time)
-            let _bgCategory;
+            
+            // 🛡️ ROBUST CATEGORY VALIDATION: OCR → CPT Auto-Detect → Fallback
+            const _bgCategory = validateAndNormalizeCategory(
+              aiResult.issueCategory,
+              aiResult.lineItems
+            );
+            
+            console.log('[BG Quiz] Category validation complete:', {
+              ocrCategory: aiResult.issueCategory || 'null',
+              finalCategory: _bgCategory,
+              lineItems: aiResult.lineItems?.length || 0,
+              hasCPT: aiResult.lineItems?.some(i => /^\d{5}$/.test(String(i.cptCode || '').trim())) || false,
+              auditReady: v.auditReady
+            });
+            
             if (v.auditReady) {
               localStorage.setItem('auditMode', 'full');
-              _bgCategory = aiResult.issueCategory || 'General Doctor Visit';
             } else {
               localStorage.setItem('auditMode', 'limited');
-              _bgCategory = 'General Doctor Visit';
             }
             currentBillCategory = { category: _bgCategory, route: '/medical-bill-dispute-letter' };
             currentBillText = JSON.stringify(aiResult);
@@ -8082,10 +8264,7 @@ async function generateAIQuiz(category, extractedText) {
     if (quizContainer) quizContainer.style.display = 'none';
     if (quizAnalyzing) quizAnalyzing.style.display = 'flex';
 
-    const categoryRules = ReferenceAuditRules[category] || ReferenceAuditRules["General Doctor Visit"];
-    const combinedRules = [...categoryRules, ...ReferenceAuditRules["Universal"], ...ReferenceAuditRules["Lab & Imaging"]];
-    
-    // Parse enhanced OCR data
+    // Parse enhanced OCR data early for category validation
     let billData = {};
     try {
       billData = JSON.parse(extractedText);
@@ -8093,6 +8272,22 @@ async function generateAIQuiz(category, extractedText) {
       console.warn('[Quiz Gen] Could not parse extractedText as JSON, using as string');
       billData = { rawText: extractedText };
     }
+    
+    // 🛡️ FINAL CATEGORY VALIDATION before quiz generation
+    const validatedCategory = validateAndNormalizeCategory(category, billData.lineItems);
+    
+    if (validatedCategory !== category) {
+      console.warn('[Quiz Gen] ⚠️ Category mismatch detected!', {
+        providedCategory: category,
+        correctedCategory: validatedCategory,
+        lineItemsCount: billData.lineItems?.length || 0
+      });
+    }
+    
+    console.log('[Quiz Gen] Starting AI quiz generation for category:', validatedCategory);
+
+    const categoryRules = ReferenceAuditRules[validatedCategory] || ReferenceAuditRules["General Doctor Visit"];
+    const combinedRules = [...categoryRules, ...ReferenceAuditRules["Universal"], ...ReferenceAuditRules["Lab & Imaging"]];
     
     // Extract key data for quiz generation
     const lineItems = billData.lineItems || [];
@@ -8144,7 +8339,7 @@ ${JSON.stringify(lineItems.slice(0, 8), null, 2)}
 PRE-DETECTED ISSUES:
 ${JSON.stringify(detectedIssues, null, 2)}
 
-[CLINICAL AUDIT RULES FOR ${category}]
+[CLINICAL AUDIT RULES FOR ${validatedCategory}]
 ${JSON.stringify(combinedRules, null, 2)}
 
 [YOUR TASK]
