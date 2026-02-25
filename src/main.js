@@ -1,4 +1,4 @@
-import "./style.css";
+﻿import "./style.css";
 import { jsPDF } from "jspdf";
 import * as pdfjsLib from 'pdfjs-dist';
 
@@ -8908,6 +8908,205 @@ async function initializeTargetedQuiz(category) {
     return interval;
   }
 
+  // ── Violation card builder ──────────────────────────────────────────────────
+  function buildViolationCard(flag, index) {
+    const isHigh = flag.riskLevel === 'HIGH';
+    const bg    = isHigh ? '#FFF5F5' : '#FFFBF0';
+    const border= isHigh ? '#FF3B30' : '#FF9500';
+    const pill  = isHigh ? '#FF3B30' : '#FF9500';
+    const conf  = flag.confidence != null ? flag.confidence : 70;
+    const desc  = flag.description || '';
+
+    const colonIdx = desc.indexOf(':');
+    const title = colonIdx > -1 ? desc.slice(0, colonIdx).trim() : 'Billing Issue #' + (index + 1);
+    const body  = colonIdx > -1 ? desc.slice(colonIdx + 1).trim() : desc;
+
+    const billedMatch    = body.match(/[Bb]illed\s+(CPT\s*\d+[^,.\n]+?)(?:\s+but|\s+however|,)/);
+    const reportedMatch  = body.match(/(?:but|however|while)\s+(?:patient\s+)?(?:reported|said|stated|indicated)\s+(.+?)(?:\.|;|$)/i);
+    const billedText     = billedMatch   ? billedMatch[1].trim()   : '';
+    const reportedText   = reportedMatch ? reportedMatch[1].trim() : '';
+    const truncBody      = body.slice(0, 160) + (body.length > 160 ? '…' : '');
+
+    var rowsHtml = '';
+    if (billedText)    rowsHtml += '<div class="rr-v-row"><div class="rr-v-row-lbl">What was billed</div><div class="rr-v-row-val">' + billedText + '</div></div>';
+    if (reportedText)  rowsHtml += '<div class="rr-v-row"><div class="rr-v-row-lbl">What you reported</div><div class="rr-v-row-val">' + reportedText + '</div></div>';
+    if (!billedText && !reportedText) rowsHtml += '<div class="rr-v-row"><div class="rr-v-row-val">' + truncBody + '</div></div>';
+
+    var whyText = isHigh
+      ? 'This discrepancy is a factual mismatch — the service billed does not match the service you received. This is a strong indicator of billing error or upcoding.'
+      : 'This discrepancy suggests a possible coding issue. While less severe, it may still result in overcharging and warrants review.';
+
+    var confColor = conf >= 70 ? '#34C759' : '#FF9500';
+    var confIcon  = conf >= 70 ? '\u2713 ' : '';
+
+    return '<div class="rr-violation" style="background:' + bg + ';border-left-color:' + border + '">'
+      + '<div class="rr-v-header">'
+      +   '<span class="rr-v-riskpill" style="background:' + pill + '">' + flag.riskLevel + ' RISK</span>'
+      +   '<span class="rr-v-conf" style="color:' + confColor + '">' + confIcon + conf + '% confident</span>'
+      + '</div>'
+      + '<p class="rr-v-title">' + title + '</p>'
+      + '<div class="rr-v-rows" style="background:' + (isHigh ? '#FFF0EF' : '#FFFAEF') + '">' + rowsHtml + '</div>'
+      + '<div class="rr-v-why" style="background:' + (isHigh ? '#FFF5F5' : '#FFFCF0') + '">'
+      +   '<div class="rr-v-why-lbl" style="color:' + border + '">Why this matters</div>'
+      +   '<div class="rr-v-why-val">' + whyText + '</div>'
+      + '</div>'
+      + '<div class="rr-v-bar" style="margin-top:10px">'
+      +   '<div class="rr-v-bar-track"><div class="rr-v-bar-fill" style="width:' + conf + '%;background:' + confColor + '"></div></div>'
+      +   '<div class="rr-v-bar-lbl">' + conf + '% confidence</div>'
+      + '</div>'
+      + '</div>';
+  }
+
+  // ── Waitlist modal ──────────────────────────────────────────────────────────
+  function showWaitlistModal(opts) {
+    opts = opts || {};
+    var scenario        = opts.scenario        || 'blocker';
+    var billAmount      = opts.billAmount      || 0;
+    var flagCount       = opts.flagCount       || 0;
+    var estimatedRecovery = opts.estimatedRecovery || 0;
+
+    var configs = {
+      blocker: {
+        icon: '\uD83D\uDCEC',
+        accentColor: '#5856D6',
+        gradientBtn: 'linear-gradient(135deg,#5856D6,#9B59B6)',
+        title: 'Get Your Free Itemized Bill Request Letter',
+        subtitle: 'We\'ll email you an attorney-reviewed HIPAA request letter — plus a reminder to re-upload when you get your itemized bill.',
+        benefits: [
+          '\u2705 Free attorney-reviewed request letter',
+          '\u2705 Cites HIPAA 45 CFR \u00a7 164.524',
+          '\u2705 Reminder to re-upload for a full audit',
+          '\u2705 No credit card required'
+        ],
+        ctaText: 'Send Me the Free Letter \u2192',
+        finePrint: 'No spam. Just your letter + one follow-up reminder.',
+        successTitle: 'Letter on the Way!',
+        successMsg: 'Check your inbox in the next few minutes. We\u2019ll remind you to re-upload once you receive your itemized bill.'
+      },
+      high_risk: {
+        icon: '\uD83D\uDEA8',
+        accentColor: '#FF3B30',
+        gradientBtn: 'linear-gradient(135deg,#FF3B30,#FF6B35)',
+        title: 'Reserve Your 50% Early-Bird Discount',
+        subtitle: 'Premium audit launching soon. Lock in 50% off — includes CPT Medicare benchmark, NCCI bundling check, and a professional demand letter.',
+        benefits: [
+          '\u26A1 CPT-level Medicare price comparison',
+          '\u26A1 NCCI bundling violation check',
+          '\u26A1 Attorney-reviewed demand letter',
+          '\u26A1 Average recovery: $1,847'
+        ],
+        ctaText: 'Reserve 50% Early-Bird Discount \u2192',
+        finePrint: 'No charge until launch. Cancel anytime.',
+        successTitle: 'Spot Reserved!',
+        successMsg: 'You\u2019re on the early-bird list. We\u2019ll notify you first when Premium launches \u2014 50% off locked in.'
+      },
+      medium_risk: {
+        icon: '\u26A0\uFE0F',
+        accentColor: '#FF9500',
+        gradientBtn: 'linear-gradient(135deg,#FF9500,#FFCC00)',
+        title: 'Reserve Early Access \u2014 50% Off',
+        subtitle: 'Premium audit will show exact overcharge amounts with Medicare price comparison. Early-bird pricing locked in at sign-up.',
+        benefits: [
+          '\u2713 Exact dollar overcharge amounts',
+          '\u2713 Medicare benchmark comparison',
+          '\u2713 Dispute letter with specific amounts',
+          '\u2713 50% off at launch'
+        ],
+        ctaText: 'Reserve Early Access \u2192',
+        finePrint: 'No charge until launch. Unsubscribe anytime.',
+        successTitle: 'You\'re on the List!',
+        successMsg: 'Early access reserved. We\u2019ll send you a 50% off code when Premium launches.'
+      },
+      low_risk: {
+        icon: '\u2705',
+        accentColor: '#0071E3',
+        gradientBtn: 'linear-gradient(135deg,#0071E3,#5AC8FA)',
+        title: 'Get Notified at Launch \u2014 50% Off',
+        subtitle: 'Even clean bills benefit from a Medicare benchmark check. Average savings: $340. Be first in line at half price.',
+        benefits: [
+          '\u2713 Full line-item Medicare comparison',
+          '\u2713 Catch hidden quantity errors',
+          '\u2713 50% early-bird discount',
+          '\u2713 Cancel anytime'
+        ],
+        ctaText: 'Get Notified at Launch \u2192',
+        finePrint: 'No credit card. No spam.',
+        successTitle: 'You\'re on the List!',
+        successMsg: 'We\u2019ll notify you first when Premium launches \u2014 50% off locked in.'
+      }
+    };
+
+    var cfg = configs[scenario] || configs['blocker'];
+
+    var overlay = document.createElement('div');
+    overlay.id = 'waitlist-modal-overlay';
+    overlay.innerHTML = '<div id="waitlist-modal-card">'
+      + '<button id="wl-close-btn" aria-label="Close">\u2715</button>'
+      + '<div style="font-size:36px;margin-bottom:12px">' + cfg.icon + '</div>'
+      + '<h3 id="wl-title">' + cfg.title + '</h3>'
+      + '<p id="wl-subtitle">' + cfg.subtitle + '</p>'
+      + '<ul class="wl-benefits">' + cfg.benefits.map(function(b){ return '<li>' + b + '</li>'; }).join('') + '</ul>'
+      + '<div id="wl-form-area">'
+      +   '<div class="wl-input-row">'
+      +     '<input type="email" id="wl-email-input" class="wl-email-input" placeholder="your@email.com" />'
+      +     '<button id="wl-submit-btn" class="wl-submit-btn" style="background:' + cfg.gradientBtn + '">' + cfg.ctaText + '</button>'
+      +   '</div>'
+      +   '<p class="wl-fine-print">' + cfg.finePrint + '</p>'
+      + '</div>'
+      + '<div id="wl-success" class="wl-success" style="display:none">'
+      +   '<div style="font-size:40px;margin-bottom:12px">\uD83C\uDF89</div>'
+      +   '<h4 id="wl-success-title">' + cfg.successTitle + '</h4>'
+      +   '<p id="wl-success-msg">' + cfg.successMsg + '</p>'
+      + '</div>'
+      + '</div>';
+
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) overlay.remove();
+    });
+    document.getElementById('wl-close-btn').addEventListener('click', function() {
+      overlay.remove();
+    });
+    document.getElementById('wl-submit-btn').addEventListener('click', function() {
+      var email = document.getElementById('wl-email-input').value.trim();
+      if (!email || !email.includes('@')) {
+        document.getElementById('wl-email-input').style.borderColor = '#FF3B30';
+        return;
+      }
+      var btn = document.getElementById('wl-submit-btn');
+      btn.textContent = 'Saving\u2026';
+      btn.disabled = true;
+
+      fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email,
+          scenario: scenario,
+          billAmount: billAmount,
+          flagCount: flagCount,
+          estimatedRecovery: estimatedRecovery
+        })
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        document.getElementById('wl-form-area').style.display = 'none';
+        document.getElementById('wl-success').style.display = 'block';
+        if (data.scenarioCount) {
+          var badge = document.createElement('div');
+          badge.className = 'wl-counter-badge';
+          badge.textContent = data.scenarioCount + ' people on this waitlist';
+          document.getElementById('wl-success').appendChild(badge);
+        }
+      })
+      .catch(function() {
+        btn.textContent = 'Try Again';
+        btn.disabled = false;
+      });
+    });
+  }
+
   function showResults() {
     quizContainer.style.display = 'none';
     quizResult.style.display = 'flex';
@@ -8916,546 +9115,251 @@ async function initializeTargetedQuiz(category) {
     // Stop any previous animation
     quizAnalyzing.style.display = 'none';
 
-    const resultBadge = document.getElementById('result-badge');
-    const quizRefundAmount = document.getElementById('result-amount');
-    const quizVerdict = document.getElementById('result-description');
+    // ── Core data ──────────────────────────────────────────────────────────────
+    var billAmount = detectedAmount ? parseFloat(detectedAmount.replace(/[$,]/g, '')) : 0;
+    var recoveryRates = { BLOCKER: 0.22, HIGH: 0.25, MEDIUM: 0.12, LOW: 0.05 };
 
-    // Calculate estimated recovery amount based on risk level and bill amount
-    const billAmount = detectedAmount ? parseFloat(detectedAmount.replace(/[$,]/g, '')) : 0;
-    const recoveryRates = {
-      BLOCKER: 0.22,   // Summary bill: avg 22% potential recovery
-      HIGH: 0.25,      // High risk: 15-35% (avg 25%)
-      MEDIUM: 0.12,    // Medium risk: 5-18% (avg 12%)
-      LOW: 0.05        // Low risk: 0-8% (avg 5%)
-    };
+    function trioItem(num, label, color) {
+      color = color || 'white';
+      return '<div class="rr-trio-item"><span class="rr-trio-num" style="color:' + color + '">' + num + '</span><span class="rr-trio-lab">' + label + '</span></div>';
+    }
 
-    // ========== GATEKEEPER: CHECK FOR SUMMARY BILL BLOCKER ==========
+    function saveAuditData(verdict) {
+      try {
+        localStorage.setItem('medicalAuditData', JSON.stringify({
+          amount: detectedAmount || '0',
+          category: currentBillCategory ? currentBillCategory.category || 'General' : 'General',
+          verdict: verdict,
+          findings: confirmedRedFlags
+        }));
+      } catch(e) {}
+    }
+
+    function attachRestartBtn() {
+      var btn = document.getElementById('rr-restart-btn');
+      if (btn) btn.onclick = function() { location.reload(); };
+    }
+
+    // ── Activate card ──────────────────────────────────────────────────────────
+    quizFinal.style.display = 'block';
+
+    // ==========================================================================
+    //  BLOCKER
+    // ==========================================================================
     if (blockerDetected) {
-      console.log('[Gatekeeper] 🚫 BLOCKER DETECTED - Summary bill, routing to itemized bill tool');
-      
-      const estimatedRecovery = Math.round(billAmount * recoveryRates.BLOCKER);
-      
-      quizFinal.style.display = 'flex';
-      
-      if (resultBadge) {
-        resultBadge.innerHTML = `<span style="color: #FF3B30; font-weight: 600;">⚠️ Preliminary Analysis Only</span>`;
-      }
-      
-      if (quizRefundAmount) {
-        quizRefundAmount.innerHTML = `
-          <div style="text-align: center;">
-            <div style="font-size: clamp(36px, 7vw, 48px); font-weight: 900; color: #FF3B30; line-height: 1.1; margin-bottom: 8px;">
-              Potential Savings
-            </div>
-            <div style="font-size: clamp(24px, 5vw, 32px); font-weight: 700; color: #86868B; margin-bottom: 12px;">
-              $${estimatedRecovery.toLocaleString()} - $${Math.round(billAmount * 0.35).toLocaleString()}
-            </div>
-            <div style="font-size: 13px; color: #86868B; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">
-              Estimated Range (Based on Summary Bill Only)
-            </div>
-          </div>
-        `;
-      }
-      
-      if (quizVerdict) {
-        quizVerdict.innerHTML = `
-          <div style="padding: 32px 24px;">
-            <div style="background: linear-gradient(135deg, #FFF3F0, #FFF9F0); border-left: 4px solid #FF3B30; border-radius: 16px; padding: 24px; margin-bottom: 24px;">
-              <h3 style="font-size: 20px; font-weight: 700; color: #FF3B30; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-                <span>🚫</span> Audit Blocked: Summary Bill Detected
-              </h3>
-              <p style="font-size: 16px; line-height: 1.6; color: #1D1D1F; margin: 0 0 16px 0;">
-                Your bill <strong>lacks CPT codes</strong> (5-digit medical service codes). Without detailed line items, we cannot verify if charges match services received.
-              </p>
-              <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-                <strong style="color: #FF3B30; font-size: 15px; display: block; margin-bottom: 8px;">❌ What We Cannot Check:</strong>
-                <ul style="margin: 0; padding-left: 20px; color: #1D1D1F; font-size: 14px; line-height: 1.8;">
-                  <li>Upcoding (billing higher service levels than provided)</li>
-                  <li>Unbundling (separating services that should be bundled)</li>
-                  <li>Duplicate charges (same service billed multiple times)</li>
-                  <li>Phantom billing (charges for services never received)</li>
-                  <li>Non-covered services billed as covered procedures</li>
-                </ul>
-              </div>
-            </div>
+      var estRec  = Math.round(billAmount * recoveryRates.BLOCKER);
+      var estMax  = Math.round(billAmount * 0.35);
+      var flagLen = confirmedRedFlags.length;
 
-            <div style="background: linear-gradient(135deg, #E3F2FD, #F3E5F5); border-radius: 16px; padding: 24px; margin-bottom: 24px; border: 1px solid rgba(0, 113, 227, 0.2);">
-              <h4 style="font-size: 18px; font-weight: 700; color: #0071E3; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-                <span>💡</span> Why You Need an Itemized Bill
-              </h4>
-              <div style="display: grid; gap: 12px;">
-                <div style="display: flex; gap: 12px; align-items: start;">
-                  <span style="font-size: 24px; flex-shrink: 0;">✓</span>
-                  <div>
-                    <strong style="color: #1D1D1F; font-size: 15px; display: block;">Exposes Hidden Overcharges</strong>
-                    <span style="color: #86868B; font-size: 14px;">Studies show 80% of medical bills contain errors. Itemized bills reveal duplicate charges, incorrect CPT codes, and unbundled services.</span>
-                  </div>
-                </div>
-                <div style="display: flex; gap: 12px; align-items: start;">
-                  <span style="font-size: 24px; flex-shrink: 0;">✓</span>
-                  <div>
-                    <strong style="color: #1D1D1F; font-size: 15px; display: block;">Legal Right Protected by Law</strong>
-                    <span style="color: #86868B; font-size: 14px;">Federal HIPAA law (45 CFR § 164.524) guarantees your right to an itemized bill with CPT codes, descriptions, quantities, and individual prices within 30 days.</span>
-                  </div>
-                </div>
-                <div style="display: flex; gap: 12px; align-items: start;">
-                  <span style="font-size: 24px; flex-shrink: 0;">✓</span>
-                  <div>
-                    <strong style="color: #1D1D1F; font-size: 15px; display: block;">Enables Precise Audit</strong>
-                    <span style="color: #86868B; font-size: 14px;">With CPT codes, we can cross-reference Medicare pricing, detect upcoding patterns, and calculate exact overcharges down to the dollar.</span>
-                  </div>
-                </div>
-                <div style="display: flex; gap: 12px; align-items: start;">
-                  <span style="font-size: 24px; flex-shrink: 0;">✓</span>
-                  <div>
-                    <strong style="color: #1D1D1F; font-size: 15px; display: block;">Strengthens Dispute Power</strong>
-                    <span style="color: #86868B; font-size: 14px;">Itemized bills provide concrete evidence for negotiations. Providers are 3x more likely to reduce charges when faced with detailed billing errors.</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+      quizFinal.innerHTML = '<div class="rr-wrap">'
+        + '<div class="rr-left rr-left--blocker">'
+        +   '<span class="rr-badge rr-badge--danger">\u26A0\uFE0F Audit Blocked</span>'
+        +   '<div><div class="rr-left-label">Estimated Recovery Range</div>'
+        +   '<div class="rr-amount-display">$' + estRec.toLocaleString() + '\u2013$' + estMax.toLocaleString() + '</div>'
+        +   '<div class="rr-amount-sub">22\u201335% of bill \u00b7 requires itemized bill to confirm</div></div>'
+        +   '<div class="rr-trio">' + trioItem(flagLen, 'Flags Found', '#FF453A') + trioItem('$' + billAmount.toLocaleString(), 'Bill Total', 'white') + trioItem('\u2013', 'CPT Codes', '#86868B') + '</div>'
+        +   '<div class="rr-left-note"><div class="rr-left-note-title">Why We\'re Blocked</div>'
+        +   '<ul class="rr-check-list"><li>No CPT codes to verify</li><li>Cannot detect upcoding</li><li>Cannot check duplicate charges</li><li>Cannot verify service match</li></ul></div>'
+        +   '<div class="rr-stat-proof"><div>\uD83D\uDCCA <strong>80%</strong> of itemized bills contain errors</div><div>\uD83D\uDCB0 Avg. recovery after itemized audit: <strong>$1,847</strong></div></div>'
+        +   '<button class="rr-reset-btn" id="rr-restart-btn">\u2190 Analyze Another Bill</button>'
+        + '</div>'
+        + '<div class="rr-right">'
+        +   '<h2 class="rr-right-title">Get Your Itemized Bill \u2014 Then Run a Full Audit</h2>'
+        +   '<p class="rr-right-sub">You submitted a summary bill. Federal law (HIPAA 45 CFR \u00a7 164.524) guarantees your right to a detailed itemized statement with CPT codes within 30 days.</p>'
+        +   '<div class="rr-step-card rr-step-card--active">'
+        +     '<div class="rr-step-num">Step 1 \u00b7 Do This Now</div>'
+        +     '<h4>Request Your Itemized Bill</h4>'
+        +     '<p>We\'ll send you a free, attorney-reviewed request letter. It cites HIPAA law and requires a response within 30 days.</p>'
+        +     '<div class="rr-step-includes"><div>\u2713 Legally binding HIPAA request</div><div>\u2713 Requires CPT codes + line-item prices</div><div>\u2713 One-click email template</div></div>'
+        +     '<button class="rr-cta-primary" id="rr-blocker-waitlist-btn" style="background:linear-gradient(135deg,#5856D6,#9B59B6)">Send Me the Free Letter + Audit Reminder \u2192</button>'
+        +   '</div>'
+        +   '<div class="rr-step-card rr-step-card--future">'
+        +     '<div class="rr-step-num">Step 2 \u00b7 After You Receive It</div>'
+        +     '<h4>Re-upload for a Full CPT Audit</h4>'
+        +     '<p>Once you have the itemized bill, upload it here for a complete line-by-line verification against Medicare pricing.</p>'
+        +     '<div class="rr-step-includes"><div>\u2713 CPT code match verification</div><div>\u2713 Medicare pricing benchmark</div><div>\u2713 AI-powered fraud detection</div></div>'
+        +   '</div>'
+        +   '<button class="rr-cta-secondary" style="margin-top:8px" id="rr-blocker-cta-btn">Get Free Itemized Bill Request Letter \u2192</button>'
+        + '</div>'
+        + '</div>';
 
-            <div style="background: #F5F5F7; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center;">
-              <p style="font-size: 15px; line-height: 1.7; color: #1D1D1F; margin: 0;">
-                <strong style="color: #FF3B30;">📊 Based on your answers:</strong> We detected <strong>${confirmedRedFlags.length}</strong> potential red flag(s) from your summary bill.\n\n
-                However, <strong>this is only a preliminary estimate</strong>. A full audit requires CPT-level analysis to verify charges.\n\n
-                Estimated potential savings: <strong>$${estimatedRecovery.toLocaleString()} - $${Math.round(billAmount * 0.35).toLocaleString()}</strong> (22-35% of bill), but this can only be confirmed with an itemized bill.
-              </p>
-            </div>
-
-            <div style="background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%); border-radius: 16px; padding: 24px; color: white; text-align: center; box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);">
-              <h4 style="font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">🎯 Your Next Step</h4>
-              <p style="font-size: 14px; margin: 0 0 16px 0; opacity: 0.9;">Request your itemized bill in 60 seconds with our free attorney-reviewed letter template</p>
-            </div>
-          </div>
-        `;
-      }
-      
-      if (quizCtaBtn) {
-        quizCtaBtn.textContent = 'Get Free Itemized Bill Request Letter →';
-        quizCtaBtn.onclick = () => {
-          // Save audit data
-          try {
-            const medicalAuditData = {
-              amount: detectedAmount || '0',
-              category: currentBillCategory?.category || 'General',
-              verdict: 'Summary bill detected. Must request itemized bill for audit.',
-              findings: confirmedRedFlags
-            };
-            localStorage.setItem('medicalAuditData', JSON.stringify(medicalAuditData));
-          } catch (err) {
-            console.error('[Gatekeeper] Failed to save data:', err);
-          }
-          
-          navigate('/request-itemized-medical-bill');
-        };
-      }
-      
-      return; // Stop execution - blocker detected
+      setTimeout(function() {
+        attachRestartBtn();
+        var wlBtn = document.getElementById('rr-blocker-waitlist-btn');
+        if (wlBtn) wlBtn.onclick = function() { showWaitlistModal({ scenario: 'blocker', billAmount: billAmount, flagCount: flagLen, estimatedRecovery: estRec }); };
+        var ctaBtn = document.getElementById('rr-blocker-cta-btn');
+        if (ctaBtn) ctaBtn.onclick = function() { saveAuditData('Summary bill detected. Must request itemized bill for audit.'); navigate('/request-itemized-medical-bill'); };
+      }, 50);
+      return;
     }
 
-    // ========== RISK EVALUATION (ITEMIZED BILL PATH) ==========
-    
-    const highRiskCount = confirmedRedFlags.filter(f => f.riskLevel === 'HIGH').length;
-    const mediumRiskCount = confirmedRedFlags.filter(f => f.riskLevel === 'MEDIUM').length;
-    
-    let overallRisk = 'LOW';
-    if (highRiskCount > 0) {
-      overallRisk = 'HIGH';
-    } else if (mediumRiskCount >= 2 || highestRisk === 'MEDIUM') {
-      overallRisk = 'MEDIUM';
-    }
-    
-    console.log(`[Risk Assessment] Overall: ${overallRisk}, High: ${highRiskCount}, Medium: ${mediumRiskCount}, Total Flags: ${confirmedRedFlags.length}`);
-    
-    quizFinal.style.display = 'flex';
-    
-    // ========== HIGH RISK PATH (FREEMIUM MODEL) ==========
+    // ── Risk evaluation ────────────────────────────────────────────────────────
+    var highRiskCount   = confirmedRedFlags.filter(function(f){ return f.riskLevel === 'HIGH'; }).length;
+    var mediumRiskCount = confirmedRedFlags.filter(function(f){ return f.riskLevel === 'MEDIUM'; }).length;
+    var overallRisk = 'LOW';
+    if (highRiskCount > 0) overallRisk = 'HIGH';
+    else if (mediumRiskCount >= 2 || highestRisk === 'MEDIUM') overallRisk = 'MEDIUM';
+
+    var totalQuestions = currentQuestionIndex || confirmedRedFlags.length + 3;
+    var avgConf = confirmedRedFlags.length > 0
+      ? Math.round(confirmedRedFlags.reduce(function(s, f){ return s + (f.confidence != null ? f.confidence : 70); }, 0) / confirmedRedFlags.length)
+      : 0;
+
+    console.log('[Risk Assessment] Overall: ' + overallRisk + ', High: ' + highRiskCount + ', Medium: ' + mediumRiskCount + ', Total Flags: ' + confirmedRedFlags.length);
+
+    // ==========================================================================
+    //  HIGH RISK
+    // ==========================================================================
     if (overallRisk === 'HIGH') {
-      const estimatedRecovery = Math.round(billAmount * recoveryRates.HIGH);
-      const recoveryMin = Math.round(billAmount * 0.15);
-      const recoveryMax = Math.round(billAmount * 0.35);
-      
-      if (resultBadge) {
-        resultBadge.innerHTML = `<span style="color: #FF3B30; font-weight: 600;">🚨 HIGH RISK DETECTED</span>`;
-      }
-      
-      if (quizRefundAmount) {
-        quizRefundAmount.innerHTML = `
-          <div style="text-align: center;">
-            <div style="font-size: clamp(32px, 6vw, 42px); font-weight: 900; color: #FF3B30; line-height: 1.1; margin-bottom: 8px;">
-              Estimated Recovery
-            </div>
-            <div style="font-size: clamp(40px, 8vw, 56px); font-weight: 900; background: linear-gradient(135deg, #FF3B30, #FF9500); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; margin-bottom: 12px;" id="recovery-animate">
-              $${estimatedRecovery.toLocaleString()}
-            </div>
-            <div style="font-size: 14px; color: #86868B; font-weight: 500;">
-              Range: $${recoveryMin.toLocaleString()} - $${recoveryMax.toLocaleString()} (15-35% of bill)
-            </div>
-          </div>
-        `;
-        
-        // Animate count-up
-        setTimeout(() => {
-          const animateEl = document.getElementById('recovery-animate');
-          if (animateEl) {
-            let current = 0;
-            const increment = estimatedRecovery / 40;
-            const timer = setInterval(() => {
-              current += increment;
-              if (current >= estimatedRecovery) {
-                current = estimatedRecovery;
-                clearInterval(timer);
-              }
-              animateEl.textContent = `$${Math.round(current).toLocaleString()}`;
-            }, 30);
-          }
-        }, 100);
-      }
-      
-      if (quizVerdict) {
-        // NEW: Separate high-confidence vs low-confidence flags (Phase 1)
-        const highConfidenceFlags = confirmedRedFlags.filter(f => f.confidence >= 70);
-        const lowConfidenceFlags = confirmedRedFlags.filter(f => f.confidence < 70);
-        
-        let flagsHtml = '<ul style="margin: 0; padding-left: 20px; color: #1D1D1F;">';
-        confirmedRedFlags.forEach(flag => {
-          const riskColor = flag.riskLevel === 'HIGH' ? '#FF3B30' : '#FF9500';
-          const confidenceIcon = flag.confidence >= 70 ? '✓' : '?';
-          const confidenceColor = flag.confidence >= 70 ? '#34C759' : '#FF9500';
-          flagsHtml += `<li style="margin: 12px 0;">
-            <strong style="color: ${riskColor};">[${flag.riskLevel}]</strong> ${flag.description}
-            <span style="color: ${confidenceColor}; font-size: 12px; margin-left: 8px;">${confidenceIcon} ${flag.confidence}% confident</span>
-          </li>`;
-        });
-        flagsHtml += '</ul>';
-        
-        // Calculate average confidence score
-        const avgConfidence = confirmedRedFlags.length > 0 
-          ? Math.round(confirmedRedFlags.reduce((sum, f) => sum + f.confidence, 0) / confirmedRedFlags.length)
-          : 0;
-        
-        // Calculate total questions asked
-        const totalQuestions = currentQuestionIndex || confirmedRedFlags.length + 3;
-        
-        quizVerdict.innerHTML = `
-          <div style="padding: 32px 24px;">
-            <!-- Audit Stats -->
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; text-align: center;">
-              <div style="background: linear-gradient(135deg, #FFF3F0, #FFE5E5); border-radius: 12px; padding: 16px;">
-                <div style="font-size: 32px; font-weight: 900; color: #FF3B30; line-height: 1;">${confirmedRedFlags.length}</div>
-                <div style="font-size: 12px; color: #86868B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Red Flags</div>
-              </div>
-              <div style="background: linear-gradient(135deg, #E8F5E9, #F1F8E9); border-radius: 12px; padding: 16px;">
-                <div style="font-size: 32px; font-weight: 900; color: #34C759; line-height: 1;">${avgConfidence}%</div>
-                <div style="font-size: 12px; color: #86868B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Confidence</div>
-              </div>
-              <div style="background: linear-gradient(135deg, #E3F2FD, #F3E5F5); border-radius: 12px; padding: 16px;">
-                <div style="font-size: 32px; font-weight: 900; color: #0071E3; line-height: 1;">${totalQuestions}</div>
-                <div style="font-size: 12px; color: #86868B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Checks Done</div>
-              </div>
-            </div>
+      var estRec  = Math.round(billAmount * recoveryRates.HIGH);
+      var paidAmt = billAmount - estRec;
+      var paidPct = billAmount > 0 ? ((paidAmt / billAmount) * 100).toFixed(0) : 70;
+      var savePct = billAmount > 0 ? ((estRec  / billAmount) * 100).toFixed(0) : 30;
+      var flagLen = confirmedRedFlags.length;
+      var pluralS = flagLen > 1 ? 's' : '';
 
-            <!-- Bill Comparison Bar -->
-            <div style="background: #F5F5F7; border-radius: 16px; padding: 24px; margin-bottom: 24px;">
-              <h4 style="font-size: 16px; font-weight: 700; color: #1D1D1F; margin: 0 0 16px 0; text-align: center;">Bill Breakdown Analysis</h4>
-              <div style="position: relative; height: 60px; background: #E5E5EA; border-radius: 12px; overflow: hidden; margin-bottom: 12px;">
-                <div style="position: absolute; left: 0; top: 0; height: 100%; width: 100%; background: linear-gradient(90deg, #FF3B30 0%, #FF3B30 ${((billAmount - estimatedRecovery) / billAmount * 100).toFixed(0)}%, #34C759 ${((billAmount - estimatedRecovery) / billAmount * 100).toFixed(0)}%, #34C759 100%); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; color: white; font-weight: 700; font-size: 14px;">
-                  <span>💰 You Pay: $${(billAmount - estimatedRecovery).toLocaleString()}</span>
-                  <span>🎯 Potential Refund: $${estimatedRecovery.toLocaleString()}</span>
-                </div>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #86868B;">
-                <span>Original Bill: <strong style="color: #1D1D1F;">$${billAmount.toLocaleString()}</strong></span>
-                <span>Potential Savings: <strong style="color: #34C759;">${((estimatedRecovery / billAmount) * 100).toFixed(0)}%</strong></span>
-              </div>
-            </div>
+      var violationCards = confirmedRedFlags.map(buildViolationCard).join('');
 
-            <!-- Violations -->
-            <div style="background: linear-gradient(135deg, #FFF3F0, #FFE5E5); border-left: 4px solid #FF3B30; border-radius: 16px; padding: 24px; margin-bottom: 24px;">
-              <h3 style="font-size: 20px; font-weight: 700; color: #FF3B30; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-                <span>🚨</span> High-Risk Billing Violations Detected
-              </h3>
-              <p style="font-size: 16px; line-height: 1.6; color: #1D1D1F; margin: 0 0 16px 0;">
-                We detected <strong>${confirmedRedFlags.length}</strong> factual discrepancies where the CPT codes billed do not match the services you described receiving. These are strong indicators of billing fraud.
-              </p>
-              ${lowConfidenceFlags.length > 0 ? `
-              <div style="background: rgba(255, 255, 255, 0.7); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-                <strong style="color: #FF9500; font-size: 14px;">⚠️ Note:</strong>
-                <span style="color: #1D1D1F; font-size: 14px;"> ${lowConfidenceFlags.length} finding(s) marked as low confidence may need additional documentation.</span>
-              </div>` : ''}
-              <div style="background: rgba(255, 255, 255, 0.9); border-radius: 12px; padding: 20px;">
-                <strong style="display: block; margin-bottom: 12px; color: #FF3B30; font-size: 15px;">Confirmed Red Flags (Avg. Confidence: ${avgConfidence}%):</strong>
-                ${flagsHtml}
-              </div>
-            </div>
+      quizFinal.innerHTML = '<div class="rr-wrap">'
+        + '<div class="rr-left rr-left--high">'
+        +   '<span class="rr-badge rr-badge--danger">\uD83D\uDEA8 HIGH RISK</span>'
+        +   '<div><div class="rr-left-label">Estimated Recovery</div>'
+        +   '<div class="rr-amount-display" id="rr-amount-anim">$' + estRec.toLocaleString() + '</div>'
+        +   '<div class="rr-amount-sub">Range: $' + Math.round(billAmount * 0.15).toLocaleString() + ' \u2013 $' + Math.round(billAmount * 0.35).toLocaleString() + ' \u00b7 15\u201335% of bill</div></div>'
+        +   '<div class="rr-trio">' + trioItem(flagLen, 'Red Flags', '#FF453A') + trioItem(avgConf + '%', 'Confidence', '#FF9F0A') + trioItem(totalQuestions, 'Checks', '#64D2FF') + '</div>'
+        +   '<div class="rr-bar-wrap"><div class="rr-bar-label">Bill breakdown</div>'
+        +   '<div class="rr-bar-track">'
+        +     '<div class="rr-bar-fill-paid" style="width:' + paidPct + '%;justify-content:center"><span style="font-size:11px;color:rgba(255,255,255,0.75);white-space:nowrap;padding:0 4px">Pay $' + paidAmt.toLocaleString() + '</span></div>'
+        +     '<div class="rr-bar-fill-save" style="width:' + savePct + '%;justify-content:center"><span style="font-size:11px;color:white;white-space:nowrap;padding:0 4px">Save $' + estRec.toLocaleString() + '</span></div>'
+        +   '</div></div>'
+        +   '<div class="rr-stat-proof"><div>\uD83D\uDCCA <strong>' + flagLen + '</strong> billing violation' + pluralS + ' confirmed</div><div>\u2B50 <strong>94.8%</strong> audit accuracy \u00b7 CMS verified</div><div>\uD83D\uDCB0 Average recovery: <strong>$1,847</strong></div></div>'
+        +   '<button class="rr-reset-btn" id="rr-restart-btn">\u2190 Analyze Another Bill</button>'
+        + '</div>'
+        + '<div class="rr-right">'
+        +   '<h2 class="rr-right-title">\uD83D\uDEA8 ' + flagLen + ' High-Risk Billing Violation' + pluralS + ' Detected</h2>'
+        +   '<p class="rr-right-sub">The CPT codes billed do not match the services you described receiving. These are factual discrepancies \u2014 strong indicators of billing errors or upcoding.</p>'
+        +   violationCards
+        +   '<div class="rr-premium-card rr-premium-card--dark" style="margin-top:6px">'
+        +     '<div class="rr-premium-label">\u26A1 Premium Deep Audit</div>'
+        +     '<h4>Recover Every Dollar with an Attorney-Reviewed Demand Letter</h4>'
+        +     '<p>CPT-level Medicare benchmark + NCCI bundling check + professional demand letter. Launching at $29 \u2014 <strong style="color:#FF9F0A">50% off for early signups.</strong></p>'
+        +     '<button class="rr-cta-primary" id="rr-premium-waitlist-btn" style="background:linear-gradient(135deg,#FF3B30,#FF6B35);margin-bottom:10px">Reserve 50% Early-Bird Discount \u2192</button>'
+        +     '<button class="rr-cta-secondary" id="rr-high-cta-btn">Generate Free Basic Audit Request \u2192</button>'
+        +   '</div>'
+        + '</div>'
+        + '</div>';
 
-            <!-- Social Proof -->
-            <div style="background: linear-gradient(135deg, #E3F2FD, #F3E5F5); border-radius: 16px; padding: 20px; margin-bottom: 24px; text-align: center;">
-              <p style="font-size: 14px; line-height: 1.7; color: #1D1D1F; margin: 0;">
-                📊 Based on analysis of <strong>12,547 medical bills</strong><br>
-                💰 Average recovery: <strong>$1,847</strong> (22% of bill)<br>
-                ⭐ Accuracy rate: <strong>94.8%</strong> verified by CMS auditors
-              </p>
-            </div>
-            
-            <div style="display: grid; gap: 16px; margin-top: 24px;">
-              <div style="background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%); border-radius: 16px; padding: 24px; color: white; position: relative; overflow: hidden; box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);">
-                <div style="position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.3); padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;">COMING SOON</div>
-                <h4 style="font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">🔍 Premium Deep Clinical Audit</h4>
-                <p style="font-size: 14px; margin: 0 0 16px 0; opacity: 0.9; line-height: 1.5;">CPT-level analysis with Medicare benchmark pricing, NCCI edit verification, and attorney-reviewed demand letter.</p>
-                <button id="premium-waitlist-btn" class="btn" style="background: white; color: #667EEA; width: 100%; font-weight: 600; padding: 14px; border-radius: 12px; border: none; cursor: pointer; font-size: 15px;">Join Waitlist for 50% Discount</button>
-              </div>
-              
-              <div style="background: #F5F5F7; border-radius: 16px; padding: 24px;">
-                <h4 style="font-size: 18px; font-weight: 600; margin: 0 0 8px 0; color: #1D1D1F;">📄 Free Basic Audit Request</h4>
-                <p style="font-size: 14px; margin: 0; color: #86868B; line-height: 1.6;">Generate a professional dispute letter citing the violations detected above. Perfect first step to challenge your bill.</p>
-              </div>
-            </div>
-          </div>
-        `;
-      }
-      
-      // Attach premium waitlist handler
-      setTimeout(() => {
-        const premiumBtn = document.getElementById('premium-waitlist-btn');
-        if (premiumBtn) {
-          premiumBtn.onclick = () => {
-            const email = prompt('Enter your email for 50% early-bird discount when we launch Premium Audit:');
-            if (email && email.includes('@')) {
-              alert('Thank you! You\'re on the waitlist. We\'ll notify you when Premium launches with your exclusive 50% discount code.');
-              // TODO: Send email to backend waitlist API
-            }
-          };
+      setTimeout(function() {
+        attachRestartBtn();
+        var amtEl = document.getElementById('rr-amount-anim');
+        if (amtEl && estRec > 0) {
+          var cur = 0; var step = estRec / 40;
+          var t = setInterval(function() { cur = Math.min(cur + step, estRec); amtEl.textContent = '$' + Math.round(cur).toLocaleString(); if (cur >= estRec) clearInterval(t); }, 30);
         }
-      }, 100);
-      
-      if (quizCtaBtn) {
-        quizCtaBtn.textContent = 'Generate Free Basic Audit Request →';
-        quizCtaBtn.onclick = () => {
-          // Save audit data
-          try {
-            const medicalAuditData = {
-              amount: detectedAmount || '0',
-              category: currentBillCategory?.category || 'General',
-              verdict: `HIGH RISK: ${confirmedRedFlags.length} billing violations detected.`,
-              findings: confirmedRedFlags
-            };
-            localStorage.setItem('medicalAuditData', JSON.stringify(medicalAuditData));
-          } catch (err) {
-            console.error('[Risk Audit] Failed to save data:', err);
-          }
-          
-          const targetRoute = currentBillCategory?.route || '/medical-bill-dispute-letter';
-          navigate(targetRoute);
-        };
-      }
-      
-      return; // HIGH RISK path complete
+        var wlBtn = document.getElementById('rr-premium-waitlist-btn');
+        if (wlBtn) wlBtn.onclick = function() { showWaitlistModal({ scenario: 'high_risk', billAmount: billAmount, flagCount: flagLen, estimatedRecovery: estRec }); };
+        var ctaBtn = document.getElementById('rr-high-cta-btn');
+        if (ctaBtn) ctaBtn.onclick = function() { saveAuditData('HIGH RISK: ' + flagLen + ' billing violations detected.'); navigate(currentBillCategory ? currentBillCategory.route || '/medical-bill-dispute-letter' : '/medical-bill-dispute-letter'); };
+      }, 50);
+      return;
     }
-    
-    // ========== MEDIUM/LOW RISK PATH ==========
-    const estimatedRecovery = overallRisk === 'MEDIUM' ? Math.round(billAmount * recoveryRates.MEDIUM) : Math.round(billAmount * recoveryRates.LOW);
-    const recoveryMin = overallRisk === 'MEDIUM' ? Math.round(billAmount * 0.05) : Math.round(billAmount * 0);
-    const recoveryMax = overallRisk === 'MEDIUM' ? Math.round(billAmount * 0.18) : Math.round(billAmount * 0.08);
-    const totalQuestions = currentQuestionIndex || confirmedRedFlags.length + 3;
-    
-    if (resultBadge) {
-      const riskColor = overallRisk === 'MEDIUM' ? '#FF9500' : '#34C759';
-      const riskEmoji = overallRisk === 'MEDIUM' ? '⚠️' : '✅';
-      resultBadge.innerHTML = `<span style="color: ${riskColor}; font-weight: 600;">${riskEmoji} ${overallRisk} RISK LEVEL</span>`;
-    }
-    
-    if (quizRefundAmount) {
-      quizRefundAmount.innerHTML = `
-        <div style="text-align: center;">
-          <div style="font-size: clamp(32px, 6vw, 42px); font-weight: 900; color: ${overallRisk === 'MEDIUM' ? '#FF9500' : '#34C759'}; line-height: 1.1; margin-bottom: 8px;">
-            ${overallRisk === 'MEDIUM' ? 'Estimated Recovery' : 'Minimal Issues Found'}
-          </div>
-          ${estimatedRecovery > 0 ? `
-            <div style="font-size: clamp(40px, 8vw, 56px); font-weight: 900; background: linear-gradient(135deg, ${overallRisk === 'MEDIUM' ? '#FF9500, #FFCC00' : '#34C759, #5AC8FA'}); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; margin-bottom: 12px;" id="recovery-animate">
-              $${estimatedRecovery.toLocaleString()}
-            </div>
-            <div style="font-size: 14px; color: #86868B; font-weight: 500;">
-              Range: $${recoveryMin.toLocaleString()} - $${recoveryMax.toLocaleString()} (${overallRisk === 'MEDIUM' ? '5-18%' : '0-8%'} of bill)
-            </div>
-          ` : `
-            <div style="font-size: clamp(36px, 7vw, 48px); font-weight: 900; color: #34C759; line-height: 1.1; margin-bottom: 8px;">
-              Bill Looks Clean
-            </div>
-            <div style="font-size: 16px; color: #86868B; font-weight: 500;">
-              No significant overcharges detected
-            </div>
-          `}
-        </div>
-      `;
-      
-      // Animate count-up for MEDIUM risk
-      if (estimatedRecovery > 0) {
-        setTimeout(() => {
-          const animateEl = document.getElementById('recovery-animate');
-          if (animateEl) {
-            let current = 0;
-            const increment = estimatedRecovery / 40;
-            const timer = setInterval(() => {
-              current += increment;
-              if (current >= estimatedRecovery) {
-                current = estimatedRecovery;
-                clearInterval(timer);
-              }
-              animateEl.textContent = `$${Math.round(current).toLocaleString()}`;
-            }, 30);
-          }
-        }, 100);
-      }
-    }
-    
-    if (quizVerdict) {
-      let verdictHTML = '';
-      
-      if (overallRisk === 'MEDIUM' && confirmedRedFlags.length > 0) {
-        // Calculate average confidence for MEDIUM risk
-        const avgConfidence = confirmedRedFlags.length > 0 
-          ? Math.round(confirmedRedFlags.reduce((sum, f) => sum + f.confidence, 0) / confirmedRedFlags.length)
-          : 0;
-        
-        let flagsHtml = '<ul style="margin: 0; padding-left: 20px; color: #1D1D1F;">';
-        confirmedRedFlags.forEach(flag => {
-          const confidenceIcon = flag.confidence >= 70 ? '✓' : '?';
-          const confidenceColor = flag.confidence >= 70 ? '#34C759' : '#FF9500';
-          flagsHtml += `<li style="margin: 8px 0;">${flag.description} 
-            <span style="color: ${confidenceColor}; font-size: 12px;">${confidenceIcon} ${flag.confidence}%</span>
-          </li>`;
-        });
-        flagsHtml += '</ul>';
-        
-        verdictHTML = `
-          <div style="padding: 32px 24px;">
-            <!-- Audit Stats -->
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; text-align: center;">
-              <div style="background: linear-gradient(135deg, #FFF9F0, #FFEDCC); border-radius: 12px; padding: 16px;">
-                <div style="font-size: 32px; font-weight: 900; color: #FF9500; line-height: 1;">${confirmedRedFlags.length}</div>
-                <div style="font-size: 12px; color: #86868B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Minor Issues</div>
-              </div>
-              <div style="background: linear-gradient(135deg, #F0F4C3, #FFF9C4); border-radius: 12px; padding: 16px;">
-                <div style="font-size: 32px; font-weight: 900; color: #FF9500; line-height: 1;">${avgConfidence}%</div>
-                <div style="font-size: 12px; color: #86868B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Confidence</div>
-              </div>
-              <div style="background: linear-gradient(135deg, #E3F2FD, #E1F5FE); border-radius: 12px; padding: 16px;">
-                <div style="font-size: 32px; font-weight: 900; color: #0071E3; line-height: 1;">${totalQuestions}</div>
-                <div style="font-size: 12px; color: #86868B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Checks Done</div>
-              </div>
-            </div>
 
-            ${estimatedRecovery > 0 ? `
-            <!-- Bill Comparison Bar -->
-            <div style="background: #F5F5F7; border-radius: 16px; padding: 24px; margin-bottom: 24px;">
-              <h4 style="font-size: 16px; font-weight: 700; color: #1D1D1F; margin: 0 0 16px 0; text-align: center;">Potential Savings Breakdown</h4>
-              <div style="position: relative; height: 60px; background: #E5E5EA; border-radius: 12px; overflow: hidden; margin-bottom: 12px;">
-                <div style="position: absolute; left: 0; top: 0; height: 100%; width: 100%; background: linear-gradient(90deg, #86868B 0%, #86868B ${((billAmount - estimatedRecovery) / billAmount * 100).toFixed(0)}%, #FF9500 ${((billAmount - estimatedRecovery) / billAmount * 100).toFixed(0)}%, #FF9500 100%); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; color: white; font-weight: 700; font-size: 14px;">
-                  <span>💰 Expected Payment: $${(billAmount - estimatedRecovery).toLocaleString()}</span>
-                  <span>💡 Possible Savings: $${estimatedRecovery.toLocaleString()}</span>
-                </div>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #86868B;">
-                <span>Total Bill: <strong style="color: #1D1D1F;">$${billAmount.toLocaleString()}</strong></span>
-                <span>Potential Savings: <strong style="color: #FF9500;">${((estimatedRecovery / billAmount) * 100).toFixed(0)}%</strong></span>
-              </div>
-            </div>
-            ` : ''}
+    // ==========================================================================
+    //  MEDIUM / LOW
+    // ==========================================================================
+    var estRec = overallRisk === 'MEDIUM'
+      ? Math.round(billAmount * recoveryRates.MEDIUM)
+      : Math.round(billAmount * recoveryRates.LOW);
+    var flagLen = confirmedRedFlags.length;
 
-            <!-- Findings -->
-            <div style="background: linear-gradient(135deg, #FFF9F0, #FFEDCC); border-left: 4px solid #FF9500; border-radius: 16px; padding: 24px; margin-bottom: 24px;">
-              <h3 style="font-size: 20px; font-weight: 700; color: #FF9500; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-                <span>⚠️</span> Potential Coding Discrepancies
-              </h3>
-              <p style="font-size: 16px; line-height: 1.6; color: #1D1D1F; margin: 0 0 16px 0;">
-                We found <strong>${confirmedRedFlags.length}</strong> potential coding discrepancy${confirmedRedFlags.length > 1 ? 'ies' : ''} that may warrant investigation. Additional documentation could strengthen your case.
-              </p>
-              <div style="background: rgba(255, 255, 255, 0.9); border-radius: 12px; padding: 20px;">
-                <strong style="display: block; margin-bottom: 12px; color: #FF9500; font-size: 15px;">Potential Issues (Avg. Confidence: ${avgConfidence}%):</strong>
-                ${flagsHtml}
-              </div>
-            </div>
+    if (overallRisk === 'MEDIUM') {
+      var paidAmt = billAmount - estRec;
+      var paidPct = billAmount > 0 ? ((paidAmt / billAmount) * 100).toFixed(0) : 88;
+      var savePct = billAmount > 0 ? ((estRec  / billAmount) * 100).toFixed(0) : 12;
+      var pluralIes = flagLen !== 1 ? 'ies' : 'y';
+      var pluralS   = flagLen !== 1 ? 's'   : '';
+      var violationCards = confirmedRedFlags.map(buildViolationCard).join('');
 
-            <!-- Social Proof -->
-            <div style="background: linear-gradient(135deg, #E3F2FD, #F3E5F5); border-radius: 16px; padding: 20px; margin-bottom: 24px; text-align: center;">
-              <p style="font-size: 14px; line-height: 1.7; color: #1D1D1F; margin: 0;">
-                📊 Based on analysis of <strong>12,547 medical bills</strong><br>
-                ⭐ Accuracy rate: <strong>94.8%</strong> verified by CMS auditors
-              </p>
-            </div>
-          </div>
-        `;
-      } else {
-        // LOW RISK - Clean bill
-        verdictHTML = `
-          <div style="padding: 32px 24px;">
-            <!-- Audit Stats -->
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; text-align: center;">
-              <div style="background: linear-gradient(135deg, #E8F5E9, #F1F8E9); border-radius: 12px; padding: 16px;">
-                <div style="font-size: 32px; font-weight: 900; color: #34C759; line-height: 1;">0</div>
-                <div style="font-size: 12px; color: #86868B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Red Flags</div>
-              </div>
-              <div style="background: linear-gradient(135deg, #E3F2FD, #E1F5FE); border-radius: 12px; padding: 16px;">
-                <div style="font-size: 32px; font-weight: 900; color: #0071E3; line-height: 1;">${totalQuestions}</div>
-                <div style="font-size: 12px; color: #86868B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Checks Done</div>
-              </div>
-              <div style="background: linear-gradient(135deg, #E8F5E9, #F1F8E9); border-radius: 12px; padding: 16px;">
-                <div style="font-size: 32px; font-weight: 900; color: #34C759; line-height: 1;">✓</div>
-                <div style="font-size: 12px; color: #86868B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Clean Bill</div>
-              </div>
-            </div>
+      quizFinal.innerHTML = '<div class="rr-wrap">'
+        + '<div class="rr-left rr-left--medium">'
+        +   '<span class="rr-badge rr-badge--warn">\u26A0\uFE0F MEDIUM RISK</span>'
+        +   '<div><div class="rr-left-label">Possible Savings</div>'
+        +   '<div class="rr-amount-display" id="rr-amount-anim">$' + estRec.toLocaleString() + '</div>'
+        +   '<div class="rr-amount-sub">Range: $' + Math.round(billAmount * 0.05).toLocaleString() + ' \u2013 $' + Math.round(billAmount * 0.18).toLocaleString() + ' \u00b7 5\u201318% of bill</div></div>'
+        +   '<div class="rr-trio">' + trioItem(flagLen, 'Issues', '#FF9F0A') + trioItem(avgConf + '%', 'Confidence', '#FFD60A') + trioItem(totalQuestions, 'Checks', '#64D2FF') + '</div>'
+        +   (billAmount > 0 ? ('<div class="rr-bar-wrap"><div class="rr-bar-label">Bill breakdown</div><div class="rr-bar-track"><div class="rr-bar-fill-paid" style="width:' + paidPct + '%"></div><div class="rr-bar-fill-save" style="width:' + savePct + '%"></div></div></div>') : '')
+        +   '<div class="rr-stat-proof"><div>\uD83D\uDCCA <strong>' + flagLen + '</strong> potential discrepanc' + pluralIes + ' found</div><div>\u2B50 <strong>94.8%</strong> audit accuracy</div></div>'
+        +   '<button class="rr-reset-btn" id="rr-restart-btn">\u2190 Analyze Another Bill</button>'
+        + '</div>'
+        + '<div class="rr-right">'
+        +   '<h2 class="rr-right-title">\u26A0\uFE0F Potential Coding Discrepanc' + pluralIes + ' Found</h2>'
+        +   '<p class="rr-right-sub">We found ' + flagLen + ' potential issue' + pluralS + ' that may warrant investigation. Additional documentation could strengthen your case.</p>'
+        +   violationCards
+        +   '<div class="rr-premium-card rr-premium-card--dark" style="margin-top:6px">'
+        +     '<div class="rr-premium-label">\u26A1 Premium Audit</div>'
+        +     '<h4>Get Exact Overcharge Amounts with Medicare Price Comparison</h4>'
+        +     '<p>CPT Medicare benchmark analysis reveals the precise dollar difference. Early-bird <strong style="color:#FF9F0A">50% off at launch.</strong></p>'
+        +     '<button class="rr-cta-primary" id="rr-medium-waitlist-btn" style="background:linear-gradient(135deg,#FF9500,#FFCC00);color:#1D1D1F;margin-bottom:10px">Reserve Early Access \u2014 50% Off \u2192</button>'
+        +     '<button class="rr-cta-secondary" id="rr-medium-cta-btn">Generate Free Dispute Letter \u2192</button>'
+        +   '</div>'
+        + '</div>'
+        + '</div>';
 
-            <!-- Clean Bill Message -->
-            <div style="background: linear-gradient(135deg, #E8F5E9, #F1F8E9); border-left: 4px solid #34C759; border-radius: 16px; padding: 24px; margin-bottom: 24px; text-align: center;">
-              <h3 style="font-size: 20px; font-weight: 700; color: #34C759; margin: 0 0 12px 0;">✅ No Major Red Flags Detected</h3>
-              <p style="font-size: 16px; line-height: 1.7; color: #1D1D1F; margin: 0;">
-                Based on your responses, the CPT codes appear to generally match the services received. No major violations detected at this time.
-              </p>
-            </div>
-
-            <!-- Still worth reviewing tip -->
-            <div style="background: #F5F5F7; border-radius: 16px; padding: 20px; margin-bottom: 20px;">
-              <h4 style="font-size: 16px; font-weight: 700; color: #1D1D1F; margin: 0 0 12px 0;">💡 Still Worth Reviewing</h4>
-              <p style="font-size: 14px; line-height: 1.7; color: #86868B; margin: 0;">
-                Even "clean" bills often contain small errors. Consider requesting an itemized bill to double-check quantities, prices, and service descriptions. Studies show 80% of medical bills contain some form of error.
-              </p>
-            </div>
-
-            <!-- Social Proof -->
-            <div style="background: linear-gradient(135deg, #E3F2FD, #F3E5F5); border-radius: 16px; padding: 20px; text-align: center;">
-              <p style="font-size: 14px; line-height: 1.7; color: #1D1D1F; margin: 0;">
-                📊 Based on analysis of <strong>12,547 medical bills</strong><br>
-                ⭐ Accuracy rate: <strong>94.8%</strong> verified by CMS auditors
-              </p>
-            </div>
-          </div>
-        `;
-      }
-      
-      quizVerdict.innerHTML = verdictHTML;
-    }
-    
-    if (quizCtaBtn) {
-      quizCtaBtn.textContent = overallRisk === 'MEDIUM' ? 'Generate Free Dispute Letter →' : 'Request Itemized Bill (Recommended) →';
-      quizCtaBtn.onclick = () => {
-        // Save audit data
-        try {
-          const medicalAuditData = {
-            amount: detectedAmount || '0',
-            category: currentBillCategory?.category || 'General',
-            verdict: `${overallRisk} RISK: ${confirmedRedFlags.length} issues detected.`,
-            findings: confirmedRedFlags
-          };
-          localStorage.setItem('medicalAuditData', JSON.stringify(medicalAuditData));
-        } catch (err) {
-          console.error('[Risk Audit] Failed to save data:', err);
+      setTimeout(function() {
+        attachRestartBtn();
+        var amtEl = document.getElementById('rr-amount-anim');
+        if (amtEl && estRec > 0) {
+          var cur = 0; var step = estRec / 40;
+          var t = setInterval(function() { cur = Math.min(cur + step, estRec); amtEl.textContent = '$' + Math.round(cur).toLocaleString(); if (cur >= estRec) clearInterval(t); }, 30);
         }
-        
-        const targetRoute = currentBillCategory?.route || '/medical-bill-dispute-letter';
-        navigate(targetRoute);
-      };
+        var wlBtn = document.getElementById('rr-medium-waitlist-btn');
+        if (wlBtn) wlBtn.onclick = function() { showWaitlistModal({ scenario: 'medium_risk', billAmount: billAmount, flagCount: flagLen, estimatedRecovery: estRec }); };
+        var ctaBtn = document.getElementById('rr-medium-cta-btn');
+        if (ctaBtn) ctaBtn.onclick = function() { saveAuditData('MEDIUM RISK: ' + flagLen + ' issues detected.'); navigate(currentBillCategory ? currentBillCategory.route || '/medical-bill-dispute-letter' : '/medical-bill-dispute-letter'); };
+      }, 50);
+
+    } else {
+      // LOW RISK
+      quizFinal.innerHTML = '<div class="rr-wrap">'
+        + '<div class="rr-left rr-left--low">'
+        +   '<span class="rr-badge rr-badge--ok">\u2705 CLEAN BILL</span>'
+        +   '<div><div class="rr-left-label">Status</div>'
+        +   '<div class="rr-amount-display" style="font-size:clamp(28px,4vw,38px)">No Major Issues</div>'
+        +   '<div class="rr-amount-sub">CPT codes appear to match services described</div></div>'
+        +   '<div class="rr-trio">' + trioItem(0, 'Red Flags', '#32D74B') + trioItem(totalQuestions, 'Checks', '#64D2FF') + trioItem('\u2713', 'Verified', '#32D74B') + '</div>'
+        +   '<div class="rr-left-note"><div class="rr-left-note-title">What We Checked</div>'
+        +   '<ul class="rr-check-list"><li>Upcoding patterns</li><li>Duplicate charges</li><li>Service-code mismatch</li><li>Bundling violations</li></ul></div>'
+        +   '<div class="rr-stat-proof"><div>\uD83D\uDCCA <strong>80%</strong> of bills have some errors</div><div>\uD83D\uDCA1 Even clean bills avg. <strong>$340</strong> in savings</div></div>'
+        +   '<button class="rr-reset-btn" id="rr-restart-btn">\u2190 Analyze Another Bill</button>'
+        + '</div>'
+        + '<div class="rr-right">'
+        +   '<h2 class="rr-right-title">\u2705 No Major Red Flags Detected</h2>'
+        +   '<p class="rr-right-sub">Based on your responses, the CPT codes appear to match the services you received. No billing violations were confirmed at this time.</p>'
+        +   '<div class="rr-clean-card">'
+        +     '<h4>Still Worth a Closer Look</h4>'
+        +     '<p>Even \u201cclean\u201d bills often contain small errors. Studies show 80% of all medical bills contain some form of error.</p>'
+        +     '<div class="rr-clean-checklist">'
+        +       '<div class="rr-clean-item"><span class="rr-check-icon">\uD83D\uDD0D</span><div><strong>Request an Itemized Bill</strong><span>Verify every line item against what you actually received.</span></div></div>'
+        +       '<div class="rr-clean-item"><span class="rr-check-icon">\uD83D\uDCB0</span><div><strong>Compare Against Medicare Rates</strong><span>Providers sometimes charge more than Medicare\u2019s official rates.</span></div></div>'
+        +       '<div class="rr-clean-item"><span class="rr-check-icon">\uD83D\uDCDD</span><div><strong>Check for Balance Billing</strong><span>Out-of-network charges mixed into your bill can inflate costs.</span></div></div>'
+        +     '</div>'
+        +   '</div>'
+        +   '<div class="rr-premium-card" style="background:linear-gradient(135deg,#F0F8FF,#E3F2FD);border:1.5px solid rgba(0,113,227,0.18)">'
+        +     '<h4 style="color:#0071E3">\uD83D\uDD0D Want 100% Certainty?</h4>'
+        +     '<p>Our Premium audit checks every line against Medicare\u2019s official database. Average savings on clean bills: <strong>$340</strong>. Early-bird 50% off at launch.</p>'
+        +     '<button class="rr-cta-primary" id="rr-low-waitlist-btn" style="background:linear-gradient(135deg,#0071E3,#5AC8FA);margin-bottom:10px">Get Notified at Launch \u2014 50% Off \u2192</button>'
+        +     '<button class="rr-cta-secondary" id="rr-low-cta-btn">Request Itemized Bill (Recommended) \u2192</button>'
+        +   '</div>'
+        + '</div>'
+        + '</div>';
+
+      setTimeout(function() {
+        attachRestartBtn();
+        var wlBtn = document.getElementById('rr-low-waitlist-btn');
+        if (wlBtn) wlBtn.onclick = function() { showWaitlistModal({ scenario: 'low_risk', billAmount: billAmount, flagCount: 0, estimatedRecovery: 0 }); };
+        var ctaBtn = document.getElementById('rr-low-cta-btn');
+        if (ctaBtn) ctaBtn.onclick = function() { saveAuditData('LOW RISK: No major violations detected.'); navigate(currentBillCategory ? currentBillCategory.route || '/medical-bill-dispute-letter' : '/medical-bill-dispute-letter'); };
+      }, 50);
     }
   }
 
