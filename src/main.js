@@ -8229,7 +8229,6 @@ ${documentType === 'itemized_bill' ? `EXAMPLE FOR ITEMIZED BILL (NO GATEKEEPER):
   }
 ]`}
 `;
-]`;
 
     // Call secure backend API with strict response schema
     const data = await callSecureGeminiAPI(
