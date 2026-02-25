@@ -161,19 +161,7 @@ export default async function handler(req, res) {
              'unknown';
   
   console.log(`[Security] Request from IP: ${ip}`);
-  
-  // Rate limiting check (1 request per 3 seconds) - NOW ASYNC
-  const rateLimit = await checkRateLimit(ip);
-  
-  if (!rateLimit.allowed) {
-    console.log(`[Rate Limit] Blocked IP ${ip} - Wait ${rateLimit.waitTime}s`);
-    return res.status(429).json({ 
-      error: 'Rate limit exceeded',
-      message: `Please wait ${rateLimit.waitTime} second(s) before trying again.`,
-      waitTime: rateLimit.waitTime
-    });
-  }
-  
+
   try {
     // Extract request data
     const { contents, generationConfig, action, recaptchaToken } = req.body;
@@ -192,10 +180,21 @@ export default async function handler(req, res) {
         message: 'Contents array required'
       });
     }
-    
-    // Verify reCAPTCHA
-    const recaptchaResult = await verifyRecaptcha(recaptchaToken);
-    
+
+    // Run reCAPTCHA + rate limit check IN PARALLEL (saves 1-2s)
+    const [recaptchaResult, rateLimit] = await Promise.all([
+      verifyRecaptcha(recaptchaToken),
+      checkRateLimit(ip)
+    ]);
+
+    if (!rateLimit.allowed) {
+      console.log(`[Rate Limit] Blocked IP ${ip} - Wait ${rateLimit.waitTime}s`);
+      return res.status(429).json({ 
+        error: 'Rate limit exceeded',
+        message: `Please wait ${rateLimit.waitTime} second(s) before trying again.`,
+        waitTime: rateLimit.waitTime
+      });
+    }
     if (!recaptchaResult.success) {
       console.log(`[Security] reCAPTCHA failed for IP ${ip}:`, recaptchaResult.error);
       return res.status(403).json({ 
@@ -225,10 +224,7 @@ export default async function handler(req, res) {
     // Add system prompt for medical billing expertise
     const enhancedContents = contents.map((content, index) => {
       if (index === 0 && content.parts && content.parts[0]?.text) {
-        // Prepend medical billing expert system prompt
-        const systemPrompt = `You are a Senior Medical Billing Auditor with expertise in CPT/HCPCS coding and CMS compliance. Your goal is to identify overcharges, billing errors, and potential fraud in medical bills.
-
-IMPORTANT: Your output MUST be valid JSON only. Do not include markdown formatting, code blocks, or any text outside the JSON structure.
+        const systemPrompt = `You are a medical billing auditor. Output valid JSON only. No markdown.
 
 `;
         return {
@@ -316,9 +312,9 @@ IMPORTANT: Your output MUST be valid JSON only. Do not include markdown formatti
       }
     };
 
-    // Create abort controller for timeout
+    // Create abort controller for timeout (75s gives ~12s buffer before Vercel's 90s hard limit)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 85000); // 85 second timeout (allow time for complex bills)
+    const timeoutId = setTimeout(() => controller.abort(), 75000);
     
     try {
       const response = await fetch(apiUrl, {
@@ -374,10 +370,10 @@ IMPORTANT: Your output MUST be valid JSON only. Do not include markdown formatti
       
       // Handle abort/timeout errors
       if (fetchError.name === 'AbortError') {
-        console.error('[Gemini API] Request timeout after 55 seconds');
+        console.error('[Gemini API] Request timeout after 75 seconds');
         return res.status(504).json({ 
           error: 'Request timeout',
-          message: 'Analysis took too long. Please compress your image file (under 2MB recommended) and try again.'
+          message: 'Analysis took too long. Please compress your image file (under 1MB recommended) and try again.'
         });
       }
       
