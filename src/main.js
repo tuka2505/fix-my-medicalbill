@@ -7737,47 +7737,31 @@ function setupBillScanning() {
           const data = await callSecureGeminiAPI(
             [{ 
               parts: [
-                { text: `Medical bill OCR auditor. Extract data as JSON.
+                { text: `Extract medical bill data as JSON.
 
-STEP 1 - DOCUMENT TYPE (CRITICAL):
-Look at the bill carefully. Do you see a table/list with 5-digit CPT codes (99285, 70450, 85025, etc.)?
-- If YES → documentType = "itemized_bill" 
-- If NO (only category totals like "ER Services: $5,000") → documentType = "summary_bill"
-
-STEP 2 - EXTRACT LINE ITEMS:
-For EVERY line in the bill, extract as JSON array "lineItems":
-[
-  { "cptCode": "99285", "description": "Emergency Visit Level 5", "charge": 2150.00 },
-  { "cptCode": "70450", "description": "CT Scan Head", "charge": 2400.00 },
-  ...
-]
-IMPORTANT: Extract ALL line items. Do not truncate. Be thorough.
-
-STEP 3 - EXTRACT OTHER DATA:
-- facilityName: Hospital/clinic name
-- totalAmount: Total patient responsibility amount (number only, no $)
-- dateOfService: Service date (YYYY-MM-DD)
-- issueCategory: "Emergency Room" | "Lab & Imaging" | "Surgery & Inpatient" | "General Doctor Visit"
-
-STEP 4 - OUTPUT FORMAT:
+OUTPUT REQUIRED:
 {
   "isValid": true,
-  "documentType": "itemized_bill" or "summary_bill",
-  "facilityName": "Mercy Health Center",
+  "documentType": "itemized_bill" (if you see 5-digit CPT codes) OR "summary_bill" (if only totals),
+  "facilityName": "Hospital Name",
   "totalAmount": 6615.00,
   "dateOfService": "2026-02-12",
-  "issueCategory": "Emergency Room",
+  "issueCategory": "Emergency Room" | "Lab & Imaging" | "Surgery & Inpatient" | "General Doctor Visit",
   "lineItems": [
-    { "cptCode": "99285", "description": "Emergency Visit Level 5", "charge": 2150.00 },
-    ...
+    {"cptCode": "99285", "description": "ER Visit Level 5", "charge": 2150.00},
+    {"cptCode": "70450", "description": "CT Scan", "charge": 2400.00}
   ]
 }
 
-CRITICAL: If you see CPT codes → MUST be "itemized_bill". Extract ALL lineItems with cptCode field.` },
+RULES:
+- If you see ANY 5-digit CPT codes → documentType = "itemized_bill"
+- Extract ALL line items with CPT codes
+- Remove $ and commas from numbers
+- Return valid JSON only` },
                 { inlineData: { mimeType: fileToProcess.type, data: base64String } }
               ] 
             }],
-            { response_mime_type: "application/json", maxOutputTokens: 1500 },
+            { response_mime_type: "application/json", maxOutputTokens: 2500 },
             'bill_ocr'
           );
 
