@@ -8283,7 +8283,7 @@ JSON array only. Each question has:
       { 
         responseMimeType: "application/json",
         maxOutputTokens: 5000,
-        temperature: 0.8
+        temperature: 0.4
       },
       'quiz_generation'
     );
@@ -8707,32 +8707,32 @@ async function initializeTargetedQuiz(category) {
   const analyzingText = document.querySelector('.analyzing-text');
   let msgInterval;
   if (analyzingText) {
-    analyzingText.textContent = 'Analyzing your bill with AI...';
+    analyzingText.innerHTML = 'AI 정밀 분석 중... <span style="color: #86868B; font-size: 14px;">(평균 30초 소요)</span>';
     
     // Animate loading messages with progress (keep running until AI responds)
     const loadingMessages = [
-      'Analyzing your bill with AI...',
-      'Understanding your specific billing issues...',
-      'Cross-referencing Federal Medicare guidelines...',
-      'Identifying potential overcharges...',
-      'Reviewing CPT code compliance...',
-      'Checking for unbundling violations...',
-      'Generating personalized questions...',
-      'Preparing your risk assessment...',
-      'Tailoring questions to your bill...',
-      'Almost ready...'
+      'AI 정밀 분석 중... <span style="color: #86868B; font-size: 14px;">(평균 30초 소요)</span>',
+      '⚕️ Federal Medicare 가이드라인 교차 검증 중...',
+      '🔍 CPT 코드 정확도 분석 중...',
+      '💰 잠재적 과다청구 패턴 탐지 중...',
+      '📋 Unbundling 위반 검사 중...',
+      '🎯 맞춤형 검증 질문 생성 중...',
+      '⚡ 거의 완료... 고급 분석 마무리 중...',
+      '<strong>정상 작동 중</strong> - 복잡한 청구서일수록 시간 소요',
+      '✓ 정밀 분석으로 정확도 극대화 중...',
+      '🔬 최종 검증 단계...'
     ];
     let msgIndex = 0;
     msgInterval = setInterval(() => {
       msgIndex++;
-      if (msgIndex >= loadingMessages.length) msgIndex = 6; // Loop from "Generating" onwards
+      if (msgIndex >= loadingMessages.length) msgIndex = 5; // Loop from "Generating" onwards
       
       analyzingText.style.opacity = '0.5';
       setTimeout(() => {
-        analyzingText.textContent = loadingMessages[msgIndex];
+        analyzingText.innerHTML = loadingMessages[msgIndex];
         analyzingText.style.opacity = '1';
       }, 200);
-    }, 1800); // Slower rotation for better readability
+    }, 3500); // Slower rotation to show "not an error" message longer
   }
 
   // Use pre-loaded quiz if available (started during bill analysis completion)
@@ -8905,9 +8905,10 @@ async function initializeTargetedQuiz(category) {
       highestRisk = risk;
     }
     
-    // Track blocker detection
-    if (risk === 'BLOCKER' || answer === 'flag') {
+    // Track blocker detection (ONLY for riskLevel BLOCKER, NOT regular flags)
+    if (risk === 'BLOCKER') {
       blockerDetected = true;
+      console.log('[Risk Quiz] ⚠️ BLOCKER detected - Audit cannot proceed without itemized bill');
     }
     
     // Collect confirmed red flags with confidence weighting
