@@ -1913,6 +1913,10 @@ function renderHero() {
             </p>
           </div>
 
+          <a href="/request-itemized-medical-bill" style="display: block; margin-top: 12px; background: linear-gradient(180deg, #0071E3 0%, #005BB5 100%); color: white; text-decoration: none; padding: 11px 18px; border-radius: 980px; font-size: 14px; font-weight: 500; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08); transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)';">
+            Request Itemized Bill
+          </a>
+
         </div>
       </div>
 
