@@ -7562,7 +7562,7 @@ function setupBillScanning() {
     // Skip compression for small files (<500KB)
     if (file.size < 500 * 1024) return file;
     
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new Image();
@@ -7571,8 +7571,11 @@ function setupBillScanning() {
           let width = img.width;
           let height = img.height;
           
-          // Max dimension 2000px for large images
-          const maxDim = 2000;
+          // More aggressive compression for large files
+          const isVeryLarge = file.size > 2 * 1024 * 1024; // > 2MB
+          const maxDim = isVeryLarge ? 1600 : 2000; // Smaller max for large files
+          const quality = isVeryLarge ? 0.7 : 0.85; // Lower quality for large files
+          
           if (width > maxDim || height > maxDim) {
             if (width > height) {
               height = (height / width) * maxDim;
@@ -7589,11 +7592,34 @@ function setupBillScanning() {
           ctx.drawImage(img, 0, 0, width, height);
           
           canvas.toBlob((blob) => {
-            resolve(new File([blob], file.name, { type: 'image/jpeg' }));
-          }, 'image/jpeg', 0.85);
+            if (!blob) {
+              reject(new Error('Image compression failed'));
+              return;
+            }
+            
+            const compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
+            
+            // Check if compressed file is still too large (> 2MB)
+            if (compressedFile.size > 2 * 1024 * 1024) {
+              console.warn('[Compress] File still large after compression:', (compressedFile.size / 1024 / 1024).toFixed(2), 'MB');
+              // Try again with even more aggressive compression
+              const ctx2 = canvas.getContext('2d');
+              canvas.width = Math.floor(width * 0.7);
+              canvas.height = Math.floor(height * 0.7);
+              ctx2.drawImage(img, 0, 0, canvas.width, canvas.height);
+              
+              canvas.toBlob((blob2) => {
+                resolve(new File([blob2], file.name, { type: 'image/jpeg' }));
+              }, 'image/jpeg', 0.6); // Very aggressive quality
+            } else {
+              resolve(compressedFile);
+            }
+          }, 'image/jpeg', quality);
         };
+        img.onerror = () => reject(new Error('Failed to load image'));
         img.src = e.target.result;
       };
+      reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsDataURL(file);
     });
   }
@@ -7642,6 +7668,19 @@ function setupBillScanning() {
         scanProgressFill.style.width = '55%';
         scanProgressText.textContent = '🗜️ Optimizing image... 55%';
         fileToProcess = await compressImage(file);
+        
+        // Verify compressed file size is acceptable (< 2MB recommended)
+        const compressedSizeMB = (fileToProcess.size / 1024 / 1024).toFixed(2);
+        console.log(`[Compress] Original: ${(file.size / 1024 / 1024).toFixed(2)}MB → Compressed: ${compressedSizeMB}MB`);
+        
+        // If still > 3MB after compression, warn user
+        if (fileToProcess.size > 3 * 1024 * 1024) {
+          const proceed = confirm(`⚠️ Large File After Compression (${compressedSizeMB}MB)\n\nThis file may take 60-90 seconds to analyze and could timeout.\n\nRecommendations:\n• Crop to show only the bill (remove blank areas)\n• Use a lower resolution scan\n• Split multi-page bills into separate uploads\n\nProceed anyway?`);
+          if (!proceed) {
+            scanProgress.style.display = 'none';
+            return;
+          }
+        }
       }
 
       const reader = new FileReader();
@@ -7877,10 +7916,18 @@ OUTPUT: Valid JSON only. NO markdown formatting, NO explanations outside JSON.` 
           
           // Handle timeout errors
           if (inner.message.includes('504') || inner.message.includes('timeout')) {
-            alert('Analysis Timeout\n\nThe file took too long to process (over 60 seconds). Please try:\n\n• Compress your image file (recommended: under 2MB)\n• Use a clearer/higher quality scan\n• Crop to show only the relevant bill sections\n\nIf the issue persists, contact support.');
+            // Extract custom message if present
+            const customMsg = inner.message.includes('504:') ? inner.message.split('504:')[1] : null;
+            
+            if (customMsg) {
+              alert(customMsg);
+            } else {
+              alert('Analysis Timeout (90 seconds)\\n\\nYour file took too long to process. This usually means:\\n• File is too large or complex\\n• Image quality is too low (hard to read)\\n• Multiple pages in one image\\n\\nQuick fixes:\\n\u2713 Compress to under 1MB\\n\u2713 Crop to bill area only\\n\u2713 Use clear, high-res photo\\n\u2713 Split multi-page documents\\n\\nTip: JPG format works best!');
+            }
+            
             if (scanProgress) {
-              scanProgressText.textContent = 'Analysis timeout. Please compress your file and try again.';
-              setTimeout(() => { if (scanProgress) scanProgress.style.display = 'none'; }, 3000);
+              scanProgressText.textContent = '\u23f1\ufe0f Timeout - File took >90s. Please compress and retry.';
+              setTimeout(() => { if (scanProgress) scanProgress.style.display = 'none'; }, 5000);
             }
             return;
           }
@@ -8316,7 +8363,7 @@ async function callSecureGeminiAPI(contents, generationConfig = {}, action = 'un
       
       // Timeout (504 Gateway Timeout)
       if (response.status === 504) {
-        throw new Error('504:Analysis timeout. File too large or complex. Please reduce file size to under 2MB or crop unnecessary sections and try again.');
+        throw new Error('504:Analysis Timeout (90 seconds exceeded)\\n\\nYour file took too long to process. This usually happens with:\\n\u2022 Very large files (>2MB)\\n\u2022 Low-quality scans (hard to read text)\\n\u2022 Multi-page documents\\n\\nSolutions:\\n\u2713 Compress image to under 1MB (recommended)\\n\u2713 Crop to show only the bill (remove blank areas)\\n\u2713 Use higher quality scan/photo\\n\u2713 Split multi-page bills into separate uploads\\n\\nIf issue persists, try a different image format (JPG works best).');
       }
       
       // File too large (10MB limit)

@@ -13,7 +13,7 @@
   ],
   "functions": {
     "api/generate.js": {
-      "maxDuration": 60,
+      "maxDuration": 90,
       "memory": 1024
     }
   }

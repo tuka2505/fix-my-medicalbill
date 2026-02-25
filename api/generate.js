@@ -5,7 +5,7 @@ import { Redis } from '@upstash/redis';
 
 // Vercel function configuration - increase timeout for large image processing
 export const config = {
-  maxDuration: 60 // 60 seconds (max for Pro plan, 10s for Hobby plan)
+  maxDuration: 90 // 90 seconds (extended for complex medical bills)
 };
 
 const RATE_LIMIT_WINDOW = 3 * 1000; // 3 seconds
@@ -286,7 +286,7 @@ IMPORTANT: Your output MUST be valid JSON only. Do not include markdown formatti
     
     // Create abort controller for timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 85000); // 85 second timeout (allow time for complex bills)
     
     try {
       const response = await fetch(apiUrl, {
