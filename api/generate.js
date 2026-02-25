@@ -322,9 +322,10 @@ export default async function handler(req, res) {
       };
     }
 
-    // Create abort controller for timeout (75s gives ~12s buffer before Vercel's 90s hard limit)
+    // Create abort controller for timeout (85s for OCR, 60s for others)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 75000);
+    const timeoutMs = isBillOCR ? 85000 : 60000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     
     try {
       const response = await fetch(apiUrl, {

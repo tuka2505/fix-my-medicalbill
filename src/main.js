@@ -7737,28 +7737,23 @@ function setupBillScanning() {
           const data = await callSecureGeminiAPI(
             [{ 
               parts: [
-                { text: `Extract bill data as JSON. Be concise.
-
+                { text: `Extract bill data. Return JSON:
 {
   "isValid": true,
-  "documentType": "itemized_bill" (if 5-digit CPT codes visible) or "summary_bill",
-  "facilityName": "Mercy Health Center",
+  "documentType": "itemized_bill",
+  "facilityName": "Hospital Name",
   "totalAmount": 6615.00,
   "dateOfService": "2026-02-12",
   "issueCategory": "Emergency Room",
-  "lineItems": [
-    {"cptCode": "99285", "description": "ER Visit Lvl 5", "charge": 2150.00},
-    {"cptCode": "70450", "description": "CT Head", "charge": 2400.00}
-  ]
-}
-
-Extract ALL line items. Numbers only (no $ or commas). Return ONLY this JSON - no extra fields.` },
+  "lineItems": [{"cptCode": "99285", "description": "ER Visit", "charge": 2150.00}]
+}` },
                 { inlineData: { mimeType: fileToProcess.type, data: base64String } }
               ] 
             }],
             { 
               response_mime_type: "application/json",
-              maxOutputTokens: 4000
+              maxOutputTokens: 2000,
+              temperature: 0.8
             },
             'bill_ocr'
           );
