@@ -7824,6 +7824,13 @@ RULES:
           // Run validation layer
           const v = validateAndNormalizeBill(aiResult);
           
+          // 🔍 DEBUG: Log OCR results
+          console.log('[OCR DEBUG] documentType:', aiResult.documentType);
+          console.log('[OCR DEBUG] lineItems count:', aiResult.lineItems?.length || 0);
+          console.log('[OCR DEBUG] lineItems sample:', aiResult.lineItems?.slice(0, 3));
+          console.log('[OCR DEBUG] facilityName:', aiResult.facilityName);
+          console.log('[OCR DEBUG] totalAmount:', aiResult.totalAmount);
+          
           // Run audit engine
           const auditResult = runAuditEngine(v);
           
@@ -8254,8 +8261,26 @@ ${documentType === 'itemized_bill' ? `EXAMPLE FOR ITEMIZED BILL (NO GATEKEEPER):
       throw new Error('AI returned invalid or insufficient questions');
     }
 
-    console.log('[Risk Quiz] Generated', aiQuestions.length, 'questions based on', lineItems.length, 'line items');
-    return aiQuestions;
+    // 🔍 CRITICAL FIX: If itemized bill, remove gatekeeper questions
+    let filteredQuestions = aiQuestions;
+    if (documentType === 'itemized_bill' && hasCPTCodes) {
+      filteredQuestions = aiQuestions.filter(q => {
+        // Remove questions asking about CPT code existence
+        const isGatekeeper = q.question.toLowerCase().includes('does your bill show') && 
+                            q.question.toLowerCase().includes('cpt code');
+        if (isGatekeeper) {
+          console.log('[Quiz Gen] 🚫 Removed gatekeeper question (itemized bill detected):', q.id);
+        }
+        return !isGatekeeper;
+      });
+      
+      if (filteredQuestions.length < aiQuestions.length) {
+        console.log(`[Quiz Gen] ✓ Filtered ${aiQuestions.length - filteredQuestions.length} gatekeeper questions. Remaining: ${filteredQuestions.length}`);
+      }
+    }
+
+    console.log('[Risk Quiz] Generated', filteredQuestions.length, 'questions based on', lineItems.length, 'line items');
+    return filteredQuestions;
 
   } catch (error) {
     console.error('[Risk Quiz] Error generating AI questions:', error);
