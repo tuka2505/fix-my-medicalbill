@@ -8707,20 +8707,20 @@ async function initializeTargetedQuiz(category) {
   const analyzingText = document.querySelector('.analyzing-text');
   let msgInterval;
   if (analyzingText) {
-    analyzingText.innerHTML = 'AI 정밀 분석 중... <span style="color: #86868B; font-size: 14px;">(평균 30초 소요)</span>';
+    analyzingText.innerHTML = 'AI precision analysis in progress... <span style="color: #86868B; font-size: 14px;">(avg. 30 seconds)</span>';
     
     // Animate loading messages with progress (keep running until AI responds)
     const loadingMessages = [
-      'AI 정밀 분석 중... <span style="color: #86868B; font-size: 14px;">(평균 30초 소요)</span>',
-      '⚕️ Federal Medicare 가이드라인 교차 검증 중...',
-      '🔍 CPT 코드 정확도 분석 중...',
-      '💰 잠재적 과다청구 패턴 탐지 중...',
-      '📋 Unbundling 위반 검사 중...',
-      '🎯 맞춤형 검증 질문 생성 중...',
-      '⚡ 거의 완료... 고급 분석 마무리 중...',
-      '<strong>정상 작동 중</strong> - 복잡한 청구서일수록 시간 소요',
-      '✓ 정밀 분석으로 정확도 극대화 중...',
-      '🔬 최종 검증 단계...'
+      'AI precision analysis in progress... <span style="color: #86868B; font-size: 14px;">(avg. 30 seconds)</span>',
+      '⚕️ Cross-referencing Federal Medicare guidelines...',
+      '🔍 Analyzing CPT code accuracy...',
+      '💰 Detecting potential overcharge patterns...',
+      '📋 Checking for unbundling violations...',
+      '🎯 Generating personalized verification questions...',
+      '⚡ Nearly complete... finalizing advanced analysis...',
+      '<strong>Working normally</strong> - Complex bills require more time',
+      '✓ Maximizing accuracy through precision analysis...',
+      '🔬 Final verification stage...'
     ];
     let msgIndex = 0;
     msgInterval = setInterval(() => {
@@ -9289,7 +9289,7 @@ async function initializeTargetedQuiz(category) {
     if (highRiskCount > 0) overallRisk = 'HIGH';
     else if (mediumRiskCount >= 2 || highestRisk === 'MEDIUM') overallRisk = 'MEDIUM';
 
-    var totalQuestions = currentQuestionIndex || confirmedRedFlags.length + 3;
+    var totalQuestions = questions.length;
     var avgConf = confirmedRedFlags.length > 0
       ? Math.round(confirmedRedFlags.reduce(function(s, f){ return s + (f.confidence != null ? f.confidence : 70); }, 0) / confirmedRedFlags.length)
       : 0;
