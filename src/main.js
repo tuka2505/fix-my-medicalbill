@@ -8121,12 +8121,12 @@ async function generateAIQuiz(category, extractedText) {
     
     console.log(`[Quiz Gen] Document Type: ${documentType}, Line Items: ${lineItems.length}, Has CPT: ${hasCPTCodes}`);
     
-    // Determine dynamic question count based on bill complexity (increased for thorough analysis)
-    let questionCount = 8; // Default: 8 questions (more professional)
+    // Determine dynamic question count (optimized for speed)
+    let questionCount = 5; // Default: 5 questions (fast, focused)
     if (totalAmount > 5000 || lineItems.length > 10) {
-      questionCount = 12; // Complex bill: 12 questions for deep audit
+      questionCount = 7; // Complex bill: 7 questions maximum
     } else if (totalAmount < 1000) {
-      questionCount = 7;  // Simple bill: minimum 7 questions
+      questionCount = 5;  // Simple bill: 5 questions
     }
 
     const prompt = `You are a Medicare/Medicaid Compliance Auditor detecting FACTUAL clinical discrepancies.
@@ -8219,6 +8219,7 @@ ${documentType === 'itemized_bill' ? `EXAMPLE FOR ITEMIZED BILL (NO GATEKEEPER):
       [{ parts: [{ text: prompt }] }],
       { 
         responseMimeType: "application/json",
+        maxOutputTokens: 2500,
         responseSchema: {
           type: "ARRAY",
           items: {
