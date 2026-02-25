@@ -8309,11 +8309,28 @@ JSON array only. Each question has:
     let filteredQuestions = aiQuestions;
     if (documentType === 'itemized_bill' && hasCPTCodes) {
       filteredQuestions = aiQuestions.filter(q => {
-        // Remove questions asking about CPT code existence
-        const isGatekeeper = q.question.toLowerCase().includes('does your bill show') && 
-                            q.question.toLowerCase().includes('cpt code');
+        // Multi-pattern gatekeeper detection (robust)
+        const questionLower = q.question.toLowerCase();
+        
+        // Check 1: Question asks about CPT code existence
+        const asksCPTExistence = (
+          (questionLower.includes('does') || questionLower.includes('do you') || 
+           questionLower.includes('can you') || questionLower.includes('are there')) &&
+          (questionLower.includes('cpt') || questionLower.includes('billing code') || 
+           questionLower.includes('itemized'))
+        );
+        
+        // Check 2: Has BLOCKER risk level (definitive gatekeeper marker)
+        const hasBlockerOption = q.options?.some(opt => 
+          opt.riskLevel === 'BLOCKER' || 
+          opt.flagText?.includes('AUDIT BLOCKED') ||
+          opt.flagText?.includes('Summary bill')
+        );
+        
+        const isGatekeeper = asksCPTExistence || hasBlockerOption;
+        
         if (isGatekeeper) {
-          console.log('[Quiz Gen] 🚫 Removed gatekeeper question (itemized bill detected):', q.id);
+          console.log('[Quiz Gen] 🚫 Removed gatekeeper question (itemized bill detected):', q.id, '|', q.question.substring(0, 60));
         }
         return !isGatekeeper;
       });
