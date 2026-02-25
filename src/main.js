@@ -7737,31 +7737,53 @@ function setupBillScanning() {
           const data = await callSecureGeminiAPI(
             [{ 
               parts: [
-                { text: `Extract medical bill data as JSON.
+                { text: `Extract bill data as JSON. Be concise.
 
-OUTPUT REQUIRED:
 {
   "isValid": true,
-  "documentType": "itemized_bill" (if you see 5-digit CPT codes) OR "summary_bill" (if only totals),
-  "facilityName": "Hospital Name",
+  "documentType": "itemized_bill" (if 5-digit CPT codes visible) or "summary_bill",
+  "facilityName": "Mercy Health Center",
   "totalAmount": 6615.00,
   "dateOfService": "2026-02-12",
-  "issueCategory": "Emergency Room" | "Lab & Imaging" | "Surgery & Inpatient" | "General Doctor Visit",
+  "issueCategory": "Emergency Room",
   "lineItems": [
-    {"cptCode": "99285", "description": "ER Visit Level 5", "charge": 2150.00},
-    {"cptCode": "70450", "description": "CT Scan", "charge": 2400.00}
+    {"cptCode": "99285", "description": "ER Visit Lvl 5", "charge": 2150.00},
+    {"cptCode": "70450", "description": "CT Head", "charge": 2400.00}
   ]
 }
 
-RULES:
-- If you see ANY 5-digit CPT codes → documentType = "itemized_bill"
-- Extract ALL line items with CPT codes
-- Remove $ and commas from numbers
-- Return valid JSON only` },
+Extract ALL line items. Numbers only (no $ or commas). Return ONLY this JSON - no extra fields.` },
                 { inlineData: { mimeType: fileToProcess.type, data: base64String } }
               ] 
             }],
-            { response_mime_type: "application/json", maxOutputTokens: 2500 },
+            { 
+              response_mime_type: "application/json",
+              maxOutputTokens: 3000,
+              responseSchema: {
+                type: "OBJECT",
+                properties: {
+                  isValid: { type: "BOOLEAN" },
+                  documentType: { type: "STRING", enum: ["itemized_bill", "summary_bill", "eob", "statement"] },
+                  facilityName: { type: "STRING" },
+                  totalAmount: { type: "NUMBER" },
+                  dateOfService: { type: "STRING" },
+                  issueCategory: { type: "STRING" },
+                  lineItems: {
+                    type: "ARRAY",
+                    items: {
+                      type: "OBJECT",
+                      properties: {
+                        cptCode: { type: "STRING" },
+                        description: { type: "STRING" },
+                        charge: { type: "NUMBER" }
+                      },
+                      required: ["cptCode", "description", "charge"]
+                    }
+                  }
+                },
+                required: ["isValid", "documentType", "facilityName", "totalAmount", "dateOfService", "issueCategory", "lineItems"]
+              }
+            },
             'bill_ocr'
           );
 
