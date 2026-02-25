@@ -8239,6 +8239,11 @@ async function generateAIQuiz(category, extractedText) {
       questionCount = 5;  // Simple bill: 5 questions
     }
 
+    // Convert lineItems to compact text format (avoid verbose JSON)
+    const lineItemsText = lineItems.slice(0, 8).map((item, i) => 
+      `${i+1}. CPT ${item.cptCode || item.cpt || 'N/A'}: ${(item.description || item.desc || 'Unknown').substring(0, 50)} ($${item.charge || item.amount || 0})`
+    ).join('\n');
+
     const prompt = `You are a Medicare/Medicaid Compliance Auditor detecting FACTUAL clinical discrepancies.
 
 [CRITICAL INSTRUCTION]
@@ -8249,7 +8254,7 @@ DO NOT estimate dollar amounts. Output riskLevel only: HIGH, MEDIUM, LOW, NONE.
 Facility: ${facilityName}
 Document Type: ${documentType}
 LINE ITEMS (${lineItems.length} items):
-${JSON.stringify(lineItems.slice(0, 8), null, 2)}
+${lineItemsText}
 
 [YOUR TASK]
 Generate EXACTLY ${questionCount} questions to verify CPT codes in the bill.
@@ -8272,42 +8277,29 @@ JSON array only. Each question has:
 - options: label, value (flag/safe/unsure), riskLevel (HIGH/MEDIUM/LOW/NONE/BLOCKER), flagText
 `;
 
-    // Call secure backend API with strict response schema
+    // Call secure backend API (no schema - faster like OCR)
     const data = await callSecureGeminiAPI(
       [{ parts: [{ text: prompt }] }],
       { 
-        responseMimeType: "application/json",
-        maxOutputTokens: 4000,
-        responseSchema: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              id: { type: "STRING" },
-              question: { type: "STRING" },
-              context: { type: "STRING" },
-              options: {
-                type: "ARRAY",
-                items: {
-                  type: "OBJECT",
-                  properties: {
-                    label: { type: "STRING" },
-                    value: { type: "STRING", enum: ["flag", "safe", "unsure"] },
-                    riskLevel: { type: "STRING", enum: ["HIGH", "MEDIUM", "LOW", "NONE", "BLOCKER"] },
-                    flagText: { type: "STRING", nullable: true }
-                  },
-                  required: ["label", "value", "riskLevel"]
-                }
-              }
-            },
-            required: ["id", "question", "context", "options"]
-          }
-        }
+        response_mime_type: "application/json",
+        maxOutputTokens: 5000,
+        temperature: 0.8
       },
       'quiz_generation'
     );
 
-    const aiQuestions = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || '[]');
+    // Parse AI response with cleanup (remove markdown, trim)
+    let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+    aiText = aiText.replace(/```json/gi, '').replace(/```/gi, '').trim();
+    
+    let aiQuestions;
+    try {
+      aiQuestions = JSON.parse(aiText);
+    } catch (parseError) {
+      console.error('[Quiz Gen] JSON parse error:', parseError);
+      console.error('[Quiz Gen] Raw AI response (first 500 chars):', aiText.substring(0, 500));
+      throw new Error('AI returned invalid JSON format for quiz questions');
+    }
     
     if (!Array.isArray(aiQuestions) || aiQuestions.length < 2) {
       throw new Error('AI returned invalid or insufficient questions');
