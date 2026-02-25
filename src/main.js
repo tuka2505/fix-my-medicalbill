@@ -7737,52 +7737,47 @@ function setupBillScanning() {
           const data = await callSecureGeminiAPI(
             [{ 
               parts: [
-                { text: `You are a Senior Medical Billing Auditor with 15+ years experience analyzing US healthcare bills for fraud, upcoding, and billing errors.
+                { text: `Medical bill OCR auditor. Extract data as JSON.
 
-ANALYZE this medical bill and extract key information. Focus on ACCURACY over speed.
+STEP 1 - DOCUMENT TYPE (CRITICAL):
+Look at the bill carefully. Do you see a table/list with 5-digit CPT codes (99285, 70450, 85025, etc.)?
+- If YES → documentType = "itemized_bill" 
+- If NO (only category totals like "ER Services: $5,000") → documentType = "summary_bill"
 
-CRITICAL INSTRUCTIONS:
-1. isValid: Only true if this is clearly a medical bill (not receipt, invoice, or unrelated doc)
-2. documentType: 
-   - "itemized_bill" = has 5-digit CPT/HCPCS codes (e.g., 99285, 70450) listed next to charges for EACH service
-   - "summary_bill" = ONLY shows category totals (e.g., "Emergency Dept: $5,000") with NO individual CPT codes
-   - "eob" = Explanation of Benefits from insurance company
-   - "statement" = monthly billing statement
-   
-   CRITICAL: If you see ANY 5-digit CPT codes (99285, 70450, etc.), this is "itemized_bill" regardless of format.
-3. facilityName: Hospital/clinic name (be precise, include full legal name if visible)
-4. totalAmount: Patient responsibility amount in dollars (NOT insurance paid portion)
-5. dateOfService: Service date in YYYY-MM-DD format
-6. issueCategory: Primary service type based on CPT codes:
-   - "Emergency Room" = CPT 99281-99285, 99291
-   - "Lab & Imaging" = CPT 70000-89999 (X-rays, MRI, blood tests)
-   - "Surgery & Inpatient" = CPT 10000-69999 (procedures, surgeries)
-   - "General Doctor Visit" = CPT 99201-99215 (office visits)
+STEP 2 - EXTRACT LINE ITEMS:
+For EVERY line in the bill, extract as JSON array "lineItems":
+[
+  { "cptCode": "99285", "description": "Emergency Visit Level 5", "charge": 2150.00 },
+  { "cptCode": "70450", "description": "CT Scan Head", "charge": 2400.00 },
+  ...
+]
+IMPORTANT: Extract ALL line items. Do not truncate. Be thorough.
 
-7. lineItemsSummary: List ALL line items you can see in this format:
-   "CPT 99285 Emergency Visit - Level 5: $1,200 | CPT 71045 Chest X-ray - 2 Views: $450 | ..."
-   Include CPT codes, descriptions, units, and amounts. Be thorough.
+STEP 3 - EXTRACT OTHER DATA:
+- facilityName: Hospital/clinic name
+- totalAmount: Total patient responsibility amount (number only, no $)
+- dateOfService: Service date (YYYY-MM-DD)
+- issueCategory: "Emergency Room" | "Lab & Imaging" | "Surgery & Inpatient" | "General Doctor Visit"
 
-8. detectedIssuesSummary: RED FLAGS you detect (be specific):
-   - Upcoding: "99285 (Level 5 ER) billed for minor complaint - should be 99283"
-   - Duplicates: "CPT 36415 Venipuncture billed 3x on same day"
-   - Unbundling: "Supplies (gloves, IV start) billed separately when included in facility fee"
-   - Balance Billing: "Out-of-network anesthesiologist charging $2,000 above insurance allowed amount"
-   - Math Errors: "Line items total $3,450 but bill shows $4,200"
-   If no issues detected, write: "No obvious billing errors detected"
+STEP 4 - OUTPUT FORMAT:
+{
+  "isValid": true,
+  "documentType": "itemized_bill" or "summary_bill",
+  "facilityName": "Mercy Health Center",
+  "totalAmount": 6615.00,
+  "dateOfService": "2026-02-12",
+  "issueCategory": "Emergency Room",
+  "lineItems": [
+    { "cptCode": "99285", "description": "Emergency Visit Level 5", "charge": 2150.00 },
+    ...
+  ]
+}
 
-ACCURACY CHECKLIST:
-✓ Read ALL text carefully, including small print
-✓ Double-check dollar amounts (remove $ and commas)
-✓ Verify CPT codes are 5 digits
-✓ Match issueCategory to actual CPT codes present
-✓ List EVERY line item you can see
-
-OUTPUT: Valid JSON only. NO markdown formatting, NO explanations outside JSON.` },
+CRITICAL: If you see CPT codes → MUST be "itemized_bill". Extract ALL lineItems with cptCode field.` },
                 { inlineData: { mimeType: fileToProcess.type, data: base64String } }
               ] 
             }],
-            { response_mime_type: "application/json" },
+            { response_mime_type: "application/json", maxOutputTokens: 1500 },
             'bill_ocr'
           );
 
@@ -8119,18 +8114,28 @@ async function generateAIQuiz(category, extractedText) {
     const lineItems = billData.lineItems || [];
     const detectedIssues = billData.detectedIssues || {};
     const billSummary = billData.billSummary || {};
-    const facilityName = billData.facilityInfo?.name || 'Unknown Facility';
-    const totalAmount = billSummary.patientResponsibility || billSummary.totalCharges || 0;
+    const facilityName = billData.facilityInfo?.name || billData.facilityName || 'Unknown Facility';
+    const totalAmount = billData.totalAmount || billSummary.patientResponsibility || billSummary.totalCharges || 0;
     let documentType = billData.documentType || 'unknown';
     
-    // Critical fix: If we have CPT codes in lineItems, this is DEFINITELY an itemized bill
-    const hasCPTCodes = lineItems.some(item => 
-      item.cptCode && /^\d{5}$/.test(String(item.cptCode))
-    );
-    if (hasCPTCodes && documentType === 'summary_bill') {
-      console.log('[Quiz Gen] ⚠️ Override: OCR said summary_bill but CPT codes found → forcing itemized_bill');
-      documentType = 'itemized_bill';
+    // ⚠️ CRITICAL FIX: Force itemized_bill if we have ANY CPT codes
+    const hasCPTCodes = lineItems.some(item => {
+      const cpt = String(item.cptCode || item.cpt || '').trim();
+      return /^\d{5}$/.test(cpt);  // 5-digit CPT code
+    });
+    
+    if (hasCPTCodes) {
+      if (documentType !== 'itemized_bill') {
+        console.log(`[Quiz Gen] ⚠️ OVERRIDE: OCR said "${documentType}" but found ${lineItems.length} line items with CPT codes → forcing itemized_bill`);
+        documentType = 'itemized_bill';
+      }
+    } else if (lineItems.length === 0 && documentType === 'unknown') {
+      // No lineItems extracted → likely summary bill
+      console.log('[Quiz Gen] ⚠️ No line items extracted → assuming summary_bill');
+      documentType = 'summary_bill';
     }
+    
+    console.log(`[Quiz Gen] Document Type: ${documentType}, Line Items: ${lineItems.length}, Has CPT: ${hasCPTCodes}`);
     
     // Determine dynamic question count based on bill complexity (increased for thorough analysis)
     let questionCount = 8; // Default: 8 questions (more professional)
@@ -8161,70 +8166,69 @@ ${JSON.stringify(combinedRules, null, 2)}
 [YOUR TASK]
 Generate EXACTLY ${questionCount} questions to PROVE or DISPROVE the CPT codes in the bill.
 
-RULES:
-1. FIRST QUESTION: Check for Summary Bill blocker (gatekeeper)
-2. If "summary_bill" detected: Generate blocker question about itemized bill
-3. Target SPECIFIC CPT codes from lineItems (e.g., "You were billed CPT 99285. Did you...")
-4. Each question has:
-   - Options with "value": "flag" (triggers red flag) or "safe" (no issue)
-   - riskLevel: "HIGH", "MEDIUM", "LOW", or "NONE"
-   - flagText: Specific clinical violation description (only for flag options)
+${documentType === 'itemized_bill' 
+  ? `CRITICAL RULES - ITEMIZED BILL DETECTED:
+1. ⚠️ SKIP GATEKEEPER: This bill already has CPT codes. DO NOT ask if CPT codes exist.
+2. START DIRECTLY with CPT-specific verification questions (e.g., "CPT 99285 is billed. Did you receive intensive care?")
+3. Target SPECIFIC CPT codes from lineItems array above
+4. Each question verifies if the billed CPT code matches actual care received`
+  : `CRITICAL RULES - SUMMARY BILL SUSPECTED:
+1. ⚠️ FIRST QUESTION MUST BE GATEKEEPER: "Does your bill show specific 5-digit CPT codes?"
+2. If user answers "No CPT codes" → riskLevel: "BLOCKER" with flagText: "AUDIT BLOCKED: Summary bill"
+3. Subsequent questions should be general (no specific CPT codes since we don't have them)`
+}
+
+ALWAYS INCLUDE:
+- Options with "value": "flag" (triggers red flag) or "safe" (no issue)
+- riskLevel: "HIGH", "MEDIUM", "LOW", "BLOCKER", or "NONE"
+- flagText: Specific clinical violation description (only for flag options)
 
 [STRICT OUTPUT SCHEMA - JSON ONLY]
 Return ONLY valid JSON array. No markdown. No explanations.
 
+${documentType === 'itemized_bill' ? `EXAMPLE FOR ITEMIZED BILL (NO GATEKEEPER):
 [
   {
     "id": "q1",
-    "question": "Does your bill show specific 5-digit CPT codes (like 99285, 70450)?",
-    "context": "Summary bills hide errors. CPT codes required for clinical audit.",
+    "question": "CPT 99285 (Level 5 Emergency Visit) is billed. Did you receive intensive care (multiple IVs, CT/MRI, life-threatening condition)?",
+    "context": "Level 5 ER requires high medical complexity. Minor conditions should be Level 2-3.",
     "options": [
-      { 
-        "label": "Yes, I see CPT codes", 
-        "value": "safe", 
-        "riskLevel": "NONE", 
-        "flagText": null 
-      },
-      { 
-        "label": "No, only totals shown", 
-        "value": "flag", 
-        "riskLevel": "BLOCKER", 
-        "flagText": "AUDIT BLOCKED: Summary bill detected. Cannot verify CPT codes without itemized billing."
-      },
-      { 
-        "label": "Not Sure", 
-        "value": "unsure", 
-        "riskLevel": "LOW", 
-        "flagText": null 
-      }
+      { "label": "Yes, intensive care received", "value": "safe", "riskLevel": "NONE", "flagText": null },
+      { "label": "No, routine care only", "value": "flag", "riskLevel": "HIGH", "flagText": "ER Level 5 Upcoding: CPT 99285 billed but patient reports routine care." },
+      { "label": "Not Sure", "value": "unsure", "riskLevel": "NONE", "flagText": null }
     ]
   },
   {
     "id": "q2",
-    "question": "If you see CPT 99285 (Level 5 ER), did you receive intensive care (multiple IVs, CT/MRI, life-threatening condition)?",
-    "context": "Level 5 ER requires high medical complexity. Minor conditions should be Level 2-3.",
+    "question": "CPT 70450 (CT Scan Head) is billed for $2,400. Did you receive this scan?",
+    "context": "Verify you actually received this expensive imaging service.",
     "options": [
-      { 
-        "label": "Yes, intensive care received", 
-        "value": "safe", 
-        "riskLevel": "NONE", 
-        "flagText": null
-      },
-      { 
-        "label": "No, routine care only", 
-        "value": "flag", 
-        "riskLevel": "HIGH", 
-        "flagText": "ER Level 5 Upcoding: Billed CPT 99285 (highest severity) but patient reports routine care. Clinical documentation mismatch."
-      },
-      { 
-        "label": "Not Sure / Didn't see this code", 
-        "value": "unsure", 
-        "riskLevel": "NONE", 
-        "flagText": null
-      }
+      { "label": "Yes, I had CT scan", "value": "safe", "riskLevel": "NONE", "flagText": null },
+      { "label": "No, never had CT scan", "value": "flag", "riskLevel": "HIGH", "flagText": "Service Not Rendered: CT scan billed but patient never received it." }
     ]
   }
-]
+]` : `EXAMPLE FOR SUMMARY BILL (WITH GATEKEEPER):
+[
+  {
+    "id": "q1_gatekeeper",
+    "question": "Does your bill show specific 5-digit CPT codes (like 99285, 70450)?",
+    "context": "Summary bills hide errors. CPT codes required for audit.",
+    "options": [
+      { "label": "Yes, I see CPT codes", "value": "safe", "riskLevel": "NONE", "flagText": null },
+      { "label": "No, only totals shown", "value": "flag", "riskLevel": "BLOCKER", "flagText": "AUDIT BLOCKED: Summary bill detected." }
+    ]
+  },
+  {
+    "id": "q2",
+    "question": "Did you have an overnight hospital stay?",
+    "context": "Multi-day stays often have duplicate charges.",
+    "options": [
+      { "label": "Yes, overnight stay", "value": "safe", "riskLevel": "NONE", "flagText": null },
+      { "label": "No, same-day only", "value": "safe", "riskLevel": "NONE", "flagText": null }
+    ]
+  }
+]`}
+`;
 ]`;
 
     // Call secure backend API with strict response schema
