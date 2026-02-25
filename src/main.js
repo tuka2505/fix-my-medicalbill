@@ -7830,9 +7830,7 @@ function setupBillScanning() {
   "dateOfService": "2026-02-12",
   "issueCategory": "Emergency Room",
   "lineItems": [{"cptCode": "99285", "description": "ER Visit", "charge": 2150.00}]
-}
-
-IMPORTANT: issueCategory must be ONE of: "Emergency Room", "Surgery", "Lab Work", "Imaging/Radiology", "Hospital Stay", "General Doctor Visit", "Specialist Visit", "Diagnostic Testing". Use CPT codes to determine: 99281-99285=ER, 99221-99239=Hospital Stay, 10000-69999=Surgery, 70000-79999=Imaging, 80000-89999=Lab, 99201-99215=General Visit.` },
+}` },
                 { inlineData: { mimeType: fileToProcess.type, data: base64String } }
               ] 
             }],
