@@ -7836,7 +7836,7 @@ Keep descriptions SHORT (max 40 chars). Extract up to 10 line items.` },
               ] 
             }],
             { 
-              response_mime_type: "application/json",
+              responseMimeType: "application/json",
               maxOutputTokens: 3000,
               temperature: 0.8
             },
@@ -8281,7 +8281,7 @@ JSON array only. Each question has:
     const data = await callSecureGeminiAPI(
       [{ parts: [{ text: prompt }] }],
       { 
-        response_mime_type: "application/json",
+        responseMimeType: "application/json",
         maxOutputTokens: 5000,
         temperature: 0.8
       },

@@ -260,19 +260,20 @@ export default async function handler(req, res) {
     }
 
     // Build generationConfig:
-    // - Quiz generation uses its own ARRAY schema (passed from client)
     // - Bill OCR: NO SCHEMA (faster, prevents 504 timeout on large images)
+    // - Quiz generation: NO SCHEMA (faster, prompt-based JSON)
     // - Other: Default simplified OBJECT schema
     const hasCustomSchema = generationConfig?.responseSchema != null;
     const isBillOCR = action === 'bill_ocr';
+    const isQuizGen = action === 'quiz_generation';
     
     const finalGenerationConfig = {
       ...generationConfig,
       responseMimeType: "application/json"
     };
     
-    // Skip schema for bill_ocr to prevent timeout (use prompt-based JSON output instead)
-    if (!isBillOCR) {
+    // Skip schema for bill_ocr and quiz_generation (use prompt-based JSON output instead)
+    if (!isBillOCR && !isQuizGen) {
       finalGenerationConfig.responseSchema = hasCustomSchema ? generationConfig.responseSchema : {
         type: "OBJECT",
         properties: {
