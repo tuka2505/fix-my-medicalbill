@@ -7829,14 +7829,15 @@ function setupBillScanning() {
   "totalAmount": 6615.00,
   "dateOfService": "2026-02-12",
   "issueCategory": "Emergency Room",
-  "lineItems": [{"cptCode": "99285", "description": "ER Visit", "charge": 2150.00}]
-}` },
+  "lineItems": [{"cptCode": "99285", "description": "ER Visit Level 5", "charge": 2150.00}]
+}
+Keep descriptions SHORT (max 40 chars). Extract up to 10 line items.` },
                 { inlineData: { mimeType: fileToProcess.type, data: base64String } }
               ] 
             }],
             { 
               response_mime_type: "application/json",
-              maxOutputTokens: 2000,
+              maxOutputTokens: 3000,
               temperature: 0.8
             },
             'bill_ocr'
