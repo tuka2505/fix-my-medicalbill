@@ -297,18 +297,21 @@ export default async function handler(req, res) {
             enum: ["Emergency Room", "Lab & Imaging", "Surgery & Inpatient", "General Doctor Visit"],
             description: "Primary category of medical service"
           },
-          lineItemsSummary: {
-            type: "STRING",
-            nullable: true,
-            description: "Text summary of line items with CPT codes, descriptions, and amounts"
-          },
-          detectedIssuesSummary: {
-            type: "STRING",
-            nullable: true,
-            description: "Text summary of detected billing issues (upcoding, duplicates, etc)"
+          lineItems: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                cptCode: { type: "STRING" },
+                description: { type: "STRING" },
+                charge: { type: "NUMBER" }
+              },
+              required: ["cptCode", "description", "charge"]
+            },
+            description: "Array of line items with CPT codes"
           }
         },
-        required: ["isValid", "documentType", "totalAmount", "issueCategory"]
+        required: ["isValid", "documentType", "totalAmount", "issueCategory", "lineItems"]
       }
     };
 

@@ -7758,31 +7758,7 @@ Extract ALL line items. Numbers only (no $ or commas). Return ONLY this JSON - n
             }],
             { 
               response_mime_type: "application/json",
-              maxOutputTokens: 3000,
-              responseSchema: {
-                type: "OBJECT",
-                properties: {
-                  isValid: { type: "BOOLEAN" },
-                  documentType: { type: "STRING", enum: ["itemized_bill", "summary_bill", "eob", "statement"] },
-                  facilityName: { type: "STRING" },
-                  totalAmount: { type: "NUMBER" },
-                  dateOfService: { type: "STRING" },
-                  issueCategory: { type: "STRING" },
-                  lineItems: {
-                    type: "ARRAY",
-                    items: {
-                      type: "OBJECT",
-                      properties: {
-                        cptCode: { type: "STRING" },
-                        description: { type: "STRING" },
-                        charge: { type: "NUMBER" }
-                      },
-                      required: ["cptCode", "description", "charge"]
-                    }
-                  }
-                },
-                required: ["isValid", "documentType", "facilityName", "totalAmount", "dateOfService", "issueCategory", "lineItems"]
-              }
+              maxOutputTokens: 3000
             },
             'bill_ocr'
           );
