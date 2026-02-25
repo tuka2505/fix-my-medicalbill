@@ -9186,7 +9186,7 @@ async function initializeTargetedQuiz(category) {
         +     '<h4>Request Your Itemized Bill</h4>'
         +     '<p>We\'ll send you a free, attorney-reviewed request letter. It cites HIPAA law and requires a response within 30 days.</p>'
         +     '<div class="rr-step-includes"><div>\u2713 Legally binding HIPAA request</div><div>\u2713 Requires CPT codes + line-item prices</div><div>\u2713 One-click email template</div></div>'
-        +     '<button class="rr-cta-primary" id="rr-blocker-waitlist-btn" style="background:linear-gradient(135deg,#5856D6,#9B59B6)">Send Me the Free Letter + Audit Reminder \u2192</button>'
+        +     '<button class="rr-cta-primary" id="rr-blocker-cta-btn" style="background:linear-gradient(135deg,#0071E3,#005BB5)">Get Free Itemized Bill Request Letter \u2192</button>'
         +   '</div>'
         +   '<div class="rr-step-card rr-step-card--future">'
         +     '<div class="rr-step-num">Step 2 \u00b7 After You Receive It</div>'
@@ -9194,7 +9194,7 @@ async function initializeTargetedQuiz(category) {
         +     '<p>Once you have the itemized bill, upload it here for a complete line-by-line verification against Medicare pricing.</p>'
         +     '<div class="rr-step-includes"><div>\u2713 CPT code match verification</div><div>\u2713 Medicare pricing benchmark</div><div>\u2713 AI-powered fraud detection</div></div>'
         +   '</div>'
-        +   '<button class="rr-cta-secondary" style="margin-top:8px" id="rr-blocker-cta-btn">Get Free Itemized Bill Request Letter \u2192</button>'
+        +   '<button class="rr-cta-secondary" style="margin-top:8px" id="rr-blocker-waitlist-btn">Join Waitlist for Audit Reminder</button>'
         + '</div>'
         + '</div>';
 
@@ -9354,7 +9354,7 @@ async function initializeTargetedQuiz(category) {
         +     '<h4>Still Worth a Closer Look</h4>'
         +     '<p>Even \u201cclean\u201d bills often contain small errors. Studies show 80% of all medical bills contain some form of error.</p>'
         +     '<div class="rr-clean-checklist">'
-        +       '<div class="rr-clean-item"><span class="rr-check-icon">\uD83D\uDD0D</span><div><strong>Request an Itemized Bill</strong><span>Verify every line item against what you actually received.</span></div></div>'
+        +       '<div class="rr-clean-item"><span class="rr-check-icon">\uD83D\uDD0D</span><div><strong>Review Line Items Carefully</strong><span>Verify every charge against what you actually received.</span></div></div>'
         +       '<div class="rr-clean-item"><span class="rr-check-icon">\uD83D\uDCB0</span><div><strong>Compare Against Medicare Rates</strong><span>Providers sometimes charge more than Medicare\u2019s official rates.</span></div></div>'
         +       '<div class="rr-clean-item"><span class="rr-check-icon">\uD83D\uDCDD</span><div><strong>Check for Balance Billing</strong><span>Out-of-network charges mixed into your bill can inflate costs.</span></div></div>'
         +     '</div>'
@@ -9363,7 +9363,7 @@ async function initializeTargetedQuiz(category) {
         +     '<h4 style="color:#0071E3">\uD83D\uDD0D Want 100% Certainty?</h4>'
         +     '<p>Our Premium audit checks every line against Medicare\u2019s official database. Average savings on clean bills: <strong>$340</strong>. Early-bird 50% off at launch.</p>'
         +     '<button class="rr-cta-primary" id="rr-low-waitlist-btn" style="background:linear-gradient(135deg,#0071E3,#5AC8FA);margin-bottom:10px">Get Notified at Launch \u2014 50% Off \u2192</button>'
-        +     '<button class="rr-cta-secondary" id="rr-low-cta-btn">Request Itemized Bill (Recommended) \u2192</button>'
+        +     '<button class="rr-cta-secondary" id="rr-low-cta-btn">Generate Dispute Letter (if needed) \u2192</button>'
         +   '</div>'
         + '</div>'
         + '</div>';
