@@ -1,6 +1,19 @@
 {
   "buildCommand": "npm run build:spa",
   "installCommand": "npm install",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.fixmymedicalbill.com"
+        }
+      ],
+      "destination": "https://fixmymedicalbill.com/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
