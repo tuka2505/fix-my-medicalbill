@@ -14,10 +14,34 @@
       "permanent": true
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/((?!ads\\.txt|sitemap\\.xml|robots\\.txt|manifest\\.json|browserconfig\\.xml|security-test\\.html).*)",
-      "destination": "/index.html"
+      "src": "/ads\\.txt",
+      "dest": "/ads.txt"
+    },
+    {
+      "src": "/sitemap\\.xml",
+      "dest": "/sitemap.xml"
+    },
+    {
+      "src": "/robots\\.txt",
+      "dest": "/robots.txt"
+    },
+    {
+      "src": "/manifest\\.json",
+      "dest": "/manifest.json"
+    },
+    {
+      "src": "/browserconfig\\.xml",
+      "dest": "/browserconfig.xml"
+    },
+    {
+      "src": "/security-test\\.html",
+      "dest": "/security-test.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ],
   "functions": {
