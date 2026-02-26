@@ -50,8 +50,18 @@
     <meta name="twitter:description" content="Dispute hospital bills in 60 seconds with our AI-powered tool. 100% Free, Private, and Legal." />
     <meta name="twitter:image" content="https://fixmymedicalbill.com/og-image.png" />
     
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://fixmymedicalbill.com/" />
+    <!-- Canonical URL - Dynamically set by JavaScript -->
+    <link rel="canonical" id="canonical-url" href="https://fixmymedicalbill.com/" />
+    
+    <script>
+      // Set canonical URL dynamically based on current path
+      (function() {
+        const canonical = document.getElementById('canonical-url');
+        const path = window.location.pathname;
+        const canonicalUrl = 'https://fixmymedicalbill.com' + path;
+        canonical.href = canonicalUrl;
+      })();
+    </script>
     
     <!-- Structured Data - SoftwareApplication Schema -->
     <script type="application/ld+json">
