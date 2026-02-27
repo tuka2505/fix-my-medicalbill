@@ -1,40 +1,23 @@
 {
   "buildCommand": "npm run build:spa",
   "installCommand": "npm install",
-  "routes": [
+  "redirects": [
     {
-      "src": "/ads\\.txt",
-      "dest": "/ads.txt"
-    },
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.fixmymedicalbill.com"
+        }
+      ],
+      "destination": "https://fixmymedicalbill.com/:path*",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
     {
-      "src": "/sitemap\\.xml",
-      "dest": "/sitemap.xml"
-    },
-    {
-      "src": "/robots\\.txt",
-      "dest": "/robots.txt"
-    },
-    {
-      "src": "/manifest\\.json",
-      "dest": "/manifest.json"
-    },
-    {
-      "src": "/browserconfig\\.xml",
-      "dest": "/browserconfig.xml"
-    },
-    {
-      "src": "/security-test\\.html",
-      "dest": "/security-test.html"
-    },
-    {
-      "src": "/(.*)",
-      "headers": { "host": "www.fixmymedicalbill.com" },
-      "dest": "https://fixmymedicalbill.com/$1",
-      "status": 308
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "functions": {
