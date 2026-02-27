@@ -3,7 +3,18 @@
   "installCommand": "npm install",
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.fixmymedicalbill.com"
+        }
+      ],
+      "destination": "https://fixmymedicalbill.com/",
+      "permanent": true
+    },
+    {
+      "source": "/:path((?!assets/).*)",
       "has": [
         {
           "type": "host",
@@ -12,6 +23,17 @@
       ],
       "destination": "https://fixmymedicalbill.com/:path*",
       "permanent": true
+    }
+  ],
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
     }
   ],
   "rewrites": [
