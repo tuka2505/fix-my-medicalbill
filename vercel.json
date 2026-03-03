@@ -1,6 +1,8 @@
 {
-  "buildCommand": "npm run build:spa",
+  "buildCommand": "npm run build",
   "installCommand": "npm install",
+  "cleanUrls": true,
+  "trailingSlash": false,
   "rewrites": [
     {
       "source": "/(.*)",

@@ -99,14 +99,30 @@ async function prerender() {
       // Navigate to the page
       await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
       
-      // Wait for the app-rendered event
-      await page.waitForFunction(
-        () => document.readyState === 'complete',
-        { timeout: 5000 }
-      ).catch(() => {});
+      // Wait for app-rendered event (dispatched after router completes)
+      await page.evaluate(() => {
+        return new Promise((resolve) => {
+          if (document.readyState === 'complete') {
+            // Wait for app-rendered event or timeout after 3 seconds
+            const timeout = setTimeout(() => resolve(), 3000);
+            document.addEventListener('app-rendered', () => {
+              clearTimeout(timeout);
+              resolve();
+            }, { once: true });
+          } else {
+            document.addEventListener('DOMContentLoaded', () => {
+              const timeout = setTimeout(() => resolve(), 3000);
+              document.addEventListener('app-rendered', () => {
+                clearTimeout(timeout);
+                resolve();
+              }, { once: true });
+            }, { once: true });
+          }
+        });
+      });
       
-      // Additional wait for any async content
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Additional wait for meta tag updates
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Get the HTML
       const html = await page.content();

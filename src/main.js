@@ -1814,6 +1814,47 @@ function renderHeader() {
   `;
 }
 
+// Update page meta tags dynamically for SEO
+function updatePageMeta(title, description, canonicalPath) {
+  // Update title
+  document.title = title;
+  
+  // Update or create meta description
+  let metaDesc = document.querySelector('meta[name="description"]');
+  if (!metaDesc) {
+    metaDesc = document.createElement('meta');
+    metaDesc.setAttribute('name', 'description');
+    document.head.appendChild(metaDesc);
+  }
+  metaDesc.setAttribute('content', description);
+  
+  // Update or create canonical URL
+  let canonical = document.querySelector('link[rel="canonical"]');
+  if (!canonical) {
+    canonical = document.createElement('link');
+    canonical.setAttribute('rel', 'canonical');
+    document.head.appendChild(canonical);
+  }
+  canonical.setAttribute('href', `https://fixmymedicalbill.com${canonicalPath}`);
+  
+  // Update OG tags
+  let ogTitle = document.querySelector('meta[property="og:title"]');
+  if (ogTitle) ogTitle.setAttribute('content', title);
+  
+  let ogDesc = document.querySelector('meta[property="og:description"]');
+  if (ogDesc) ogDesc.setAttribute('content', description);
+  
+  let ogUrl = document.querySelector('meta[property="og:url"]');
+  if (ogUrl) ogUrl.setAttribute('content', `https://fixmymedicalbill.com${canonicalPath}`);
+  
+  // Update Twitter tags
+  let twitterTitle = document.querySelector('meta[name="twitter:title"]');
+  if (twitterTitle) twitterTitle.setAttribute('content', title);
+  
+  let twitterDesc = document.querySelector('meta[name="twitter:description"]');
+  if (twitterDesc) twitterDesc.setAttribute('content', description);
+}
+
 function renderHero() {
   return `
     <section class="hero">
@@ -2566,6 +2607,13 @@ function renderInfoPage(routePath) {
     renderHomePage();
     return;
   }
+  
+  // Update meta tags for SEO
+  updatePageMeta(
+    info.metaTitle || info.title,
+    info.metaDescription || info.description,
+    info.canonicalUrl ? info.canonicalUrl.replace('https://fixmymedicalbill.com', '') : routePath
+  );
 
   const sections = info.sections
     .map(
@@ -4783,6 +4831,13 @@ function renderToolPage(routePath) {
 
   const seoCopy = toolSeoCopy[routePath] || "";
   const toolSection = getToolSectionMarkup(tool.sectionId);
+  
+  // Update meta tags for SEO
+  updatePageMeta(
+    `${tool.title} | FixMyMedicalBill`,
+    seoCopy || tool.desc,
+    routePath
+  );
   
   // AI Context Banner Logic
   let contextBannerHTML = "";
